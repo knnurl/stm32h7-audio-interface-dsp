@@ -65,6 +65,16 @@ def test_effect_cases(lib8):
     lib8.dsp_fx_echo_f32_reset(ctypes.byref(e), 1)
     assert stereo(lib8.dsp_fx_echo_f32_process, e, x).tobytes() == y.tobytes()
 
+    x, y = case(lib8, "fx_echo96_f32")
+    e, m = b8.DspFxEchoF32(), pool()
+    lib8.dsp_fx_echo_f32_init(ctypes.byref(e), 96000.0, dsplib.f32(m), POOL)
+    lib8.dsp_fx_echo_f32_set_time_ms(ctypes.byref(e), 3.0)
+    lib8.dsp_fx_echo_f32_set_feedback(ctypes.byref(e), 0.6)
+    lib8.dsp_fx_echo_f32_set_amount(ctypes.byref(e), 1.0)
+    lib8.dsp_fx_echo_f32_reset(ctypes.byref(e), 1)
+    assert e.half_rate == 1
+    assert stereo(lib8.dsp_fx_echo_f32_process, e, x).tobytes() == y.tobytes()
+
     for name, cls, extra, fs in (("chorus", b8.DspFxChorusF32, None, 16000.0),
                                  ("flanger", b8.DspFxFlangerF32, 0.7, FS)):
         x, y = case(lib8, f"fx_{name}_f32")

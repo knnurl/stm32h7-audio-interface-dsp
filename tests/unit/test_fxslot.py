@@ -9,7 +9,7 @@ import dsplib
 import dsplib_b8b as b8
 
 FS = 48000.0
-POOL = 2 * 24000  # 0.5 s of echo per channel
+POOL = 2 * 24000  # 1 s of 16-bit echo per channel
 
 
 @pytest.fixture(scope="module")
@@ -41,13 +41,14 @@ def test_off_is_bit_exact(lib8):
 
 
 def test_pool_size_sets_the_echo_time(lib8):
-    """The smallest pool that holds the chorus gives the echo 28 ms; a pool too small for the
-    chorus fails, and leaves the echo unavailable when it is under 10 ms."""
+    """The smallest pool that holds the chorus gives the echo 56 ms (its lines are 16-bit since
+    2026-11-17: two samples per float of pool); a pool too small for the chorus fails, and leaves
+    the echo unavailable when it is under 10 ms."""
     need = lib8.dsp_fx_chorus_f32_mem_needed(FS)
     s, rc = make_slot(lib8, need)
     assert rc == 0 and s.state.available[b8.FX_CHORUS] == 1
     assert lib8.dsp_fx_echo_f32_max_time_ms(ctypes.byref(s.state.echo)) == \
-        pytest.approx((need // 2 - 3) / 48, rel=1e-6)
+        pytest.approx((2 * (need // 2) - 3) / 48, rel=1e-6)
     s, rc = make_slot(lib8, 100)
     assert rc == -1 and s.state.available[b8.FX_ECHO] == 0
 

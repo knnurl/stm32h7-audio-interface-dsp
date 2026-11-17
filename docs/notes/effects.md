@@ -54,7 +54,56 @@ Ping-pong sums the input into the left line and cross-feeds. The time glides ove
 changes, bending the pitch of what is in the line as a tape echo does; the proposed choice, with a
 cross-fade (no bend) as the owner's alternative. **Bug found by the glide test:** accumulating
 the glide step in float32 drifted 0.42 samples over 2400 steps and then jumped to the target; the
-delay is now computed from the target back. Matches its model to -110 dB.
+delay is now computed from the target back. Matches its float32 model bit for bit.
+
+**16-bit lines and a 48 kHz core (owner's decision 2026-11-17).** The lines hold int16 at 2^13
+per 1.0 (+/-4.0, 12 dB of headroom for feedback build-up), saturating; the core runs at fs up
+to 48 kHz and at fs / 2 at 88.2 and 96 kHz, between the batch 6 83-tap half-band filters. 0.75 s
+of stereo echo is 141 KB at either rate (it was 563 KB as float at 96 kHz;
+`docs/results/b8b_memory.md`). The pool stays a float array; the echo reads and writes its int16
+samples with memcpy, which is character-type access, so the slot can hand the same memory to the
+float chorus and flanger without breaking C's effective-type rules under GCC -O2 (a union of
+types would have relied on GCC's punning extension; memcpy is plain C11, and GCC -O2 makes each
+2-byte memcpy one ldrsh or strh [Verify in the firmware disassembly]).
+
+- **Rounding, and a deviation from the brief.** The brief asked for round to nearest. Measured,
+  that traps a decaying tail in a limit cycle: with feedback g a stored value under
+  0.5 / (1 - g) LSB rounds back to itself (10 LSB at 0.95), and a tail at feedback 0.95 hung at
+  -59 dBFS for ever, so the slot's trails never ended. The line now rounds to nearest at and
+  above 16 LSB (-54 dBFS) and toward zero below, so every small value shrinks to exact zero.
+  Measured over the alternatives, feedback 0.95, 20 ms repeats, error against float lines over
+  2 s / where the tail ends:
+
+  | Rounding | Error | Tail |
+  |---|---|---|
+  | Nearest (the brief) | -79.5 dBFS | stuck at -59 dBFS |
+  | Toward zero below 8 LSB | -76.8 dBFS | silent from 2.27 s |
+  | Toward zero below 16 LSB (built) | -74.2 dBFS | silent from 2.15 s |
+  | Toward zero below 32 / 64 LSB | -71.5 / -69.4 dBFS | silent from 2.09 / 2.07 s |
+  | Toward zero always | -64.0 dBFS | silent from 2.03 s |
+
+  16 LSB is the smallest power of two above the 10 LSB deadband at the highest feedback, so a
+  value at or above it always shrinks under round-to-nearest too. Every tested combination's
+  tail reaches exact zero (`test_tails_end_in_silence`: 0.49 s at feedback 0.5 to 3.43 s at
+  0.95 with ping-pong). `DSP_DELAYLINE_S16_SNAP_LSB` set to 0 restores pure round-to-nearest.
+- **No dither.** The error is only present while signal is stored; a silent line is exact zero.
+  Dither would put a hiss on every repeat and, requantised each pass, build it up with the
+  feedback; the repeats are filtered in the loop, which smears the deterministic error instead.
+- **Noise, measured** (`tests/unit/test_fx_echo16.py`): no feedback, a -6 dBFS 1 kHz burst:
+  error -88.4 dBFS RMS, -84.5 dBFS peak, exact silence after the repeat; feedback 0.95: -74.2
+  dBFS RMS over 2 s against float lines.
+- **Resting delay in whole samples (found while testing).** A fractional Lagrange read is a
+  low-pass: at a fraction of 0.5 it is -5.3 dB at 18 kHz at 48 kHz. At 96 kHz the latency
+  correction always left exactly half a sample, and at 48 kHz any time that is not a whole number
+  of samples did the same (true of the batch 8b float echo too), so the repeats came back dull.
+  The resting delay is now rounded to whole internal samples (20.8 us steps); glides still pass
+  through fractions.
+- **At 96 kHz** (`DSP_ECHO_RESAMPLE_LATENCY`, 83 samples: 41 for each half-band and one for the
+  odd-block hold): the first repeat lands within one sample of the set time at 88.2 and 96 kHz,
+  for 100 ms and 37.3 ms; the repeat's gain is flat to -0.0008 / +0.0001 dB from 100 Hz to 18
+  kHz; a 10 kHz repeat's image at 38 kHz is -113.1 dB; a 30 kHz input's alias at 18 kHz is not
+  stored at all (the half-band's 113 dB leaves it far under one LSB, so the line holds exact
+  zeros). Any block size gives the same output (one-sample holds; `test_block_size_does_not_matter`).
 
 ### Chorus
 Two voices per channel, half a cycle apart, at 20 ms +/- 7 ms x amount; the right channel's
@@ -156,8 +205,8 @@ Recursive RMS (#103) is listed for batch 8 but concerns metering (batch 8c).
 
 ## Open questions (for the owner)
 
-1. The macro table above (8b.0): built as proposed; change any row.
-2. Synced echo time changes: glide (built) or cross-fade.
-3. The echo's maximum time and storage, from the memory table (8b.6).
-4. A change of effect leaves about 60 ms of dry only (fade out, clear, fade in). Acceptable, or
-   should the budget allow two effects during a cross-fade?
+1. The macro table above (8b.0): accepted as built, 2026-11-17.
+2. Synced echo time changes: glide (accepted 2026-11-17).
+3. The echo's rounding: toward zero below 16 LSB (built, ends the tails) or pure nearest (the
+   brief; tails hang at up to -59 dBFS). See the table above.
+4. The about 60 ms dry gap on a change of effect: accepted, 2026-11-17.

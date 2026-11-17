@@ -12,7 +12,8 @@ Cycles per sample = case cycles / 1024 for mono cases, / 512 for stereo frames.
 |---|---|---|---|---|
 | Delay line, Lagrange read | `delay_lagrange_f32` | 48 kHz, mono | not measured | about 20 per read |
 | State-variable filter | `svf_f32` | 48 kHz, mono | not measured | about 12 |
-| Echo | `fx_echo_f32` | 48 kHz | not measured | about 60 |
+| Echo, 16-bit lines | `fx_echo_f32` | 48 kHz | not measured | about 70 |
+| Echo at 96 kHz (core at 48 kHz, two half-bands each way) | `fx_echo96_f32` | 96 kHz | not measured | about 120 per 96 kHz frame |
 | Chorus | `fx_chorus_f32` | 16 kHz | not measured | about 110 (4 Lagrange reads, 4 LFO values) |
 | Flanger | `fx_flanger_f32` | 48 kHz | not measured | about 60 |
 | Phaser, 8 stages | `fx_phaser_f32` | 48 kHz | not measured | about 45 |

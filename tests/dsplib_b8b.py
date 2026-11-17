@@ -45,12 +45,24 @@ OD_TABLE = 37
 LINES = 8
 
 
+class DspDelaylineS16(ctypes.Structure):
+    _fields_ = [("buf", ctypes.c_void_p), ("len", c_int32), ("write", c_int32)]
+
+
+ECHO_CHUNK = 32
+
+
 class DspFxEchoF32(ctypes.Structure):
-    _fields_ = [("sample_rate_hz", c_float), ("dry", c_float), ("line", DspDelaylineF32 * 2),
+    _fields_ = [("sample_rate_hz", c_float), ("rate_hz", c_float), ("half_rate", c_int32),
+                ("dry", c_float), ("line", DspDelaylineS16 * 2),
                 ("max_delay", c_float), ("delay", c_float), ("delay_target", c_float),
                 ("glide_step", c_float), ("glide_left", c_int32), ("feedback", c_float),
                 ("ping_pong", c_int32), ("lp", DspOnePoleF32 * 2), ("hp", DspOnePoleF32 * 2),
-                ("wet", DspRampF32)]
+                ("wet", DspRampF32), ("down", b6.DspHalfbandDownF32 * 2),
+                ("up", b6.DspHalfbandUpF32 * 2), ("in_hold", c_float * 2), ("in_has", c_int32),
+                ("out_hold", c_float * 2), ("out_has", c_int32),
+                ("hi", (c_float * (2 * ECHO_CHUNK)) * 2), ("lo_in", (c_float * ECHO_CHUNK) * 2),
+                ("lo_out", (c_float * ECHO_CHUNK) * 2)]
 
 
 class DspFxChorusF32(ctypes.Structure):
@@ -115,7 +127,8 @@ class DspReverbF32(ctypes.Structure):
                 ("predelay", c_int32), ("max_predelay", c_int32)]
 
 
-MIRRORS = [DspDelaylineF32, DspDelaylineApF32, DspLfoF32, DspSvfF32, DspRampF32, DspOnePoleF32,
+MIRRORS = [DspDelaylineF32, DspDelaylineApF32, DspDelaylineS16, DspLfoF32, DspSvfF32, DspRampF32,
+           DspOnePoleF32,
            DspFxEchoF32, DspFxChorusF32, DspFxFlangerF32, DspFxPhaserF32, DspFxTremoloF32,
            DspFxSweepF32, DspFxOverdriveF32, DspFxCrusherF32, DspFxSlotF32, DspReverbF32]
 
@@ -165,7 +178,15 @@ def bind(lib):
 
     stereo = [_f32_p, _f32_p, _f32_p, _f32_p, c_size]
     sig("dsp_onepole_coef", c_float, c_float, c_float)
+    s16 = P(DspDelaylineS16)
+    sig("dsp_delayline_s16_init", c_int32, s16, _f32_p, c_int32)
+    sig("dsp_delayline_s16_reset", None, s16)
+    sig("dsp_delayline_s16_push", None, s16, c_float)
+    sig("dsp_delayline_s16_tap", c_float, s16, c_int32)
+    sig("dsp_delayline_s16_read_lagrange", c_float, s16, c_float)
+    sig("dsp_delayline_s16_quantise", c_float, c_float)
     e = P(DspFxEchoF32)
+    sig("dsp_fx_echo_f32_mem_needed", c_int32, c_float, c_float)
     sig("dsp_fx_echo_f32_init", c_int32, e, c_float, _f32_p, c_int32)
     sig("dsp_fx_echo_f32_reset", None, e, c_int32)
     sig("dsp_fx_echo_f32_set_amount", None, e, c_float)

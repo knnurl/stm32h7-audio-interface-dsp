@@ -65,4 +65,43 @@ typedef enum {
 void dsp_delayline_f32_process(DspDelaylineF32 *dl, DspDelaylineApF32 *ap, int32_t interp,
                                const float *in, const float *delay, float *out, size_t n_frames);
 
+/* 16-bit delay line (the echo's storage, owner's decision 2026-11-17).
+ * Format: int16 with 2^13 per 1.0, so +/-4.0 (12 dB of headroom over full scale for feedback
+ * build-up); saturates; NaN stores 0.
+ * Rounding: to nearest (halves away from zero) at and above DSP_DELAYLINE_S16_SNAP_LSB (16 LSB,
+ * -54 dBFS), toward zero below it. Pure round-to-nearest, the rule asked for, traps a decaying
+ * echo in a limit cycle: with feedback g a stored value under 0.5 / (1 - g) LSB rounds back to
+ * itself (10 LSB at g = 0.95), and the tail hung at -59 dBFS for ever (measured,
+ * test_noise_at_feedback_095), so the slot's trails never ended. Rounding toward zero below
+ * 16 LSB makes every small value shrink, and the tail reaches exact zero (2.15 s for 20 ms
+ * repeats at 0.95). Cost, against a float line, over 2 s at g = 0.95: -74.2 dBFS of error
+ * instead of -79.5 dBFS. Set the snap level to 0 for pure round-to-nearest.
+ * Quantisation: no dither. The error is deterministic and only present while signal is stored:
+ * a silent input leaves exactly zero, where dither would leave a hiss on every repeat. The
+ * repeats pass through the echo's loop filters, which smear the error rather than leave it as
+ * a fixed pattern. Step 1.22e-4 (-78 dBFS), error RMS about 3.5e-5 (-89 dBFS) per quantisation;
+ * measured in tests/unit/test_fx_echo16.py.
+ * Memory: `mem` is the caller's float pool, used as bytes: every access goes through memcpy
+ * (character-type access), so the same pool can serve float delay lines at other times without
+ * breaking C's effective-type (strict aliasing) rules under GCC -O2; GCC turns each 2-byte
+ * memcpy into one load or store. `len` is in int16 samples (two per float of memory).
+ */
+typedef struct {
+    unsigned char *buf;
+    int32_t len;
+    int32_t write;
+} DspDelaylineS16;
+
+#define DSP_DELAYLINE_S16_SCALE 8192.0f
+#define DSP_DELAYLINE_S16_SNAP_LSB 16.0f
+
+/* Returns 0, or -1 if `mem` is NULL or `len` < 4. Clears the memory. */
+int32_t dsp_delayline_s16_init(DspDelaylineS16 *dl, float *mem, int32_t len);
+void dsp_delayline_s16_reset(DspDelaylineS16 *dl);
+void dsp_delayline_s16_push(DspDelaylineS16 *dl, float x);
+float dsp_delayline_s16_tap(const DspDelaylineS16 *dl, int32_t d);
+float dsp_delayline_s16_read_lagrange(const DspDelaylineS16 *dl, float d);
+/* The stored value of x: what a push then a tap at 0 returns. */
+float dsp_delayline_s16_quantise(float x);
+
 #endif

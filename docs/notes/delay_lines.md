@@ -101,5 +101,7 @@ Tremolo Effect (#3). They are automatic captions of videos made on an STM32H7 gu
 
 ## Open questions
 
-- 16-bit storage for the echo line (half the memory; noise about -96 dBFS before feedback, not
-  measured): the owner's 8b.6 decision.
+- Decided 2026-11-17: the echo's lines are 16-bit (`DspDelaylineS16`), with its core at
+  48 kHz at most; noise and the rounding rule are in `docs/notes/effects.md`. The float line
+  stays for the chorus, flanger and reverb, whose modulated reads and short lengths do not need
+  the saving.

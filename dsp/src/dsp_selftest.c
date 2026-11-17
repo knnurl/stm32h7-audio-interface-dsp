@@ -306,6 +306,16 @@ static void fx_echo_f32_run(const void *in, void *out) {
     run_stereo16(echo_fn, &s_8b.echo, in, out);
 }
 
+/* The echo at 96 kHz: the core at 48 kHz between the half-band filters. 3 ms, feedback 0.6. */
+static void fx_echo96_f32_run(const void *in, void *out) {
+    dsp_fx_echo_f32_init(&s_8b.echo, 96000.0f, s_pool8b, kPool8b);
+    dsp_fx_echo_f32_set_time_ms(&s_8b.echo, 3.0f);
+    dsp_fx_echo_f32_set_feedback(&s_8b.echo, 0.6f);
+    dsp_fx_echo_f32_set_amount(&s_8b.echo, 1.0f);
+    dsp_fx_echo_f32_reset(&s_8b.echo, 1);
+    run_stereo16(echo_fn, &s_8b.echo, in, out);
+}
+
 /* At 16 kHz: 512 frames are 32 ms, longer than the chorus's shortest delay (13 ms). */
 static void fx_chorus_f32_run(const void *in, void *out) {
     dsp_fx_chorus_f32_init(&s_8b.chorus, 16000.0f, s_pool8b, kPool8b);
@@ -394,6 +404,7 @@ static const SelftestCase kCases[] = {
     {"delay_lagrange_f32", kDspFmtF32, bursts_f32_input, delay_lagrange_f32_run},
     {"svf_f32", kDspFmtF32, bursts_f32_input, svf_f32_run},
     {"fx_echo_f32", kDspFmtF32, bursts_f32_input, fx_echo_f32_run},
+    {"fx_echo96_f32", kDspFmtF32, bursts_f32_input, fx_echo96_f32_run},
     {"fx_chorus_f32", kDspFmtF32, bursts_f32_input, fx_chorus_f32_run},
     {"fx_flanger_f32", kDspFmtF32, bursts_f32_input, fx_flanger_f32_run},
     {"fx_phaser_f32", kDspFmtF32, bursts_f32_input, fx_phaser_f32_run},

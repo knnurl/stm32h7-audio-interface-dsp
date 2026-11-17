@@ -56,6 +56,53 @@ def echo(xl, xr, delay, fb, lp_a, hp_a, wet, ping_pong=False):
     return out
 
 
+def quantise_s16(v):
+    """dsp_delayline_s16's storage: 2^13 per 1.0, saturated; rounded to nearest (halves away from
+    zero) at and above 16 LSB, toward zero below (the limit-cycle fix); in float32 arithmetic.
+    Returns the stored value as float32."""
+    s = np.float32(v) * np.float32(8192.0)
+    if not s >= np.float32(-32768.0):
+        s = np.float32(0.0) if s != s else np.float32(-32768.0)
+    elif s > np.float32(32767.0):
+        s = np.float32(32767.0)
+    if s >= np.float32(16.0) or s <= np.float32(-16.0):
+        q = int(s + (np.float32(0.5) if s >= 0 else np.float32(-0.5)))
+    else:
+        q = int(s)
+    return np.float32(q) * np.float32(1.0 / 8192.0)
+
+
+def echo16(xl, xr, delay, fb, lp_a, hp_a, wet, ping_pong=False):
+    """The echo at fs <= 48 kHz with 16-bit lines, step for step in float32 (no fused
+    multiply-add, as both builds compile it), so it matches the C code bit for bit. `delay` is a
+    whole number of samples (the C code rounds the resting delay)."""
+    f32 = np.float32
+    n = len(xl)
+    hist = [np.zeros(n, dtype=np.float32), np.zeros(n, dtype=np.float32)]
+    lp = [f32(0), f32(0)]
+    hpz = [f32(0), f32(0)]
+    la, ha, g, w = f32(lp_a), f32(hp_a), f32(fb), f32(wet)
+    out = [np.empty(n, dtype=np.float32), np.empty(n, dtype=np.float32)]
+    for i in range(n):
+        r, f = [], []
+        for ch in range(2):
+            k = i - 1 - delay
+            rv = hist[ch][k] if k >= 0 else f32(0)
+            r.append(rv)
+            lp[ch] = rv + la * (lp[ch] - rv)
+            hpz[ch] = lp[ch] + ha * (hpz[ch] - lp[ch])
+            f.append(lp[ch] - hpz[ch])
+        if ping_pong:
+            hist[0][i] = quantise_s16(f32(0.5) * (f32(xl[i]) + f32(xr[i])) + g * f[1])
+            hist[1][i] = quantise_s16(g * f[0])
+        else:
+            hist[0][i] = quantise_s16(f32(xl[i]) + g * f[0])
+            hist[1][i] = quantise_s16(f32(xr[i]) + g * f[1])
+        out[0][i] = w * r[0]
+        out[1][i] = w * r[1]
+    return out
+
+
 # ---- Chorus and flanger -----------------------------------------------------------------------
 
 def _hist_reader(buf, i):

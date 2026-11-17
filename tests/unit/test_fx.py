@@ -59,10 +59,9 @@ def test_echo_matches_the_model(lib8, ping_pong):
     assert fx.delay == 4799.0
     xl, xr = noise(20000, seed=2), noise(20000, seed=3)
     yl, yr = b8.run_stereo(lib8.dsp_fx_echo_f32_process, fx, xl, xr)
-    el, er = ref.echo(xl.astype(np.float64), xr.astype(np.float64), 4799, fx.feedback,
-                      fx.lp[0].a, fx.hp[0].a, 0.8, bool(ping_pong))
-    dsplib.assert_within_db(yl, el, -110.0)
-    dsplib.assert_within_db(yr, er, -110.0)
+    # 16-bit lines since 2026-11-17: the float32 model with the same quantiser, bit for bit.
+    el, er = ref.echo16(xl, xr, 4799, fx.feedback, fx.lp[0].a, fx.hp[0].a, 0.8, bool(ping_pong))
+    assert yl.tobytes() == el.tobytes() and yr.tobytes() == er.tobytes()
 
 
 def test_echo_setters(lib8):
@@ -74,11 +73,15 @@ def test_echo_setters(lib8):
     assert fx.feedback == pytest.approx(0.95)
     lib8.dsp_fx_echo_f32_set_feedback(ctypes.byref(fx), math.nan)
     assert fx.feedback == 0.0
-    # 12000 floats per line: the longest time is (12000 - 4 + 1) samples.
-    assert lib8.dsp_fx_echo_f32_max_time_ms(ctypes.byref(fx)) == pytest.approx(11997 / 48, rel=1e-6)
+    # 24000 floats hold two lines of 24000 int16 samples: the longest time is 23997 samples.
+    assert lib8.dsp_fx_echo_f32_max_time_ms(ctypes.byref(fx)) == pytest.approx(23997 / 48, rel=1e-6)
+    assert lib8.dsp_fx_echo_f32_mem_needed(FS, 0.75) == 36004
+    assert lib8.dsp_fx_echo_f32_mem_needed(96000.0, 0.75) == 36004  # the core runs at 48 kHz
     lib8.dsp_fx_echo_f32_set_time_ms(ctypes.byref(fx), 10000.0)
     assert fx.delay_target == fx.max_delay
-    _, rc = make_echo(lib8, 2 * 400)  # under 10 ms
+    lib8.dsp_fx_echo_f32_set_time_ms(ctypes.byref(fx), 100.01)  # rounds to whole samples
+    assert fx.delay_target == 4799.0
+    _, rc = make_echo(lib8, 400)  # 400 int16 per line: under 10 ms
     assert rc == -1
 
 

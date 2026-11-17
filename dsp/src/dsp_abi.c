@@ -39,6 +39,7 @@ size_t dsp_abi_sizeof(const char *name) {
         /* Batch 8b. */
         {"DspDelaylineF32", sizeof(DspDelaylineF32)},
         {"DspDelaylineApF32", sizeof(DspDelaylineApF32)},
+        {"DspDelaylineS16", sizeof(DspDelaylineS16)},
         {"DspLfoF32", sizeof(DspLfoF32)},
         {"DspSvfF32", sizeof(DspSvfF32)},
         {"DspRampF32", sizeof(DspRampF32)},
