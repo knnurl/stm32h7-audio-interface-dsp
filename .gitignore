@@ -1,0 +1,28 @@
+# Build output
+build/
+out/
+.vs/
+CMakeUserPresets.json
+
+# Third-party sources, fetched at pinned commits by fw/fetch_deps.ps1
+fw/third_party/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# KiCad backups, locks and caches
+*.kicad_prl
+*-backups/
+*.lck
+~*.lck
+fp-info-cache
+*.bak
+
+# Captures and logs from the bench (scope shots, serial logs, recordings)
+captures/
+*.wav
+*.flac
+*.log
