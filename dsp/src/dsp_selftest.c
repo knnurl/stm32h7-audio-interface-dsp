@@ -2,10 +2,14 @@
 
 #include "dsp/dsp_biquad.h"
 #include "dsp/dsp_comp.h"
+#include "dsp/dsp_delayline.h"
+#include "dsp/dsp_fxslot.h"
 #include "dsp/dsp_gain.h"
 #include "dsp/dsp_gate.h"
 #include "dsp/dsp_limiter.h"
+#include "dsp/dsp_reverb.h"
 #include "dsp/dsp_saturate.h"
+#include "dsp/dsp_svf.h"
 #include "dsp/dsp_testsig.h"
 #include "dsp/dsp_tone.h"
 
@@ -204,6 +208,171 @@ static void saturate_run(const void *in, void *out, int32_t mode) {
 static void sat_os4_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatOs4); }
 static void sat_adaa_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatAdaa); }
 
+/* Batch 8b. The cases share one state union and one memory pool (they never run at the same
+ * time): about 41 KB in all, in the firmware's .bss. Stereo cases: left = first half of the
+ * buffer, right = second half. The input is the bursts pattern above, so delay and reverb
+ * tails show between the bursts. The tremolo has no case until the owner writes it. */
+enum { kPool8b = 7680 };
+static float s_pool8b[kPool8b];
+static union {
+    DspDelaylineF32 delay;
+    DspSvfF32 svf;
+    DspFxEchoF32 echo;
+    DspFxChorusF32 chorus;
+    DspFxFlangerF32 flanger;
+    DspFxPhaserF32 phaser;
+    DspFxSweepF32 sweep;
+    DspFxOverdriveF32 overdrive;
+    DspFxCrusherF32 crusher;
+    DspFxSlotF32 slot;
+    DspReverbF32 reverb;
+} s_8b;
+
+/* A delay read swept from 10 to 600 samples and back, third-order Lagrange. */
+static void delay_lagrange_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    dsp_delayline_f32_init(&s_8b.delay, s_pool8b, 1024);
+    for (size_t i = 0; i < kDspSelftestFrames; ++i) {
+        const float t = (float)i / (float)kDspSelftestFrames;
+        const float d = 10.0f + 590.0f * (t < 0.5f ? 2.0f * t : 2.0f - 2.0f * t);
+        dsp_delayline_f32_push(&s_8b.delay, x[i]);
+        y[i] = dsp_delayline_f32_read_lagrange(&s_8b.delay, d);
+    }
+}
+
+/* Low-pass, Q 4, cutoff stepped every 16 samples from 200 Hz up to 8 kHz (fast coefficients). */
+static void svf_f32_run(const void *in, void *out) {
+    dsp_svf_f32_init(&s_8b.svf, 48000.0f, 200.0f, 4.0f);
+    for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
+        const float fc = 200.0f + 7800.0f * (float)i / (float)kDspSelftestFrames;
+        dsp_svf_f32_set_fast(&s_8b.svf, 48000.0f, fc, 4.0f);
+        dsp_svf_f32_process(&s_8b.svf, kDspSvfLow, (const float *)in + i, (float *)out + i, 16);
+    }
+}
+
+typedef void (*StereoFn)(void *state, const float *, const float *, float *, float *, size_t);
+
+static void run_stereo16(StereoFn fn, void *state, const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    const size_t half = kDspSelftestFrames / 2;
+    for (size_t i = 0; i < half; i += 16) {
+        fn(state, x + i, x + half + i, y + i, y + half + i, 16);
+    }
+}
+
+static void echo_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fx_echo_f32_process((DspFxEchoF32 *)s, a, b, c, d, n);
+}
+static void chorus_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fx_chorus_f32_process((DspFxChorusF32 *)s, a, b, c, d, n);
+}
+static void flanger_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fx_flanger_f32_process((DspFxFlangerF32 *)s, a, b, c, d, n);
+}
+static void phaser_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fx_phaser_f32_process((DspFxPhaserF32 *)s, a, b, c, d, n);
+}
+static void sweep_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fx_sweep_f32_process((DspFxSweepF32 *)s, a, b, c, d, n);
+}
+static void overdrive_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fx_overdrive_f32_process((DspFxOverdriveF32 *)s, a, b, c, d, n);
+}
+static void crusher_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fx_crusher_f32_process((DspFxCrusherF32 *)s, a, b, c, d, n);
+}
+static void slot_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_fxslot_f32_process((DspFxSlotF32 *)s, a, b, c, d, n);
+}
+static void reverb_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
+    dsp_reverb_f32_process((DspReverbF32 *)s, a, b, c, d, n);
+}
+
+/* Echo: 3 ms, feedback 0.6, ping-pong, wet 1 (the time is short so repeats fit the buffer). */
+static void fx_echo_f32_run(const void *in, void *out) {
+    dsp_fx_echo_f32_init(&s_8b.echo, 48000.0f, s_pool8b, kPool8b);
+    dsp_fx_echo_f32_set_time_ms(&s_8b.echo, 3.0f);
+    dsp_fx_echo_f32_set_feedback(&s_8b.echo, 0.6f);
+    dsp_fx_echo_f32_set_ping_pong(&s_8b.echo, 1);
+    dsp_fx_echo_f32_set_amount(&s_8b.echo, 1.0f);
+    dsp_fx_echo_f32_reset(&s_8b.echo, 1);
+    run_stereo16(echo_fn, &s_8b.echo, in, out);
+}
+
+/* At 16 kHz: 512 frames are 32 ms, longer than the chorus's shortest delay (13 ms). */
+static void fx_chorus_f32_run(const void *in, void *out) {
+    dsp_fx_chorus_f32_init(&s_8b.chorus, 16000.0f, s_pool8b, kPool8b);
+    dsp_lfo_f32_set_rate(&s_8b.chorus.lfo, 20.0f); /* Fast, so the short case sweeps. */
+    dsp_fx_chorus_f32_set_amount(&s_8b.chorus, 1.0f);
+    run_stereo16(chorus_fn, &s_8b.chorus, in, out);
+}
+
+static void fx_flanger_f32_run(const void *in, void *out) {
+    dsp_fx_flanger_f32_init(&s_8b.flanger, 48000.0f, s_pool8b, kPool8b);
+    dsp_lfo_f32_set_rate(&s_8b.flanger.lfo, 20.0f);
+    dsp_fx_flanger_f32_set_feedback(&s_8b.flanger, 0.7f);
+    dsp_fx_flanger_f32_set_amount(&s_8b.flanger, 1.0f);
+    run_stereo16(flanger_fn, &s_8b.flanger, in, out);
+}
+
+static void fx_phaser_f32_run(const void *in, void *out) {
+    dsp_fx_phaser_f32_init(&s_8b.phaser, 48000.0f);
+    dsp_lfo_f32_set_rate(&s_8b.phaser.lfo, 20.0f);
+    dsp_fx_phaser_f32_set_stages(&s_8b.phaser, 8);
+    dsp_fx_phaser_f32_set_amount(&s_8b.phaser, 1.0f);
+    run_stereo16(phaser_fn, &s_8b.phaser, in, out);
+}
+
+/* Sweep: the position ramps from the default 0.5 down to 0.1 (low-pass, closing). */
+static void fx_sweep_f32_run(const void *in, void *out) {
+    dsp_fx_sweep_f32_init(&s_8b.sweep, 48000.0f);
+    dsp_fx_sweep_f32_set_resonance(&s_8b.sweep, 3.0f);
+    dsp_fx_sweep_f32_set_amount(&s_8b.sweep, 0.1f);
+    run_stereo16(sweep_fn, &s_8b.sweep, in, out);
+}
+
+static void fx_overdrive_f32_run(const void *in, void *out) {
+    dsp_fx_overdrive_f32_init(&s_8b.overdrive, 48000.0f);
+    dsp_fx_overdrive_f32_set_asymmetric(&s_8b.overdrive, 1);
+    dsp_fx_overdrive_f32_set_amount(&s_8b.overdrive, 0.8f);
+    run_stereo16(overdrive_fn, &s_8b.overdrive, in, out);
+}
+
+static void fx_crusher_f32_run(const void *in, void *out) {
+    dsp_fx_crusher_f32_init(&s_8b.crusher, 48000.0f);
+    dsp_fx_crusher_f32_set_dither(&s_8b.crusher, 1);
+    dsp_fx_crusher_f32_set_amount(&s_8b.crusher, 1.0f);
+    run_stereo16(crusher_fn, &s_8b.crusher, in, out);
+}
+
+/* The slot: phaser on at once (no delay memory to clear), then switched to the flanger. */
+static void fxslot_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    const size_t half = kDspSelftestFrames / 2;
+    dsp_fxslot_f32_init(&s_8b.slot, 48000.0f, s_pool8b, kPool8b);
+    dsp_fxslot_f32_select(&s_8b.slot, kDspFxPhaser);
+    dsp_fxslot_f32_reset(&s_8b.slot);
+    s_8b.slot.dirty_len = 0; /* The pool was just cleared by init. */
+    dsp_fxslot_f32_set_on(&s_8b.slot, 1);
+    for (size_t i = 0; i < half; i += 16) {
+        if (i == half / 2) {
+            dsp_fxslot_f32_select(&s_8b.slot, kDspFxFlanger);
+        }
+        dsp_fxslot_f32_process(&s_8b.slot, x + i, x + half + i, y + i, y + half + i, 16);
+    }
+}
+
+/* The reverb at 16 kHz, so its lines fit the shared pool (7610 floats); 0.5 s low, 0.2 s high. */
+static void reverb_f32_run(const void *in, void *out) {
+    dsp_reverb_f32_init(&s_8b.reverb, 16000.0f, s_pool8b, kPool8b);
+    dsp_reverb_f32_set_decay(&s_8b.reverb, 0.5f, 0.2f);
+    dsp_reverb_f32_set_predelay_ms(&s_8b.reverb, 0.0f);
+    run_stereo16(reverb_fn, &s_8b.reverb, in, out);
+}
+
 static const SelftestCase kCases[] = {
     {"gain_f32", kDspFmtF32, gain_f32_input, gain_f32_run},
     {"noise_q31", kDspFmtQ31, noise_q31_input, noise_q31_run},
@@ -217,6 +386,17 @@ static const SelftestCase kCases[] = {
     {"limiter_f32", kDspFmtF32, bursts_f32_input, limiter_f32_run},
     {"sat_os4_f32", kDspFmtF32, bursts_f32_input, sat_os4_f32_run},
     {"sat_adaa_f32", kDspFmtF32, bursts_f32_input, sat_adaa_f32_run},
+    {"delay_lagrange_f32", kDspFmtF32, bursts_f32_input, delay_lagrange_f32_run},
+    {"svf_f32", kDspFmtF32, bursts_f32_input, svf_f32_run},
+    {"fx_echo_f32", kDspFmtF32, bursts_f32_input, fx_echo_f32_run},
+    {"fx_chorus_f32", kDspFmtF32, bursts_f32_input, fx_chorus_f32_run},
+    {"fx_flanger_f32", kDspFmtF32, bursts_f32_input, fx_flanger_f32_run},
+    {"fx_phaser_f32", kDspFmtF32, bursts_f32_input, fx_phaser_f32_run},
+    {"fx_sweep_f32", kDspFmtF32, bursts_f32_input, fx_sweep_f32_run},
+    {"fx_overdrive_f32", kDspFmtF32, bursts_f32_input, fx_overdrive_f32_run},
+    {"fx_crusher_f32", kDspFmtF32, bursts_f32_input, fx_crusher_f32_run},
+    {"fxslot_f32", kDspFmtF32, bursts_f32_input, fxslot_f32_run},
+    {"reverb_f32", kDspFmtF32, bursts_f32_input, reverb_f32_run},
 };
 
 size_t dsp_selftest_count(void) { return sizeof(kCases) / sizeof(kCases[0]); }
