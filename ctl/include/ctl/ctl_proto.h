@@ -11,6 +11,7 @@
 
 #include "ctl/ctl_core.h"
 #include "ctl/ctl_preset.h"
+#include "ctl/ctl_tempo.h"
 #include "ctl/ctl_text.h"
 
 #include <stddef.h>
@@ -24,6 +25,7 @@ typedef void (*CtlWriteFn)(void *ctx, const char *line, size_t len);
 typedef struct {
     CtlCore *core;
     CtlPresetStore *presets; /* May be NULL: preset commands then answer err 7. */
+    const CtlTempo *tempo;   /* May be NULL: `tempo` then reports the stored value. Set after init. */
     CtlWriteFn write;
     void *write_ctx;
     const char *fw_version;

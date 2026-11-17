@@ -52,7 +52,7 @@ aside.
 | `preset name <1-8> <name>` | `ok preset name <n>` |
 | `preset list` | per stored slot `= <n> seq=<sequence> <name>`, then `ok preset list <count>` |
 | `src [inputs\|mix]` | `ok src inputs\|mix` (the record source) |
-| `tempo [bpm]` | `ok tempo <bpm> source=stored` (batch 8b adds the followed tempo and its source) |
+| `tempo [bpm]` | `ok tempo <stored bpm> source=stored`, or while MIDI clock leads `ok tempo <followed bpm> source=midi stored=<stored bpm>`; a value sets the stored tempo |
 | `stat` | `ok stat lines= errors= refused= to_audio= coalesced= waiting= preset_writes= compactions= flash_errors= flash_free=` |
 
 Unsolicited: `# set <name> <value>` for every change the PC did not make itself (a knob, a

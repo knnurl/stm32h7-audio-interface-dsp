@@ -349,8 +349,14 @@ static void cmd_tempo(CtlProto *p, const Token *t, size_t n) {
         return;
     }
     begin_ok(p, "tempo ");
+    if (p->tempo != NULL && p->tempo->source == kCtlTempoMidi) {
+        ctl_line_float(&p->out, p->tempo->bpm);
+        ctl_line_str(&p->out, " source=midi stored=");
+    }
     ctl_line_float(&p->out, ctl_core_get(p->core, (size_t)i));
-    ctl_line_str(&p->out, " source=stored");
+    if (p->tempo == NULL || p->tempo->source != kCtlTempoMidi) {
+        ctl_line_str(&p->out, " source=stored");
+    }
     send(p);
 }
 

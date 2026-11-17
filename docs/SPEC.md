@@ -378,4 +378,5 @@ Settled, with the source:
 | 2026-11-17 | Mute is neither a preset nor a setting: the outputs always start muted | Hardware safety rule |
 | 2026-11-17 | Speaker and headphone corrections, knob modes, MIDI channel and the tone corners are settings (power-on record only), not preset contents | A preset recall must not change the room correction or the volume |
 | 2026-11-17 | The board's self-test list command is renamed `cases`; `list` belongs to the control protocol | One console carries both until batch 4 |
+| 2026-11-17 | Tempo follower: least-squares fit over up to four beats of MIDI clock, a one-beat fit to detect change (0.6 %), restart and settling; taps set the stored tempo | Measured: 0.04 BPM worst under 1 ms jitter; a step followed within one beat; a 0.75 BPM-per-beat ramp lags by 1.35 BPM (docs/notes/tempo.md) |
 

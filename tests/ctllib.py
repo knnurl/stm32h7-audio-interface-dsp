@@ -91,6 +91,11 @@ def load():
         sig(name, c_void_p, c_void_p)
 
     sig("ctl_host_counters", None, c_void_p, P(c_uint32))
+    sig("ctl_host_tempo", c_void_p, c_void_p)
+    sig("ctl_host_update", None, c_void_p, c_uint32)
+    sig("ctl_tempo_midi", None, c_void_p, c_uint8, c_uint32)
+    sig("ctl_tempo_tap", c_float, c_void_p, c_uint32)
+    sig("ctl_tempo_beat_phase", c_float, c_void_p, c_uint32)
     sig("ctl_proto_feed", None, c_void_p, c_char_p, c_size)
     sig("ctl_proto_poll", None, c_void_p, c_size)
     sig("ctl_proto_meters", None, c_void_p)
@@ -191,6 +196,13 @@ class Device:
         out = ctypes.create_string_buffer(512)
         n = self.lib.ctl_midi_out(self.lib.ctl_host_midi(self.h), out, len(out))
         return list(out.raw[:n])
+
+    def update(self, now_us):
+        self.lib.ctl_host_update(self.h, now_us & 0xFFFFFFFF)
+
+    def tick(self, now_us, byte=0xF8):
+        """A MIDI real-time byte at now_us, through the MIDI parser."""
+        self.midi([byte], now_us & 0xFFFFFFFF)
 
     def counters(self):
         """clocks, starts, stops, continues, cc_in, cc_unmapped, sysex_skipped, taps"""

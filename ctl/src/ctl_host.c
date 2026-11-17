@@ -15,6 +15,7 @@ struct CtlHost {
     CtlCore core;
     CtlProto proto;
     CtlMidi midi;
+    CtlTempo tempo;
     char out[HOST_OUT_BYTES];
     size_t out_len;
     uint32_t out_dropped;
@@ -42,6 +43,10 @@ void ctl_host_boot(CtlHost *h) {
     ctl_core_sync_audio(&h->core);
     ctl_proto_init(&h->proto, &h->core, &h->store, host_write, h, "host", 0x00C0FFEEu);
     ctl_midi_init(&h->midi, &h->core, &h->store);
+    ctl_tempo_init(&h->tempo);
+    h->midi.realtime = ctl_tempo_midi;
+    h->midi.realtime_ctx = &h->tempo;
+    h->proto.tempo = &h->tempo;
     h->out_len = 0;
 }
 
@@ -66,6 +71,13 @@ CtlPresetStore *ctl_host_store(CtlHost *h) { return &h->store; }
 CtlFlashSim *ctl_host_sim(CtlHost *h) { return &h->sim; }
 CtlProto *ctl_host_proto(CtlHost *h) { return &h->proto; }
 CtlMidi *ctl_host_midi(CtlHost *h) { return &h->midi; }
+CtlTempo *ctl_host_tempo(CtlHost *h) { return &h->tempo; }
+
+void ctl_host_update(CtlHost *h, uint32_t now_us) {
+    ctl_core_set_time(&h->core, now_us / 1000u);
+    ctl_tempo_update(&h->tempo, &h->core, now_us);
+    ctl_preset_tick(&h->store, &h->core);
+}
 uint32_t ctl_host_dropped(const CtlHost *h) { return h->out_dropped; }
 
 /* MIDI and tap counters: clocks, starts, stops, continues, cc_in, cc_unmapped, sysex_skipped,

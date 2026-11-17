@@ -4,7 +4,7 @@
 # with the address sanitiser on MSVC (ctl_fuzz).
 set(_sources
     src/ctl_core.c src/ctl_midi.c src/ctl_midi_cc14.c src/ctl_param_table.c src/ctl_params.c
-    src/ctl_preset.c src/ctl_proto.c src/ctl_queue.c src/ctl_text.c)
+    src/ctl_preset.c src/ctl_proto.c src/ctl_queue.c src/ctl_tempo.c src/ctl_text.c)
 
 set(_absolute)
 foreach(_source ${_sources})

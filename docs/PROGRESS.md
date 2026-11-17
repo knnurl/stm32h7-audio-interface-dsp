@@ -4,6 +4,26 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: batch 8b.5, the tempo follower (in ctl/)
+
+**Transcripts read:** the batch 8 list is the effects' (the 8b agent reads it); all 29 searched
+for tempo, tap and MIDI clock: one passage in #140 (note values and tap tempo on a commercial
+delay), recorded in `docs/notes/tempo.md`.
+
+- `ctl_tempo`: MIDI clock follower, tap tempo, transport and beat phase; wired to the MIDI
+  parser's real-time hook, the protocol's `tempo`, and the firmware's main loop (taps and the
+  stored tempo work on the board now; MIDI clock arrives with batch 4).
+- Measured: 0.032 to 0.041 BPM worst under +/-1 ms jitter (target 0.1); a 20 BPM step followed
+  within one beat; a 0.75 BPM-per-beat ramp lags by 1.35 BPM (`python -m pytest -s
+  tests/unit/test_ctl_tempo.py`).
+- Found by the tests: after a restart the fit over a few jittered ticks was noisy (1.57 BPM
+  worst on the ramp), now settled by reporting the one-beat fit for 16 ticks; a phase query a
+  microsecond early wrapped to a whole tick, now guarded.
+- Unit tests: 378 pass (`python -m pytest`). M7 image 67.9 KB flash, 65.4 KB DTCM.
+
+**For the owner:** glide or cross-fade on synced delay changes (glide is in); whether a
+three-beat window suits DJ tempo rides better (`docs/notes/tempo.md`).
+
 ## 2026-11-17: batch 8a, control core (host part and firmware build)
 
 **Transcripts read:** none listed for 8a in `transcripts_index.md`. All 29 searched for how the

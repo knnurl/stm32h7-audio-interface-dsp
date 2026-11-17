@@ -21,6 +21,7 @@
 #include "ctl/ctl_core.h"
 #include "ctl/ctl_preset.h"
 #include "ctl/ctl_proto.h"
+#include "ctl/ctl_tempo.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,6 +32,19 @@
 static CtlCore s_core;
 static CtlPresetStore s_presets;
 static CtlProto s_proto;
+static CtlTempo s_tempo;
+
+/* Microseconds from the cycle counter, wrap-safe at 32 bits (the counter itself wraps every
+ * 10.7 s at 400 MHz, so this must run more often than that: it does, every loop). */
+static uint32_t now_us(void) {
+    static uint32_t last_cycles, us, rest;
+    const uint32_t c = board_cycles();
+    rest += c - last_cycles;
+    last_cycles = c;
+    us += rest / 400u;
+    rest %= 400u;
+    return us;
+}
 
 static void print_info(void) {
     const uint32_t idcode = DBGMCU->IDCODE;
@@ -99,6 +113,8 @@ static void control_init(void) {
     ctl_core_sync_audio(&s_core); /* Nothing drains it until batch 2; it cannot overflow. */
     const uint32_t unit_id = HAL_GetUIDw0() ^ HAL_GetUIDw1() ^ HAL_GetUIDw2();
     ctl_proto_init(&s_proto, &s_core, &s_presets, proto_write, NULL, FW_VERSION, unit_id);
+    ctl_tempo_init(&s_tempo); /* MIDI clock reaches it in batch 4 (ctl_midi's realtime hook). */
+    s_proto.tempo = &s_tempo;
 }
 
 int main(void) {
@@ -116,6 +132,7 @@ int main(void) {
         if (console_read_line(line, sizeof(line))) {
             handle_line(line);
         }
+        ctl_tempo_update(&s_tempo, &s_core, now_us());
         ctl_proto_poll(&s_proto, 4u);
         ctl_preset_tick(&s_presets, &s_core);
         if (now - last_meters_ms >= METERS_PERIOD_MS) {
