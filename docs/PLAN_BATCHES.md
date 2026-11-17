@@ -98,6 +98,11 @@ Each such batch stops before its target part and says so in PROGRESS.
 
 ### 1.1 The review pack every batch ends with
 
+- **Transcripts first.** Before writing the batch's code, read in full every transcript
+  `docs/notes/transcripts_index.md` lists for the batch, and check the design against them.
+  Each design note then has a **"From the transcripts"** section: what agrees, what differs and
+  why, and what the transcripts suggest that was not done. Where they disagree with our
+  measurements or SPEC decisions, ours win and the note says so. Exercise answers stay out.
 - **A design note per DSP block or subsystem,** in `docs/notes/<name>.md`, on this template:
   purpose; the maths; the structure chosen and the alternatives rejected, with the reason; the
   numerical behaviour (noise, overflow, limits of validity); measured cycles per sample on the
@@ -105,8 +110,8 @@ Each such batch stops before its target part and says so in PROGRESS.
 - **One exercise for the owner,** in `docs/exercises/EX<batch>_<name>.md`: the task, a header or
   stub, tests that fail until it is done, and the acceptance numbers. Do not write the solution.
   Review the owner's solution when he asks.
-- **A PROGRESS entry:** what was done, the measured numbers, the exact commands, what the owner
-  must do or decide next.
+- **A PROGRESS entry:** what was done, the transcripts read, the measured numbers, the exact
+  commands, what the owner must do or decide next.
 
 ### 1.2 Code rules (batch 0 copies these into `CLAUDE.md`)
 
@@ -176,7 +181,7 @@ Nothing is built. The batch writes the documents every later session starts from
 cycles per sample at 96 kHz against the 4166 available. Mark every row "estimate". Later batches
 replace rows with measurements.
 
-**Acceptance.**
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1).
 
 - Every row of the interview plan's decision table is in the SPEC decision log, with the
   assessment's corrections applied (48 kHz duplex on rev A, 400 MHz, the convolution design).
@@ -246,7 +251,7 @@ line per block and returns non-zero on a mismatch.
 Linux with Arm GNU Toolchain 13.3. It runs once the owner creates the repository; do not create
 it.
 
-**Acceptance.**
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1).
 - `cmake --preset host`, `cmake --build --preset host-release` and `pytest tests` pass.
 - The firmware builds with no warnings in own code and prints its banner at 400 MHz (state how
   the frequency was confirmed).
@@ -302,7 +307,7 @@ error in ppm for 48 and 96 kHz. The PCM5102A can run without MCLK; the PCM1808 n
 - Interrupt time and jitter from the GPIO.
 - A one-hour run: zero overruns.
 
-**Acceptance.** Clean pass-through at both rates (the owner listens or checks on the scope);
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). Clean pass-through at both rates (the owner listens or checks on the scope);
 the latency table with expected and measured values; zero overruns over an hour; the pin plan
 checked against the manual.
 
@@ -378,7 +383,7 @@ gains are set from the console. `bench` reports every variant.
 - A self-test case `tone_f32`, and its cycles per sample on the target for the stereo bus, into
   the SPEC budget row (estimate 60).
 
-**Acceptance.** All tests pass on host and target; the five studies are in `docs/results/` with
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). All tests pass on host and target; the five studies are in `docs/results/` with
 their commands; the SPEC's budget rows for filters are replaced by measurements; the float
 policy is in the decision log.
 
@@ -465,7 +470,7 @@ mode goes through the Windows mixer and is not bit-exact.
   - one take recorded from `src inputs` and one from `src mix`;
   - the device listed as a MIDI input and output in Ableton's preferences.
 
-**Acceptance.** The tests pass with their numbers in PROGRESS; Windows needs no driver file; the
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). The tests pass with their numbers in PROGRESS; Windows needs no driver file; the
 README shows the measured tables, and the Ableton settings that work.
 
 **Checkpoint P1.** The project is now showable. Update the README as a portfolio page: what it
@@ -582,7 +587,7 @@ panel board match the mechanical interface table.
 assembly; a list of the parts JLC will fit and the parts fitted by hand; a count of extended
 parts; the cost read from a live quote by the owner. The owner orders.
 
-**Acceptance.** Each stage's document exists and the owner has signed it off in PROGRESS; ERC
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). Each stage's document exists and the owner has signed it off in PROGRESS; ERC
 and DRC are clean on both boards; the SPEC's rev A hardware section is complete.
 
 **Design notes:** the stage documents are the notes.
@@ -622,7 +627,7 @@ It needs no audio hardware. The overdrive of batch 8b reuses the saturation and 
 - Gate: no chatter on a signal that hovers at the threshold.
 - Oversampler: passband and stopband measured against the stated figures.
 
-**Acceptance.** Tests pass on host and target; the three studies are in `docs/results/`; a
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). Tests pass on host and target; the three studies are in `docs/results/`; a
 latency table lists every block that adds delay.
 
 **Design notes:** the compressor; the limiter and true peak; oversampling and aliasing.
@@ -739,7 +744,7 @@ DLL and the firmware. `tests/unit/` gets its tests; `tools/ctl.py` is the PC cli
 - On the target: write and read back through the console; the time to write a record; audio is
   not disturbed (the overrun counter stays 0 while 100 records are written, once batch 2 exists).
 
-**Acceptance.** All tests pass on the PC; the firmware builds with `ctl/` in it; on the Nucleo,
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). All tests pass on the PC; the firmware builds with `ctl/` in it; on the Nucleo,
 `tools/ctl.py` gets and sets parameters and saves and loads presets over the console.
 
 **Design notes:** the registry and the audio hand-off; knob ownership and pick-up; the control
@@ -838,7 +843,7 @@ goes into the decision log.
 **8b.7 Cost.** The SPEC budget rows for the effect slot and the reverb are replaced by measured
 cycles, one row per effect.
 
-**Acceptance.** All tests pass on the PC and, when the Nucleo is available, on the target; the
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). All tests pass on the PC and, when the Nucleo is available, on the target; the
 cycle and memory tables are in `docs/results/`.
 
 **Design notes:** delay lines and interpolation; modulated filters (why the state-variable
@@ -896,7 +901,7 @@ that the tap carries the effect and never the tone control or the output stages.
   overruns, zero underruns.
 - The LED thresholds against the PC meters.
 
-**Acceptance.** The measurements are in PROGRESS and the README; the SPEC budget holds measured
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). The measurements are in PROGRESS and the README; the SPEC budget holds measured
 values only.
 
 **Design notes:** the signal path and why it is in this order; metering; the output law (mute,
@@ -946,7 +951,7 @@ batch 7.
 - On the board: the reading noise of each pot; the delay from turning a knob to the audio change
   (target under 20 ms); a 30-minute idle test with zero reported changes.
 
-**Acceptance.** Every control works on the panel board; the numbers are in PROGRESS.
+**Acceptance.** The batch's transcripts are read and every design note has its "From the transcripts" section (1.1). Every control works on the panel board; the numbers are in PROGRESS.
 
 **Design notes:** the panel input pipeline (sampling, filtering, hysteresis, curves, debounce).
 **Exercise:** a double-press detector for the buttons, with tests, as the owner designs it.

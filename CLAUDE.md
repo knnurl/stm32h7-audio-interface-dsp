@@ -42,14 +42,18 @@ owner. Do not start the next batch unless the owner said so.
 
 The review pack every batch ends with:
 
+- **Transcripts first.** Before writing a batch's code, read in full the transcripts
+  `docs/notes/transcripts_index.md` lists for it. Every design note has a "From the transcripts"
+  section: agrees, differs and why, not done. Ours win where they disagree. A batch is not done
+  without it.
 - **A design note per DSP block or subsystem** in `docs/notes/<name>.md`: purpose; the maths; the
   structure chosen and the alternatives rejected, with the reason; numerical behaviour (noise,
   overflow, limits of validity); measured cycles per sample on the target; test evidence; open
   questions.
 - **One exercise for the owner** in `docs/exercises/EX<batch>_<name>.md`: the task, a header or
   stub, tests that fail until it is done, and the acceptance numbers. Never write the solution.
-- **A PROGRESS entry:** what was done, measured numbers, exact commands, what the owner decides
-  or does next.
+- **A PROGRESS entry:** what was done, the transcripts read, measured numbers, exact commands,
+  what the owner decides or does next.
 
 ## Never without the owner's explicit go
 

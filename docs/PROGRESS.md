@@ -1,7 +1,8 @@
 # Progress
 
-The handoff log, newest entry first. Each entry: what was done, measured numbers, exact
-commands, what the owner decides or does next.
+The handoff log, newest entry first. Each entry: what was done, the transcripts read (or
+"none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
+entry with no transcripts line is unfinished.
 
 ## 2026-11-17: batch 3, host part (filters, Q31, tone control)
 
