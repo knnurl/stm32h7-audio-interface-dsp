@@ -340,3 +340,6 @@ Settled, with the source:
 | 2026-11-17 | USB-C confirmed | Owner |
 | 2026-11-17 | The owner makes the aluminium case himself by CNC or waterjet; no bought extrusion | Owner. The case is designed around the boards, so the board outline is no longer tied to a catalogue size |
 | 2026-11-17 | Front-panel order confirmed; monitor volume is the large knob | Owner |
+| 2026-11-17 | `dsp_gain` snaps to its target once the float32 recursion has stalled; its coefficient uses `expm1` | The stall was measured at 3.6e-6 (-109 dBFS); a settled gain should equal what was set |
+| 2026-11-17 | pytest pinned to 8.3.5 | 9.2.0 fails with an internal error on the owner's Python 3.10 |
+

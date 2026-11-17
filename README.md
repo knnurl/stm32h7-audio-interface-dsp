@@ -43,7 +43,7 @@ Host library and tests, from the repository root:
 cmake --preset host
 cmake --build --preset host-release
 python -m pip install -r tests/requirements.txt
-python -m pytest tests
+python -m pytest
 ```
 
 Firmware, both cores:
