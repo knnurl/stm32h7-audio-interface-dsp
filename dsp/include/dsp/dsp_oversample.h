@@ -23,7 +23,11 @@
  * must have length 4K + 3 with (N + 1) / 2 <= kDspHalfbandMaxTaps (N <= 95); only its
  * even-indexed taps are used.
  * Assumptions: mono; any block size (the wrappers work through it 64 frames at a time).
- * Cycles per sample (M7, 400 MHz): not yet measured.
+ * Kernel: a linear-phase filter's even taps are symmetric, so each pair of history samples is
+ * added before one multiply (half the multiplies), into four partial sums (the M7's float add has
+ * a latency of about 3 cycles, and one running sum waited on it at every tap). A filter whose
+ * taps are not exactly symmetric takes the plain loop. Measured on the M7, 4x up and down, per
+ * input sample: 952 cycles before (os4_pass_f32); after: docs/results/budget_target.md.
  */
 #ifndef DSP_OVERSAMPLE_H
 #define DSP_OVERSAMPLE_H
@@ -36,6 +40,7 @@ enum { kDspHalfbandMaxTaps = 48, kDspOversampleMaxBlock = 64 };
 typedef struct {
     int32_t n_taps;           /* Even-indexed taps, K + 1. */
     int32_t delay;            /* Of the centre phase, in input samples. */
+    int32_t symmetric;        /* The even taps read the same backwards: the folded kernel. */
     float taps[kDspHalfbandMaxTaps];
     float hist[2 * kDspHalfbandMaxTaps]; /* Newest first, written twice for contiguous reads. */
     int32_t pos;
@@ -44,6 +49,7 @@ typedef struct {
 typedef struct {
     int32_t n_taps;
     int32_t delay; /* Of the odd-sample path, in output samples. */
+    int32_t symmetric;
     float taps[kDspHalfbandMaxTaps];
     float even[2 * kDspHalfbandMaxTaps];
     int32_t even_pos;

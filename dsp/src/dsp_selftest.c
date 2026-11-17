@@ -3,15 +3,19 @@
 #include "dsp/dsp_biquad.h"
 #include "dsp/dsp_comp.h"
 #include "dsp/dsp_delayline.h"
+#include "dsp/dsp_fastmath.h"
 #include "dsp/dsp_fxslot.h"
 #include "dsp/dsp_gain.h"
 #include "dsp/dsp_gate.h"
+#include "dsp/dsp_oversample.h"
 #include "dsp/dsp_limiter.h"
 #include "dsp/dsp_reverb.h"
 #include "dsp/dsp_saturate.h"
 #include "dsp/dsp_svf.h"
 #include "dsp/dsp_testsig.h"
 #include "dsp/dsp_tone.h"
+
+#include <math.h>
 
 typedef struct {
     const char *name;
@@ -229,6 +233,40 @@ static void saturate_run(const void *in, void *out, int32_t mode) {
 }
 
 static void sat_os4_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatOs4); }
+static void sat_os2_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatOs2); }
+
+/* Budget decomposition (2026-11-17): the two parts of the 4x saturator on their own. tanh of
+ * 4 x the input, once with the C library (differs between the PC and the target in the last
+ * bits) and once with dsp_fast_tanhf; and the 4x oversampler up and down with no shaping. */
+static void tanh_libm_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    mark();
+    for (size_t i = 0; i < kDspSelftestFrames; ++i) {
+        y[i] = tanhf(4.0f * x[i]);
+    }
+}
+
+static void tanh_fast_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    mark();
+    for (size_t i = 0; i < kDspSelftestFrames; ++i) {
+        y[i] = dsp_fast_tanhf(4.0f * x[i]);
+    }
+}
+
+static DspOversampleF32 s_os;
+static float s_os_buf[4 * 16];
+
+static void os4_pass_f32_run(const void *in, void *out) {
+    dsp_oversample_f32_init(&s_os, 4);
+    mark();
+    for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
+        dsp_oversample_f32_up(&s_os, (const float *)in + i, s_os_buf, 16);
+        dsp_oversample_f32_down(&s_os, s_os_buf, (float *)out + i, 16);
+    }
+}
 static void sat_adaa_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatAdaa); }
 
 /* Batch 8b. The cases share one state union and one memory pool (they never run at the same
@@ -428,6 +466,10 @@ static const SelftestCase kCases[] = {
     {"limiter_f32", kDspFmtF32, 2, bursts_f32_input, limiter_f32_run},
     {"sat_os4_f32", kDspFmtF32, 1, bursts_f32_input, sat_os4_f32_run},
     {"sat_adaa_f32", kDspFmtF32, 1, bursts_f32_input, sat_adaa_f32_run},
+    {"sat_os2_f32", kDspFmtF32, 1, bursts_f32_input, sat_os2_f32_run},
+    {"tanh_libm_f32", kDspFmtF32, 1, bursts_f32_input, tanh_libm_f32_run},
+    {"tanh_fast_f32", kDspFmtF32, 1, bursts_f32_input, tanh_fast_f32_run},
+    {"os4_pass_f32", kDspFmtF32, 1, bursts_f32_input, os4_pass_f32_run},
     {"delay_lagrange_f32", kDspFmtF32, 1, bursts_f32_input, delay_lagrange_f32_run},
     {"svf_f32", kDspFmtF32, 1, bursts_f32_input, svf_f32_run},
     {"fx_echo_f32", kDspFmtF32, 2, bursts_f32_input, fx_echo_f32_run},

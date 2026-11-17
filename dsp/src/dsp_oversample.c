@@ -59,6 +59,49 @@ static int32_t even_taps(const float *h, int32_t length, float *taps) {
     return n;
 }
 
+static int32_t is_symmetric(const float *taps, int32_t n) {
+    for (int32_t j = 0; j < n / 2; ++j) {
+        if (taps[j] != taps[n - 1 - j]) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* sum taps[j] x[j], j < n. The folded form pairs x[j] with x[n - 1 - j] and keeps four partial
+ * sums; the summation order is fixed, so the PC and the target still agree bit for bit. */
+static float fir(const float *taps, const float *x, int32_t n, int32_t symmetric) {
+    float a0 = 0.0f, a1 = 0.0f, a2 = 0.0f, a3 = 0.0f;
+    int32_t j = 0;
+    if (symmetric) {
+        const int32_t half = n / 2;
+        const float *xr = x + n - 1;
+        for (; j + 3 < half; j += 4) {
+            a0 += taps[j] * (x[j] + xr[-j]);
+            a1 += taps[j + 1] * (x[j + 1] + xr[-j - 1]);
+            a2 += taps[j + 2] * (x[j + 2] + xr[-j - 2]);
+            a3 += taps[j + 3] * (x[j + 3] + xr[-j - 3]);
+        }
+        for (; j < half; ++j) {
+            a0 += taps[j] * (x[j] + xr[-j]);
+        }
+        if ((n & 1) != 0) {
+            a1 += taps[half] * x[half];
+        }
+    } else {
+        for (; j + 3 < n; j += 4) {
+            a0 += taps[j] * x[j];
+            a1 += taps[j + 1] * x[j + 1];
+            a2 += taps[j + 2] * x[j + 2];
+            a3 += taps[j + 3] * x[j + 3];
+        }
+        for (; j < n; ++j) {
+            a0 += taps[j] * x[j];
+        }
+    }
+    return (a0 + a1) + (a2 + a3);
+}
+
 /* Writes one sample at the head of a double-written ring: hist[pos .. pos + n - 1] is then the
  * newest n samples, newest first. */
 static int32_t push(float *hist, int32_t n, int32_t pos, float x) {
@@ -76,6 +119,7 @@ int32_t dsp_halfband_up_init(DspHalfbandUpF32 *up, const float *h, int32_t lengt
     }
     up->n_taps = n;
     up->delay = (length - 1) / 4; /* (centre - 1) / 2 */
+    up->symmetric = is_symmetric(up->taps, n);
     return 0;
 }
 
@@ -89,10 +133,7 @@ void dsp_halfband_up_process(DspHalfbandUpF32 *up, const float *in, float *out, 
     for (size_t i = 0; i < n_in; ++i) {
         up->pos = push(up->hist, n, up->pos, in[i]);
         const float *x = &up->hist[up->pos];
-        float acc = 0.0f;
-        for (int32_t j = 0; j < n; ++j) {
-            acc += up->taps[j] * x[j];
-        }
+        const float acc = fir(up->taps, x, n, up->symmetric);
         out[2 * i] = 2.0f * acc;      /* The even taps, times the interpolation gain of 2. */
         out[2 * i + 1] = x[up->delay]; /* The centre tap: 2 x 0.5 x the delayed input. */
     }
@@ -106,6 +147,7 @@ int32_t dsp_halfband_down_init(DspHalfbandDownF32 *down, const float *h, int32_t
     }
     down->n_taps = n;
     down->delay = (length + 1) / 4; /* (centre + 1) / 2 */
+    down->symmetric = is_symmetric(down->taps, n);
     return 0;
 }
 
@@ -126,10 +168,7 @@ void dsp_halfband_down_process(DspHalfbandDownF32 *down, const float *in, float 
         down->odd_pos = push(down->odd, n, down->odd_pos, in[2 * i + 1]);
         down->even_pos = push(down->even, n, down->even_pos, in[2 * i]);
         const float *e = &down->even[down->even_pos];
-        float acc = 0.0f;
-        for (int32_t j = 0; j < n; ++j) {
-            acc += down->taps[j] * e[j];
-        }
+        const float acc = fir(down->taps, e, n, down->symmetric);
         out[i] = acc + 0.5f * down->odd[down->odd_pos + down->delay];
     }
 }

@@ -17,8 +17,10 @@
  * ADAA's small-signal response is the average of two samples, |cos(w/2)|: -3 dB at fs/4, -11.7
  * dB at 20 kHz at a 48 kHz rate. Changing the drive is not smoothed here; the caller ramps it.
  *
- * Assumptions: mono; `in` and `out` may be the same buffer. tanhf per sample (per oversampled
- * sample in the oversampled modes) until a measurement says a cheaper shaper is needed.
+ * Assumptions: mono; `in` and `out` may be the same buffer. The shaper is dsp_fast_tanhf
+ * (absolute error at most 3e-7 against tanh): the C library's tanhf was measured on the M7 as the
+ * larger part of the 4x saturator's cost (docs/results/budget_target.md). ADAA's antiderivative
+ * stays in double with the C library.
  * Cycles per sample (M7, 400 MHz): not yet measured.
  */
 #ifndef DSP_SATURATE_H

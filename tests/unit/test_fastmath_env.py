@@ -102,3 +102,27 @@ def test_silence_gives_zero_not_nan(lib6):
     lib6.dsp_env_rms_init(ctypes.byref(env), FS, 10.0)
     y = run_env(lib6, env, np.zeros(10000, dtype=np.float32), rms=True)
     assert np.all(y == 0.0)
+
+
+def test_fast_tanh_accuracy_and_shape(lib6):
+    """Against float64 tanh on a dense grid: absolute error, odd symmetry, bounded, monotonic."""
+    xs = np.concatenate([np.linspace(-10, 10, 200001), [1e-30, -1e-30, 1e-8, 0.0]])
+    ys = np.array([lib6.dsp_fast_tanhf(float(np.float32(x))) for x in xs], dtype=np.float64)
+    ref = np.tanh(xs.astype(np.float32).astype(np.float64))
+    err = np.max(np.abs(ys - ref))
+    print(f"fast tanh: worst absolute error {err:.2e}")
+    assert err < 3e-7
+    assert np.all(np.abs(ys) <= 1.0)
+    grid = np.linspace(-10, 10, 200001)
+    vals = np.array([lib6.dsp_fast_tanhf(float(x)) for x in grid])
+    assert np.all(np.diff(vals) >= 0.0), "monotonic"
+    for x in (0.1, 0.7, 2.5, 8.9):
+        assert lib6.dsp_fast_tanhf(-x) == -lib6.dsp_fast_tanhf(x)
+
+
+def test_fast_tanh_edges(lib6):
+    assert lib6.dsp_fast_tanhf(9.0) == 1.0 and lib6.dsp_fast_tanhf(-1e30) == -1.0
+    assert lib6.dsp_fast_tanhf(float("inf")) == 1.0
+    assert lib6.dsp_fast_tanhf(float("nan")) == 0.0
+    assert lib6.dsp_fast_tanhf(0.0) == 0.0
+

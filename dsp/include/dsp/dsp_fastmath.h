@@ -19,5 +19,11 @@ float dsp_fast_exp2f(float x);
 /* 20 log10(|x|) and 10^(db / 20), built on the two above. */
 float dsp_fast_lin_to_db(float x);
 float dsp_fast_db_to_lin(float db);
+/* tanh(x) = 1 - 2 / (e^(2|x|) + 1), sign restored, with e^(2|x|) from dsp_fast_exp2f: one
+ * polynomial and one division instead of the C library's tanhf (budget work, 2026-11-17).
+ * Odd, bounded by 1 in magnitude, monotonic to float rounding. Absolute error at most 3e-7
+ * (measured, tests/unit/test_fastmath_env.py). |x| >= 9 gives exactly +/-1 (tanh(9) rounds to 1
+ * in float32); NaN gives 0. */
+float dsp_fast_tanhf(float x);
 
 #endif

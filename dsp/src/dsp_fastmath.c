@@ -55,3 +55,15 @@ float dsp_fast_lin_to_db(float x) {
 }
 
 float dsp_fast_db_to_lin(float db) { return dsp_fast_exp2f(db * kLog2PerDb); }
+
+#define kTwoOverLn2 2.8853900817779268f /* 2 / ln 2: e^(2a) = 2^(a 2 / ln 2) */
+
+float dsp_fast_tanhf(float x) {
+    const float a = x < 0.0f ? -x : x;
+    if (!(a < 9.0f)) {
+        return a >= 9.0f ? (x < 0.0f ? -1.0f : 1.0f) : 0.0f; /* Saturated, or NaN. */
+    }
+    const float e = dsp_fast_exp2f(kTwoOverLn2 * a);
+    const float t = 1.0f - 2.0f / (e + 1.0f);
+    return x < 0.0f ? -t : t;
+}

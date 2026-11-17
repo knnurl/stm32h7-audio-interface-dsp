@@ -1,5 +1,7 @@
 #include "dsp/dsp_saturate.h"
 
+#include "dsp/dsp_fastmath.h"
+
 #include <math.h>
 #include <string.h>
 
@@ -18,7 +20,7 @@ static double antiderivative(const DspSaturatorF32 *sat, double x) {
 
 void dsp_saturator_f32_set_drive(DspSaturatorF32 *sat, float drive_db) {
     sat->drive = powf(10.0f, drive_db / 20.0f);
-    sat->norm = 1.0f / tanhf(sat->drive);
+    sat->norm = 1.0f / dsp_fast_tanhf(sat->drive); /* The same curve as the samples. */
     /* ADAA divides a difference of antiderivatives: both must be of the same curve, or the next
      * output is (F_new(x) - F_old(x_prev)) / dx, which can be huge for a small dx. */
     sat->adaa_f = antiderivative(sat, sat->adaa_x);
@@ -39,13 +41,13 @@ void dsp_saturator_f32_reset(DspSaturatorF32 *sat) {
 }
 
 float dsp_saturator_f32_shape(const DspSaturatorF32 *sat, float x) {
-    return tanhf(sat->drive * x) * sat->norm;
+    return dsp_fast_tanhf(sat->drive * x) * sat->norm;
 }
 
 static void shape_block(const DspSaturatorF32 *sat, float *buf, size_t n) {
     const float d = sat->drive, norm = sat->norm;
     for (size_t i = 0; i < n; ++i) {
-        buf[i] = tanhf(d * buf[i]) * norm;
+        buf[i] = dsp_fast_tanhf(d * buf[i]) * norm;
     }
 }
 

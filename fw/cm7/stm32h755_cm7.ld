@@ -37,8 +37,8 @@ SECTIONS
     .text :
     {
         . = ALIGN(4);
-        *(.text)
-        *(.text*)
+        /* The DSP library's code goes to ITCM instead (.itcm_text below). */
+        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj) *(.text .text*)
         *(.glue_7)
         *(.glue_7t)
         *(.eh_frame)
@@ -85,14 +85,17 @@ SECTIONS
         PROVIDE_HIDDEN(__fini_array_end = .);
     } >FLASH
 
-    /* Hot kernels. The first 32 bytes stay empty so that no function sits at address 0,
-     * where a pointer to it would compare equal to NULL. */
+    /* Hot kernels: the whole DSP library (dsp/, about 35 KB of 64), so its loops fetch with zero
+     * wait states instead of through the flash and the I-cache (budget work, 2026-11-17). The
+     * first 32 bytes stay empty so that no function sits at address 0, where a pointer to it
+     * would compare equal to NULL. Calls between flash and ITCM go through linker veneers. */
     _siitcm = LOADADDR(.itcm_text);
     .itcm_text :
     {
         . = . + 32;
         . = ALIGN(4);
         _sitcm = .;
+        *dsp/src/dsp_*.c.obj(.text .text*)
         *(.itcm_text)
         *(.itcm_text*)
         . = ALIGN(4);

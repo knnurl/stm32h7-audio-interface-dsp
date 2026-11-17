@@ -44,12 +44,14 @@ class DspGateF32(ctypes.Structure):
 
 
 class DspHalfbandUpF32(ctypes.Structure):
-    _fields_ = [("n_taps", c_int32), ("delay", c_int32), ("taps", c_float * HB_MAX),
+    _fields_ = [("n_taps", c_int32), ("delay", c_int32), ("symmetric", c_int32),
+                ("taps", c_float * HB_MAX),
                 ("hist", c_float * (2 * HB_MAX)), ("pos", c_int32)]
 
 
 class DspHalfbandDownF32(ctypes.Structure):
-    _fields_ = [("n_taps", c_int32), ("delay", c_int32), ("taps", c_float * HB_MAX),
+    _fields_ = [("n_taps", c_int32), ("delay", c_int32), ("symmetric", c_int32),
+                ("taps", c_float * HB_MAX),
                 ("even", c_float * (2 * HB_MAX)), ("even_pos", c_int32),
                 ("odd", c_float * (2 * HB_MAX)), ("odd_pos", c_int32)]
 
@@ -93,6 +95,7 @@ def bind(lib):
     sig("dsp_fast_exp2f", c_float, c_float)
     sig("dsp_fast_lin_to_db", c_float, c_float)
     sig("dsp_fast_db_to_lin", c_float, c_float)
+    sig("dsp_fast_tanhf", c_float, c_float)
 
     sig("dsp_env_coef", c_float, c_float, c_float)
     sig("dsp_env_peak_init", None, P(DspEnvF32), c_float, c_float, c_float)

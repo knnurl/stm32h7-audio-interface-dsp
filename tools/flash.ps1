@@ -31,9 +31,10 @@ if ($probe -notmatch "Device ID\s*:\s*0x450") {
     throw "No dual-core STM32H745/H755 (device ID 0x450) on the ST-LINK. Nothing was written."
 }
 
-# The Cortex-M4 image first: the M7 image is the one that reports whether the M4 parked.
-& $cliPath -c port=SWD -w $cm4 -v
-if ($LASTEXITCODE -ne 0) { throw "Writing the Cortex-M4 image failed." }
-& $cliPath -c port=SWD -w $cm7 -v -rst
-if ($LASTEXITCODE -ne 0) { throw "Writing the Cortex-M7 image failed." }
+# Both images in one session, then one reset. Two sessions (M4, then M7) left the core running
+# inside ST's flash loader in AXI SRAM between them, which faulted every time (pc 0x24000000,
+# found in the fault record and reproduced 2026-11-17). The M4 image goes first: the M7 image is
+# the one that reports whether the M4 parked.
+& $cliPath -c port=SWD -w $cm4 -v -w $cm7 -v -rst
+if ($LASTEXITCODE -ne 0) { throw "Writing the images failed." }
 Write-Host "Both cores flashed. Console: python tools/console.py --port COMx"

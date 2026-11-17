@@ -133,10 +133,34 @@ def test_batch6_cases_are_the_blocks(lib):
                           ctypes.byref(b6.DspGateParams(-30.0, 6.0, 1.0, 0.2, 2.0, -60.0, 1.0)))
     assert blocks(lib.dsp_gate_f32_process, gate, x).tobytes() == \
         dsplib.selftest_run(lib, case_index(lib, "gate_f32"))[1].tobytes()
-    for name, mode in (("sat_os4_f32", 2), ("sat_adaa_f32", 3)):
+    for name, mode in (("sat_os4_f32", 2), ("sat_adaa_f32", 3), ("sat_os2_f32", 1)):
         sat = b6.DspSaturatorF32()
         lib.dsp_saturator_f32_init(ctypes.byref(sat), mode, 12.0)
         assert blocks(lib.dsp_saturator_f32_process, sat, x).tobytes() == \
             dsplib.selftest_run(lib, case_index(lib, name))[1].tobytes(), name
     _, y = dsplib.selftest_run(lib, case_index(lib, "limiter_f32"))
     assert np.all(np.isfinite(y)) and np.max(np.abs(y)) <= 10 ** (-6.5 / 20) * (1 + 1e-6)
+
+
+def test_budget_decomposition_cases(lib):
+    """tanh_libm_f32 and tanh_fast_f32 are tanh(4x); os4_pass_f32 is the 4x oversampler up and
+    down with nothing between."""
+    import dsplib_b6 as b6
+    lib6 = b6.bind(lib)
+    x, y = dsplib.selftest_run(lib, case_index(lib, "tanh_libm_f32"))
+    assert np.max(np.abs(y - np.tanh(4.0 * x.astype(np.float64)))) < 1e-6
+    x, y = dsplib.selftest_run(lib, case_index(lib, "tanh_fast_f32"))
+    assert np.max(np.abs(y - np.tanh(4.0 * x.astype(np.float64)))) < 3e-7
+    x, y = dsplib.selftest_run(lib, case_index(lib, "os4_pass_f32"))
+    os = b6.DspOversampleF32()
+    lib6.dsp_oversample_f32_init(ctypes.byref(os), 4)
+    expected = np.zeros_like(x)
+    buf = np.zeros(64, dtype=np.float32)
+    for i in range(0, len(x), 16):
+        blk = x[i:i + 16].copy()
+        out = np.zeros(16, dtype=np.float32)
+        lib6.dsp_oversample_f32_up(ctypes.byref(os), dsplib.f32(blk), dsplib.f32(buf), 16)
+        lib6.dsp_oversample_f32_down(ctypes.byref(os), dsplib.f32(buf), dsplib.f32(out), 16)
+        expected[i:i + 16] = out
+    assert y.tobytes() == expected.tobytes()
+
