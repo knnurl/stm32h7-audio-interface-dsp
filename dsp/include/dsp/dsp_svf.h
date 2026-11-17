@@ -12,8 +12,9 @@
  * tests/unit/test_lfo_svf.py (test_svf_against_biquad_under_modulation).
  *
  * dsp_svf_f32_set uses tanf (coefficient code). dsp_svf_f32_set_fast replaces it with the Pade
- * approximant tan(x) ~ x (15 - x^2) / (15 - 6 x^2), for per-block modulation: cutoff error under
- * 0.2 % below 0.25 fs and about 3 % at the 0.45 fs clamp (measured, same file). Both clamp fc to
+ * approximant tan(x) ~ x (15 - x^2) / (15 - 6 x^2), for per-block modulation: g error 2.1e-4
+ * below 0.25 fs and 3.2 % at the 0.45 fs clamp, a cutoff error of 0.37 % there (measured,
+ * test_fast_g_error). Both clamp fc to
  * [1 Hz, 0.45 fs] and Q to [0.1, 50].
  *
  * Assumptions: mono; `in` and `out` may be the same buffer.

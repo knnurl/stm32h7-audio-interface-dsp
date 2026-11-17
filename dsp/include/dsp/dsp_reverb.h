@@ -23,8 +23,8 @@
  * Lagrange reads, which breaks up the metallic ringing of fixed lengths.
  * Pre-delay: 0 to 100 ms, stereo.
  *
- * Memory: caller-provided; dsp_reverb_f32_mem_needed(fs) floats (about 26 900 at 96 kHz for
- * the lines and 19 200 for the pre-delay: 184 KB; see docs/results/b8b_memory.md).
+ * Memory: caller-provided; dsp_reverb_f32_mem_needed(fs) floats: 45318 at 96 kHz (177 KB), of
+ * which the 100 ms stereo pre-delay is 19208 (75 KB); see docs/results/b8b_memory.md.
  * Assumptions: stereo; any block size. Latency: the pre-delay. Cycles: not yet measured.
  */
 #ifndef DSP_REVERB_H
