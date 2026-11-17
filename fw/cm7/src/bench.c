@@ -13,6 +13,11 @@ enum { kRuns = 33 };
 static uint32_t s_in[kDspSelftestFrames];
 static uint32_t s_out[kDspSelftestFrames];
 
+/* Cycle count when the running case finished its set-up (dsp_selftest_set_mark). */
+static uint32_t s_mark_cycles;
+
+static void mark_now(void) { s_mark_cycles = board_cycles(); }
+
 static const char *fmt_name(int fmt) { return fmt == kDspFmtQ31 ? "q31" : "f32"; }
 
 static void sort(uint32_t *values, size_t count) {
@@ -28,18 +33,27 @@ static void sort(uint32_t *values, size_t count) {
 
 static void run_case(size_t index) {
     uint32_t cycles[kRuns];
+    uint32_t proc[kRuns];
     dsp_selftest_input(index, s_in);
+    dsp_selftest_set_mark(mark_now);
     for (size_t run = 0; run < kRuns; ++run) {
         const uint32_t start = board_cycles();
+        s_mark_cycles = start;
         dsp_selftest_run(index, s_in, s_out);
-        cycles[run] = board_cycles() - start;
+        const uint32_t end = board_cycles();
+        cycles[run] = end - start;
+        proc[run] = end - s_mark_cycles; /* Processing only: from the case's mark. */
     }
+    dsp_selftest_set_mark(NULL);
     sort(cycles, kRuns);
-    printf("bench %s fmt=%s frames=%d runs=%d min=%lu med=%lu max=%lu crc=%08lx\r\n",
+    sort(proc, kRuns);
+    printf("bench %s fmt=%s frames=%d runs=%d min=%lu med=%lu max=%lu crc=%08lx ch=%d "
+           "proc_min=%lu proc_med=%lu\r\n",
            dsp_selftest_name(index), fmt_name(dsp_selftest_fmt(index)), (int)kDspSelftestFrames,
            (int)kRuns, (unsigned long)cycles[0], (unsigned long)cycles[kRuns / 2],
-           (unsigned long)cycles[kRuns - 1],
-           (unsigned long)dsp_crc32(0, s_out, sizeof(s_out)));
+           (unsigned long)cycles[kRuns - 1], (unsigned long)dsp_crc32(0, s_out, sizeof(s_out)),
+           dsp_selftest_channels(index), (unsigned long)proc[0],
+           (unsigned long)proc[kRuns / 2]);
     console_flush();
 }
 

@@ -69,7 +69,8 @@ def main():
                 _, words = protocol.parse_vec(command(port, f"vec {bench.name}", "end"))
                 ok, message, _ = protocol.compare_float(words, expected)
             print(f"{'ok  ' if ok else 'FAIL'} {bench.name}: {message}; "
-                  f"{bench.cycles_per_sample:.1f} cycles per sample")
+                  f"{bench.proc_per_frame:.1f} cycles per frame "
+                  f"({bench.channels} ch, set-up excluded)")
             failed = failed or not ok
             rows.append(bench)
         for name in host:
@@ -78,12 +79,14 @@ def main():
                 failed = True
 
     if args.results and rows:
-        lines = ["| Case | Format | Cycles per sample (min) | Median | Max | Frames |",
+        lines = ["| Case | Format | Channels | Cycles per frame, processing (min) | Median | "
+                 "Whole run incl. set-up, per frame (min) |",
                  "|---|---|---|---|---|---|"]
         for bench in rows:
-            lines.append(f"| {bench.name} | {bench.fmt} | {bench.cycles_per_sample:.1f} | "
-                         f"{bench.cycles_med / bench.frames:.1f} | "
-                         f"{bench.cycles_max / bench.frames:.1f} | {bench.frames} |")
+            per_frame = bench.frames / bench.channels
+            lines.append(f"| {bench.name} | {bench.fmt} | {bench.channels} | "
+                         f"{bench.proc_per_frame:.1f} | {bench.proc_med / per_frame:.1f} | "
+                         f"{bench.cycles_min / per_frame:.1f} |")
         pathlib.Path(args.results).write_text("\n".join(lines) + "\n", encoding="utf-8")
         print(f"cycle table written to {args.results}")
     return 1 if failed else 0

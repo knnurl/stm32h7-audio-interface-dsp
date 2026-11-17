@@ -16,9 +16,22 @@
 typedef struct {
     const char *name;
     DspFmt fmt;
+    int channels;
     void (*input)(void *in);
     void (*run)(const void *in, void *out);
 } SelftestCase;
+
+/* The bench's hook: processing starts now. The one mutable global here, set only by the bench
+ * (the self-test is a test harness, not a DSP block). */
+static DspSelftestMarkFn s_mark;
+
+void dsp_selftest_set_mark(DspSelftestMarkFn fn) { s_mark = fn; }
+
+static void mark(void) {
+    if (s_mark != NULL) {
+        s_mark();
+    }
+}
 
 /* gain_f32: half-scale noise; from silence up to -6 dB, then on to 0.25, at 48 kHz with a 5 ms
  * time constant, so both ramps are still moving when their half of the buffer ends. */
@@ -36,6 +49,7 @@ static void gain_f32_run(const void *in, void *out) {
     dsp_gain_f32_init(&gain, 48000.0f, 5.0f);
     dsp_gain_f32_set_linear(&gain, 0.0f);
     dsp_gain_f32_reset(&gain);
+    mark();
     dsp_gain_f32_set_db(&gain, -6.0f);
     dsp_gain_f32_process(&gain, x, y, half);
     dsp_gain_f32_set_linear(&gain, 0.25f);
@@ -55,6 +69,7 @@ static void noise_q31_run(const void *in, void *out) {
     (void)in;
     DspNoise noise;
     dsp_noise_seed(&noise, 2u);
+    mark();
     dsp_noise_q31(&noise, (int32_t *)out, kDspSelftestFrames);
 }
 
@@ -102,6 +117,7 @@ static void noise_quarter_q31_input(void *in) {
 static void biquad_f32_run(const void *in, void *out) {
     DspBiquadF32 filter;
     dsp_biquad_f32_init(&filter, kCascadeF32, 3);
+    mark();
     /* In blocks of 16, as the audio interrupt will call it. */
     for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
         dsp_biquad_f32_process(&filter, (const float *)in + i, (float *)out + i, 16);
@@ -111,6 +127,7 @@ static void biquad_f32_run(const void *in, void *out) {
 /* The same cascade with double state: the kernel the PEQ and tone control use. */
 static void biquad_f64_run(const void *in, void *out) {
     DspBiquadStateF64 state[3] = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
+    mark();
     for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
         const float *src = (const float *)in + i;
         float *dst = (float *)out + i;
@@ -124,6 +141,7 @@ static void biquad_f64_run(const void *in, void *out) {
 static void biquad_q31_run(const void *in, void *out, int32_t error_feedback) {
     DspBiquadQ31 filter;
     dsp_biquad_q31_init(&filter, kCascadeQ31, 3, error_feedback);
+    mark();
     for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
         dsp_biquad_q31_process(&filter, (const int32_t *)in + i, (int32_t *)out + i, 16);
     }
@@ -144,6 +162,7 @@ static void tone_f32_run(const void *in, void *out) {
     dsp_tone_f32_set_db(&tone, kDspToneMid, -3.0f);
     dsp_tone_f32_set_db(&tone, kDspToneTreble, 9.0f);
     dsp_tone_f32_reset(&tone);
+    mark();
     for (size_t i = 0; i < half; i += 16) {
         if (i == 256) {
             dsp_tone_f32_set_db(&tone, kDspToneBass, -12.0f);
@@ -168,6 +187,7 @@ static void comp_f32_run(const void *in, void *out) {
     const DspCompParams params = {-20.0f, 4.0f, 6.0f, 1.0f, 10.0f, 3.0f, 80.0f};
     DspCompF32 comp;
     dsp_comp_f32_init(&comp, 48000.0f, &params);
+    mark();
     for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
         dsp_comp_f32_process(&comp, (const float *)in + i, (float *)out + i, 16);
     }
@@ -177,6 +197,7 @@ static void gate_f32_run(const void *in, void *out) {
     const DspGateParams params = {-30.0f, 6.0f, 1.0f, 0.2f, 2.0f, -60.0f, 1.0f};
     DspGateF32 gate;
     dsp_gate_f32_init(&gate, 48000.0f, &params);
+    mark();
     for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
         dsp_gate_f32_process(&gate, (const float *)in + i, (float *)out + i, 16);
     }
@@ -191,6 +212,7 @@ static void limiter_f32_run(const void *in, void *out) {
     float *y = (float *)out;
     const size_t half = kDspSelftestFrames / 2;
     dsp_limiter_f32_init(&s_limiter, 48000.0f, -6.0f, 1.0f, 20.0f);
+    mark();
     for (size_t i = 0; i < half; i += 16) {
         dsp_limiter_f32_process(&s_limiter, x + i, x + half + i, y + i, y + half + i, 16);
     }
@@ -200,6 +222,7 @@ static DspSaturatorF32 s_saturator;
 
 static void saturate_run(const void *in, void *out, int32_t mode) {
     dsp_saturator_f32_init(&s_saturator, mode, 12.0f);
+    mark();
     for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
         dsp_saturator_f32_process(&s_saturator, (const float *)in + i, (float *)out + i, 16);
     }
@@ -241,6 +264,7 @@ static void delay_lagrange_f32_run(const void *in, void *out) {
     const float *x = (const float *)in;
     float *y = (float *)out;
     dsp_delayline_f32_init(&s_8b.delay, s_pool8b, 1024);
+    mark();
     for (size_t i = 0; i < kDspSelftestFrames; ++i) {
         const float t = (float)i / (float)kDspSelftestFrames;
         const float d = 10.0f + 590.0f * (t < 0.5f ? 2.0f * t : 2.0f - 2.0f * t);
@@ -252,6 +276,7 @@ static void delay_lagrange_f32_run(const void *in, void *out) {
 /* Low-pass, Q 4, cutoff stepped every 16 samples from 200 Hz up to 8 kHz (fast coefficients). */
 static void svf_f32_run(const void *in, void *out) {
     dsp_svf_f32_init(&s_8b.svf, 48000.0f, 200.0f, 4.0f);
+    mark();
     for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
         const float fc = 200.0f + 7800.0f * (float)i / (float)kDspSelftestFrames;
         dsp_svf_f32_set_fast(&s_8b.svf, 48000.0f, fc, 4.0f);
@@ -265,6 +290,7 @@ static void run_stereo16(StereoFn fn, void *state, const void *in, void *out) {
     const float *x = (const float *)in;
     float *y = (float *)out;
     const size_t half = kDspSelftestFrames / 2;
+    mark();
     for (size_t i = 0; i < half; i += 16) {
         fn(state, x + i, x + half + i, y + i, y + half + i, 16);
     }
@@ -372,6 +398,7 @@ static void fxslot_f32_run(const void *in, void *out) {
     dsp_fxslot_f32_reset(&s_8b.slot);
     s_8b.slot.dirty_len = 0; /* The pool was just cleared by init. */
     dsp_fxslot_f32_set_on(&s_8b.slot, 1);
+    mark();
     for (size_t i = 0; i < half; i += 16) {
         if (i == half / 2) {
             dsp_fxslot_f32_select(&s_8b.slot, kDspFxFlanger);
@@ -389,30 +416,30 @@ static void reverb_f32_run(const void *in, void *out) {
 }
 
 static const SelftestCase kCases[] = {
-    {"gain_f32", kDspFmtF32, gain_f32_input, gain_f32_run},
-    {"noise_q31", kDspFmtQ31, noise_q31_input, noise_q31_run},
-    {"biquad_f32", kDspFmtF32, noise_half_f32_input, biquad_f32_run},
-    {"biquad_f64", kDspFmtF32, noise_half_f32_input, biquad_f64_run},
-    {"biquad_q31_round", kDspFmtQ31, noise_quarter_q31_input, biquad_q31_round_run},
-    {"biquad_q31_ef", kDspFmtQ31, noise_quarter_q31_input, biquad_q31_ef_run},
-    {"tone_f32", kDspFmtF32, noise_half_f32_input, tone_f32_run},
-    {"comp_f32", kDspFmtF32, bursts_f32_input, comp_f32_run},
-    {"gate_f32", kDspFmtF32, bursts_f32_input, gate_f32_run},
-    {"limiter_f32", kDspFmtF32, bursts_f32_input, limiter_f32_run},
-    {"sat_os4_f32", kDspFmtF32, bursts_f32_input, sat_os4_f32_run},
-    {"sat_adaa_f32", kDspFmtF32, bursts_f32_input, sat_adaa_f32_run},
-    {"delay_lagrange_f32", kDspFmtF32, bursts_f32_input, delay_lagrange_f32_run},
-    {"svf_f32", kDspFmtF32, bursts_f32_input, svf_f32_run},
-    {"fx_echo_f32", kDspFmtF32, bursts_f32_input, fx_echo_f32_run},
-    {"fx_echo96_f32", kDspFmtF32, bursts_f32_input, fx_echo96_f32_run},
-    {"fx_chorus_f32", kDspFmtF32, bursts_f32_input, fx_chorus_f32_run},
-    {"fx_flanger_f32", kDspFmtF32, bursts_f32_input, fx_flanger_f32_run},
-    {"fx_phaser_f32", kDspFmtF32, bursts_f32_input, fx_phaser_f32_run},
-    {"fx_sweep_f32", kDspFmtF32, bursts_f32_input, fx_sweep_f32_run},
-    {"fx_overdrive_f32", kDspFmtF32, bursts_f32_input, fx_overdrive_f32_run},
-    {"fx_crusher_f32", kDspFmtF32, bursts_f32_input, fx_crusher_f32_run},
-    {"fxslot_f32", kDspFmtF32, bursts_f32_input, fxslot_f32_run},
-    {"reverb_f32", kDspFmtF32, bursts_f32_input, reverb_f32_run},
+    {"gain_f32", kDspFmtF32, 1, gain_f32_input, gain_f32_run},
+    {"noise_q31", kDspFmtQ31, 1, noise_q31_input, noise_q31_run},
+    {"biquad_f32", kDspFmtF32, 1, noise_half_f32_input, biquad_f32_run},
+    {"biquad_f64", kDspFmtF32, 1, noise_half_f32_input, biquad_f64_run},
+    {"biquad_q31_round", kDspFmtQ31, 1, noise_quarter_q31_input, biquad_q31_round_run},
+    {"biquad_q31_ef", kDspFmtQ31, 1, noise_quarter_q31_input, biquad_q31_ef_run},
+    {"tone_f32", kDspFmtF32, 2, noise_half_f32_input, tone_f32_run},
+    {"comp_f32", kDspFmtF32, 1, bursts_f32_input, comp_f32_run},
+    {"gate_f32", kDspFmtF32, 1, bursts_f32_input, gate_f32_run},
+    {"limiter_f32", kDspFmtF32, 2, bursts_f32_input, limiter_f32_run},
+    {"sat_os4_f32", kDspFmtF32, 1, bursts_f32_input, sat_os4_f32_run},
+    {"sat_adaa_f32", kDspFmtF32, 1, bursts_f32_input, sat_adaa_f32_run},
+    {"delay_lagrange_f32", kDspFmtF32, 1, bursts_f32_input, delay_lagrange_f32_run},
+    {"svf_f32", kDspFmtF32, 1, bursts_f32_input, svf_f32_run},
+    {"fx_echo_f32", kDspFmtF32, 2, bursts_f32_input, fx_echo_f32_run},
+    {"fx_echo96_f32", kDspFmtF32, 2, bursts_f32_input, fx_echo96_f32_run},
+    {"fx_chorus_f32", kDspFmtF32, 2, bursts_f32_input, fx_chorus_f32_run},
+    {"fx_flanger_f32", kDspFmtF32, 2, bursts_f32_input, fx_flanger_f32_run},
+    {"fx_phaser_f32", kDspFmtF32, 2, bursts_f32_input, fx_phaser_f32_run},
+    {"fx_sweep_f32", kDspFmtF32, 2, bursts_f32_input, fx_sweep_f32_run},
+    {"fx_overdrive_f32", kDspFmtF32, 2, bursts_f32_input, fx_overdrive_f32_run},
+    {"fx_crusher_f32", kDspFmtF32, 2, bursts_f32_input, fx_crusher_f32_run},
+    {"fxslot_f32", kDspFmtF32, 2, bursts_f32_input, fxslot_f32_run},
+    {"reverb_f32", kDspFmtF32, 2, bursts_f32_input, reverb_f32_run},
 };
 
 size_t dsp_selftest_count(void) { return sizeof(kCases) / sizeof(kCases[0]); }
@@ -429,6 +456,10 @@ void dsp_selftest_input(size_t index, void *in) {
     if (index < dsp_selftest_count()) {
         kCases[index].input(in);
     }
+}
+
+int dsp_selftest_channels(size_t index) {
+    return index < dsp_selftest_count() ? kCases[index].channels : 0;
 }
 
 void dsp_selftest_run(size_t index, const void *in, void *out) {

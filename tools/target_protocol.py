@@ -9,7 +9,8 @@ import numpy as np
 
 BENCH_RE = re.compile(
     r"^bench (?P<name>\S+) fmt=(?P<fmt>f32|q31) frames=(?P<frames>\d+) runs=(?P<runs>\d+) "
-    r"min=(?P<min>\d+) med=(?P<med>\d+) max=(?P<max>\d+) crc=(?P<crc>[0-9a-fA-F]{8})$"
+    r"min=(?P<min>\d+) med=(?P<med>\d+) max=(?P<max>\d+) crc=(?P<crc>[0-9a-fA-F]{8})"
+    r"(?: ch=(?P<ch>\d+) proc_min=(?P<pmin>\d+) proc_med=(?P<pmed>\d+))?$"
 )
 VEC_RE = re.compile(r"^vec (?P<name>\S+) (?P<count>\d+)$")
 
@@ -26,10 +27,19 @@ class BenchLine:
     cycles_med: int
     cycles_max: int
     crc: int
+    channels: int = 1
+    proc_min: int = 0
+    proc_med: int = 0
 
     @property
     def cycles_per_sample(self):
         return self.cycles_min / self.frames
+
+    @property
+    def proc_per_frame(self):
+        """Processing cycles (set-up excluded) per frame of all channels: the number the
+        SPEC 3.4 budget is written in. 0 when the firmware did not report it."""
+        return self.proc_min / (self.frames / self.channels) if self.proc_min else 0.0
 
 
 def parse_bench(lines):
@@ -38,9 +48,11 @@ def parse_bench(lines):
     for line in lines:
         match = BENCH_RE.match(line.strip())
         if match:
+            extra = (int(match["ch"]), int(match["pmin"]), int(match["pmed"])) \
+                if match["ch"] else (1, 0, 0)
             found.append(BenchLine(match["name"], match["fmt"], int(match["frames"]),
                                    int(match["runs"]), int(match["min"]), int(match["med"]),
-                                   int(match["max"]), int(match["crc"], 16)))
+                                   int(match["max"]), int(match["crc"], 16), *extra))
     return found
 
 
