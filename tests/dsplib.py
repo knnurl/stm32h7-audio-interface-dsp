@@ -180,6 +180,8 @@ def load():
         ctypes.c_int)
     sig("dsp_coef_magnitude_db", c_double, cd, c_size, c_double, c_double)
     sig("dsp_coef_to_f32", None, cd, p(DspBiquadCoefsF32))
+    sig("dsp_coef_is_stable", ctypes.c_int, c_double, c_double)
+    sig("dsp_coef_f32_is_stable", ctypes.c_int, p(DspBiquadCoefsF32))
     sig("dsp_coef_to_q31", ctypes.c_int, cd, p(DspBiquadCoefsQ31), p(c_double))
 
     sig("dsp_peq_f32_init", None, p(DspPeqF32), c_float, c_int32)

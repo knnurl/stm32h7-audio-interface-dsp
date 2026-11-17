@@ -50,3 +50,38 @@ moves, each moving band adds one design per block (a `pow`, a `sin`, a `cos`, in
 - Whether a knob's own reading noise (batch 8d) keeps the bands redesigning when nobody touches
   them. The panel pipeline's hysteresis is meant to stop that; the tone block itself only
   redesigns when its target changes.
+
+## From the transcripts
+
+Read in full on 2026-11-17: Biquad Filters (#172), Audio EQ Software Implementation (#89),
+Notch Filters (#49), The Simplest Digital Filter (#92).
+
+**Agrees**
+- #172 recomputes coefficients "once per block" from the knob values: the same cadence as here.
+- #172 moves towards a new setting only "if there is a significant difference": our 0.001 dB
+  snap is the same idea at the other end.
+- #172 warns that sudden coefficient jumps "can cause large transients ... instability".
+- #89: a peak at unity gain is the identity, and unity away from f0 lets bands cascade. That is
+  what makes the exact skip at 0 dB possible.
+
+**Differs, and why**
+- #172 smooths each coefficient directly with a one-pole, per sample. We smooth the gain in dB
+  and redesign per block: every intermediate filter is a real tone setting, and the measured
+  zipper is -106 dBFS. Our choice stands on that measurement.
+- #92's one-pole smoother uses a hand-picked alpha; ours derives it from the time constant.
+
+**Suggested and not done**
+- A dead band on the knobs before recomputing (#49 uses about 10 % of travel). Kept for batch
+  8d, where the panel pipeline's hysteresis does it.
+- Cross-fading two filter instances (#172's alternative to smoothing).
+
+**Open question raised by the pass:** `dsp_peq` interpolates coefficients linearly over its ramp,
+which is close to #172's approach and the one this note rejects for the tone control. It is
+stable (the stability triangle is convex), so it is not a bug, but the two blocks now follow
+opposite rules, and a PEQ band changed from a peak to a shelf passes through curves that are
+neither. Proposal for batch 8a: changes of band type cross-fade two instances; changes of
+frequency, gain or Q redesign per block as the tone control does. Owner to decide.
+
+**Fixed in the pass:** with every band skipped, the right channel's output was only written when
+the left channel was not processed in place. The header allows them to alias independently.
+Now each channel is copied on its own (`test_flat_with_one_channel_in_place`).

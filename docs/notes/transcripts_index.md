@@ -31,4 +31,10 @@ folders are gitignored: the text is the author's, and this repository is meant t
 | 10: S/PDIF and ASRC | Decimation Filters (#42) |
 | Not used by this project | Sensor Fusion #1 to #4 (#33, #34, #37, #73): accelerometers, complementary filter, extended Kalman filter |
 
-This table is by title. No transcript has been read in full yet.
+## Read in full
+
+| Date | Transcripts | For | Where the findings went |
+|---|---|---|---|
+| 2026-11-17 | #172, #89, #32, Bilinear Transform, #20, #27, #92, #49, #162 | Batch 3 | `biquad.md`, `coefficient_design.md`, `tone.md` |
+
+The rest of the table above is by title only.

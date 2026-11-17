@@ -55,3 +55,43 @@ formulas (1e-12 relative); the gain at f0, the shelf gains at DC and Nyquist, th
 
 - Whether the cramping of the speaker-stage PEQ at 48 kHz (the USB rates on rev A) is worth a
   matched design. Above 10 kHz it is; whether anyone will set a peak there is another question.
+
+## From the transcripts
+
+Read in full on 2026-11-17: Biquad Filters (#172), Audio EQ Software Implementation (#89),
+Bilinear Transform IIR Filter Design, IIR Filters (#32), Real-Time Software Implementation of
+Analog Filters (#20), Notch Filters (#49), All-Pass Filter (#162). Every formula in
+`dsp_coef.c` was rechecked by hand against the cookbook at the same time: all correct.
+
+**Agrees**
+- #172: compute the cookbook equations in code when a parameter changes, "not every single
+  sample", because the trigonometry is expensive.
+- #89 and the bilinear transform video: Tustin with prewarping gives the best frequency match,
+  and prewarping is exact only at DC and at the chosen frequency. Our cramping study measures
+  what is left everywhere else.
+- The bilinear transform video: a stable analogue prototype maps to a stable digital filter.
+
+**Differs, and why**
+- #89 derives its peak from an analogue prototype with a linear gain G and Q = fc / bandwidth at
+  the -3 dB points, using the unprewarped fc ("fairly rough"). The cookbook uses A = 10^(dB/40)
+  and its own Q definition, so a Q value from his EQ is not the same filter here. We keep the
+  cookbook: exact gain at f0, prewarped, well documented.
+- The videos name the coefficients differently: #89 calls the numerator "a"; #32 writes the
+  feedback terms with a plus sign; #172 warns that calculators "flip them around". Our headers
+  state H(z) explicitly, which is the defence.
+
+**Suggested and not done, until this pass**
+- #89: keep the "centre frequency away from 0 Hz and away from the Nyquist limit". #162: the
+  cutoff must be below Nyquist, "this isn't implemented here". Neither was implemented here
+  either. Fixed: every design now clamps f0 to (0, 0.49 fs) and Q to at least 0.01, so an
+  out-of-range setting gives the nearest valid filter (`test_bad_frequency_and_q_give_a_stable_section`).
+- Found in the same review, not in a transcript: a shelf slope above about 1.9 to 5 (depending
+  on gain) takes the square root of a negative number, and the PEQ passed its band Q straight
+  through as the slope. A NaN coefficient would have poisoned the PEQ's state for good. Fixed:
+  the slope is clamped to [0.05, 1] (`test_shelf_slope_never_gives_nan`,
+  `test_shelf_slope_above_one_stays_finite`).
+- `dsp_coef_to_q31` now refuses non-finite input, where `llround` is undefined.
+
+**For exercise 3:** #49 and #162 give design methods for a notch and an all-pass from analogue
+prototypes, parameterised by a bandwidth in hertz rather than a Q, so the -3 dB definition
+matters when you compare. The exercise is yours; the transcripts are fair to read.

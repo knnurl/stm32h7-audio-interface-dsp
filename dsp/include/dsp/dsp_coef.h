@@ -45,10 +45,21 @@ size_t dsp_coef_butterworth(DspBiquadCoefsD *out, size_t capacity, double fs_hz,
 double dsp_coef_magnitude_db(const DspBiquadCoefsD *sections, size_t n_sections, double fs_hz,
                              double f_hz);
 
+/* Every design clamps its inputs: f0 to (0, 0.49 fs), Q to at least 0.01, a shelf slope to
+ * [0.05, 1]. Out-of-range settings therefore give the nearest valid filter, never NaN or an
+ * unstable section. */
+
+/* Both poles strictly inside the unit circle: |a2| < 1 and |a1| < 1 + a2. */
+int dsp_coef_is_stable(double a1, double a2);
+/* The same, after rounding to float32: a corner of a few hertz at 96 kHz puts 1 + a1 + a2 near
+ * 1e-7, below float32's resolution near 2, so rounding can make a stable design marginal. */
+int dsp_coef_f32_is_stable(const DspBiquadCoefsF32 *c);
+
 void dsp_coef_to_f32(const DspBiquadCoefsD *in, DspBiquadCoefsF32 *out);
 /* Quantises to the Q31 section format of dsp_biquad.h, with the smallest shift (0 to 7) for
  * which every coefficient fits and the accumulator cannot overflow. Returns the shift, or -1
- * when none fits. `max_error` (may be NULL) receives the largest coefficient error. */
+ * when none fits, when a coefficient is not finite, or when the quantised section is not
+ * stable. `max_error` (may be NULL) receives the largest coefficient error. */
 int dsp_coef_to_q31(const DspBiquadCoefsD *in, DspBiquadCoefsQ31 *out, double *max_error);
 
 /* EXERCISE EX3 (docs/exercises/EX3_notch_allpass.md): written by the owner. Until then both

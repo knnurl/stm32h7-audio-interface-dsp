@@ -64,12 +64,21 @@ def _round_half_away(x):
     return int(math.copysign(math.floor(abs(x) + 0.5), x))
 
 
+def is_stable(a1, a2):
+    return -1.0 < a2 < 1.0 and a1 < 1.0 + a2 and -a1 < 1.0 + a2
+
+
 def to_q31(section):
-    """The quantisation rule of dsp_coef_to_q31: (ints, shift) or None."""
+    """The quantisation rule of dsp_coef_to_q31: (ints, shift) or None. None also for a
+    non-finite coefficient, or when the quantised section is not stable."""
+    if not all(math.isfinite(v) for v in section):
+        return None
     limit = (1 << 32) - 1
     for shift in range(8):
         scale = 2.0 ** (30 - shift)
         q = [_round_half_away(v * scale) for v in section]
         if all(-(1 << 31) <= v < (1 << 31) for v in q) and sum(abs(v) for v in q) <= limit:
+            if not is_stable(q[3] / scale, q[4] / scale):
+                return None
             return q, shift
     return None

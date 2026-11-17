@@ -135,8 +135,11 @@ void dsp_tone_f32_process(DspToneF32 *tone, const float *in_l, const float *in_r
         src_l = out_l;
         src_r = out_r;
     }
+    /* Each channel on its own: one may be processed in place and the other not. */
     if (src_l != out_l) {
         memmove(out_l, in_l, n_frames * sizeof(float));
+    }
+    if (src_r != out_r) {
         memmove(out_r, in_r, n_frames * sizeof(float));
     }
 }

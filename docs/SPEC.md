@@ -360,6 +360,6 @@ Settled, with the source:
 | 2026-11-17 | Batch 8 split into 8a (control core), 8b (effect slot, reverb, tempo), 8c (full signal path) and 8d (control panel firmware) | Too large for one session; 8a and the host parts of 8b need no audio hardware |
 | 2026-11-17 | Control code (`ctl/`) is hardware-free C under the same rules as `dsp/`, tested on the PC | Knob ownership, the protocol, MIDI and presets can then be proven before any board exists |
 | 2026-11-17 | Presets in an append-only log in the last sector of flash bank 2 | The M7 runs from bank 1, so writing presets should not interrupt audio (SPEC V17) |
-| 2026-11-17 | The PEQ and the tone control use double-precision state, float in and out (provisional until the M7 cycle cost is measured) | Measured: float32 TDF-II gives 59 to 97 dB signal-to-noise on low-frequency sections, double about 152 dB (docs/results/b3_filter_noise.md) |
+| 2026-11-17 | The PEQ and the tone control use double-precision state, float in and out (provisional until the M7 cycle cost is measured) | Measured: float32 TDF-II gives 59 to 111 dB signal-to-noise on low-frequency sections, double about 152 dB (docs/results/b3_filter_noise.md) |
 | 2026-11-17 | Q31 biquads: direct form I, per-section shift chosen so the 64-bit accumulator cannot overflow for any input; error feedback optional | Proven bound: sum of |coefficients| <= 2^32 - 1 |
 | 2026-11-17 | Tone defaults proposed: 100 Hz low shelf, 1 kHz peak Q 0.7, 10 kHz high shelf, 20 ms smoothing | Awaiting the owner's ears |

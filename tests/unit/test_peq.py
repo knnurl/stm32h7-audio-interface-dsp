@@ -119,3 +119,12 @@ def test_in_place_and_reset(lib):
     lib.dsp_peq_f32_process(ctypes.byref(peq), dsplib.f32(in_place), dsplib.f32(in_place),
                             len(in_place))
     assert in_place.tobytes() == separate.tobytes()
+
+
+def test_shelf_slope_above_one_stays_finite(lib):
+    """The PEQ passes a band's q to the shelf as its slope; above about 5 at +12 dB the cookbook
+    formula takes the square root of a negative number. The design clamps it."""
+    peq = make(lib)
+    set_band(lib, peq, 0, LOW_SHELF, 150.0, 12.0, 8.0)
+    y = run(lib, peq, noise(2048))
+    assert np.all(np.isfinite(y))

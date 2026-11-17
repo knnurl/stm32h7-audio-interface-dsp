@@ -95,3 +95,46 @@ Not measured: no board yet. The self-test cases `biquad_f32`, `biquad_q31_round`
 - The cost of double on the M7, which decides whether the provisional decision stands.
 - Whether the noise of the float32 kernel matters for the speaker stage's PEQ, whose corners are
   usually above 50 Hz. The study's 1 kHz row (120 dB) says probably not.
+
+## From the transcripts
+
+Read in full on 2026-11-17: Biquad Filters (#172), Audio EQ Software Implementation (#89), IIR
+Filters (#32), Bilinear Transform IIR Filter Design, Real-Time Software Implementation of Analog
+Filters (#20), Z-Transform (#27), The Simplest Digital Filter (#92). They are automatic captions
+of videos made on a float-only STM32 guitar pedal; where they disagree with our measurements,
+ours win.
+
+**Agrees**
+- #172 gives the same transposed direct form II equations and sign convention as
+  `dsp_biquad_f32_section`, with the states starting at zero and a0 normalised to 1.
+- #172: "at very low frequencies and at high sample rates", use double precision; poles close
+  to the unit circle are where quantisation hurts. That is the measured decision above, and the
+  same 1 / (1 + a1 + a2) argument.
+- #172: cascades of biquads for higher orders, each section stable on its own, a first-order
+  section for odd orders. `dsp_coef_butterworth` does the same.
+- #27: stable means every pole strictly inside the unit circle; a pole on it is not stable.
+
+**Differs, and why**
+- #172 says transposed direct form II states are "closer in magnitude", hence more accurate in
+  floating point. Our study finds float32 TDF-II and direct form I both poor on low-frequency
+  sections, with neither consistently better (TDF-II 59 to 111 dB, DF-I 55 to 118 dB). The
+  measurement stands.
+- #89, #20 and #49 use direct form I with shifted arrays and divide by the leading coefficient
+  every sample. These are teaching code; ours normalises once at design time.
+- No transcript covers fixed point: accumulator headroom, shifts, error feedback. The videos
+  target a float pedal at "good enough"; this device aims at measured figures above 120 dB.
+
+**Suggested and not done**
+- Measuring the real response on hardware against a calibrated bypass path (#162 de-embeds the
+  bypass; #172 and #89 use an audio analyser). Needs the board; it belongs to batch 7's lab
+  session.
+- Gain staging around high-Q sections: #172 puts a gain before and after because "large Q
+  values ... might clip". Float has headroom; the Q31 "clips" row in the study is the
+  fixed-point side of the same point.
+
+**What the pass changed**
+- `dsp_coef_f32_is_stable` and a stability check inside `dsp_coef_to_q31`, after #172's warning
+  that "any quantization could shift those poles outside of the unit circle". Measured: a 2 Hz
+  high-pass at 96 kHz is stable in double and unstable after rounding to float32
+  (`test_stability_helpers`). The float32 kernel must not be used for corners that low; the
+  double kernel is fine.

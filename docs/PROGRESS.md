@@ -4,6 +4,33 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: transcript pass for batch 3
+
+**Transcripts read in full:** Biquad Filters (#172), Audio EQ Software Implementation (#89), IIR
+Filters (#32), Bilinear Transform IIR Filter Design, Real-Time Software Implementation of Analog
+Filters (#20), Z-Transform (#27), The Simplest Digital Filter (#92), Notch Filters (#49),
+All-Pass Filter (#162). Read by a review agent in this session against the batch 3 code; the
+findings were checked here before acting on them.
+
+**Agreed with what was built:** TDF-II equations and conventions, double precision for
+low-frequency sections, cascades, coefficients recomputed per block and not per sample.
+
+**Fixed, each with a test:**
+- Shelf slope above about 1.9 to 5 gave NaN coefficients (square root of a negative); the PEQ
+  passed its band Q through unchecked. The slope is now clamped to [0.05, 1].
+- f0 at or above Nyquist, or Q at or below 0, gave unstable or infinite coefficients. Every
+  design now clamps f0 to (0, 0.49 fs) and Q to at least 0.01.
+- `dsp_coef_to_q31` refuses non-finite and unstable results; `dsp_coef_f32_is_stable` added.
+  Measured: a 2 Hz high-pass at 96 kHz becomes unstable when rounded to float32.
+- Tone control: the right channel was not written when only the left was processed in place.
+
+**Open question for the owner:** the PEQ ramps coefficients linearly, the tone control redesigns
+per block; proposal in `docs/notes/tone.md` (cross-fade on band type changes).
+
+| Item | Value | Command |
+|---|---|---|
+| Unit tests | 161 pass | `python -m pytest` |
+
 ## 2026-11-17: batch 3, host part (filters, Q31, tone control)
 
 **Done**
@@ -25,7 +52,7 @@ entry with no transcripts line is unfinished.
 | Item | Value | Command |
 |---|---|---|
 | Unit tests | 116 pass | `python -m pytest` |
-| Float32 TDF-II, low-frequency sections, signal-to-noise | 59 to 97 dB (20 Hz high-pass at 48 kHz: 68 dB at -1 dBFS) | `python tools/studies/b3_filter_noise.py` |
+| Float32 TDF-II, low-frequency sections, signal-to-noise | 59 to 111 dB (20 Hz high-pass at 48 kHz: 68 dB at -1 dBFS) | `python tools/studies/b3_filter_noise.py` |
 | Double-state TDF-II, same sections | 151 to 156 dB (the float output's own rounding) | same |
 | Q31 DF-I with error feedback, same sections | 98 to 190 dB; without it at -60 dBFS: 55 to 79 dB | same |
 | Cramping, +12 dB peak Q 1 at 15 kHz, 1.2 f0 | -4.25 dB at 48 kHz, -0.64 dB at 96 kHz | `python tools/studies/b3_cramping.py` |

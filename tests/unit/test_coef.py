@@ -106,3 +106,48 @@ def test_to_f32_rounds_each_coefficient(lib):
     lib.dsp_coef_to_f32(ctypes.byref(dsplib.coefs_d(section)), ctypes.byref(out))
     got = np.array([out.b0, out.b1, out.b2, out.a1, out.a2], dtype=np.float32)
     assert np.array_equal(got, np.float32(section))
+
+
+# ---- Guards (from the transcript pass: #89 and #162 warn about f0 near 0 and Nyquist; the
+# ---- review found a shelf slope above 1 gives the square root of a negative number).
+
+def finite_and_stable(section):
+    return all(math.isfinite(v) for v in section) and ref.is_stable(section[3], section[4])
+
+
+@pytest.mark.parametrize("gain", [12.0, 24.0, -24.0])
+@pytest.mark.parametrize("slope", [1.0, 2.0, 5.5, 50.0, 0.0, -1.0, float("nan")])
+def test_shelf_slope_never_gives_nan(lib, gain, slope):
+    for name in ("low_shelf", "high_shelf"):
+        assert finite_and_stable(dsplib.design(lib, name, 48000.0, 200.0, slope, gain)), name
+
+
+@pytest.mark.parametrize("f0", [0.0, -5.0, 24000.0, 30000.0, 1e9])
+@pytest.mark.parametrize("q", [0.7, 0.0, -1.0, float("nan")])
+def test_bad_frequency_and_q_give_a_stable_section(lib, f0, q):
+    for name in ("peak", "lowpass", "highpass"):
+        args = (48000.0, f0, q, 6.0) if name == "peak" else (48000.0, f0, q)
+        assert finite_and_stable(dsplib.design(lib, name, *args)), (name, f0, q)
+    for name in ("lowpass1", "highpass1"):
+        assert finite_and_stable(dsplib.design(lib, name, 48000.0, f0)), name
+
+
+def test_stability_helpers(lib):
+    assert lib.dsp_coef_is_stable(-1.9, 0.91)
+    assert not lib.dsp_coef_is_stable(-1.9, 1.0)        # On the circle.
+    assert not lib.dsp_coef_is_stable(-2.0, 0.999)      # A pole at z > 1.
+    assert not lib.dsp_coef_is_stable(0.0, -1.0)
+    # A 2 Hz high-pass at 96 kHz: stable in double; what float32 rounding does is recorded, and
+    # the helper must agree with the triangle evaluated on the rounded values.
+    d = dsplib.design(lib, "highpass", 96000.0, 2.0, 0.7071)
+    f = dsplib.DspBiquadCoefsF32()
+    lib.dsp_coef_to_f32(ctypes.byref(dsplib.coefs_d(d)), ctypes.byref(f))
+    expected = ref.is_stable(float(np.float32(d[3])), float(np.float32(d[4])))
+    assert bool(lib.dsp_coef_f32_is_stable(ctypes.byref(f))) == expected
+    print(f"2 Hz high-pass at 96 kHz stays stable in float32: {expected}")
+
+
+def test_q31_refuses_non_finite(lib):
+    q = dsplib.DspBiquadCoefsQ31()
+    bad = dsplib.coefs_d((float("nan"), 0.0, 0.0, 0.0, 0.0))
+    assert lib.dsp_coef_to_q31(ctypes.byref(bad), ctypes.byref(q), None) == -1

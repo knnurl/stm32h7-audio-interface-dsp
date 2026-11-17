@@ -5,6 +5,16 @@
 
 #define kPi 3.14159265358979323846
 
+/* Guards for every design: a frequency inside (0, 0.49 fs), a Q of at least 0.01, a shelf slope
+ * in [0.05, 1]. Outside those the formulas give division by zero (Q <= 0), negative alpha and
+ * an unstable section (f0 >= fs / 2), or the square root of a negative number (a shelf slope
+ * above about 1 / (1 - 2 / (A + 1/A)): 5 at +12 dB, 1.9 at +24 dB). Slope 1 is the steepest
+ * shelf without overshoot, so nothing useful is lost by stopping there. */
+static double clamp(double v, double lo, double hi) { return v < lo ? lo : (v > hi ? hi : v); }
+static double safe_f0(double fs_hz, double f0_hz) { return clamp(f0_hz, 1e-6 * fs_hz, 0.49 * fs_hz); }
+static double safe_q(double q) { return q != q ? 0.7071 : clamp(q, 0.01, 1000.0); }
+static double safe_slope(double s) { return s != s ? 1.0 : clamp(s, 0.05, 1.0); }
+
 static void normalise(DspBiquadCoefsD *out, double b0, double b1, double b2, double a0, double a1,
                       double a2) {
     out->b0 = b0 / a0;
@@ -23,6 +33,8 @@ void dsp_coef_identity(DspBiquadCoefsD *out) {
 }
 
 void dsp_coef_peak(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double q, double gain_db) {
+    f0_hz = safe_f0(fs_hz, f0_hz);
+    q = safe_q(q);
     const double a = pow(10.0, gain_db / 40.0);
     const double w0 = 2.0 * kPi * f0_hz / fs_hz;
     const double cw = cos(w0);
@@ -37,6 +49,8 @@ static double shelf_alpha(double w0, double a, double slope) {
 
 void dsp_coef_low_shelf(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double slope,
                         double gain_db) {
+    f0_hz = safe_f0(fs_hz, f0_hz);
+    slope = safe_slope(slope);
     const double a = pow(10.0, gain_db / 40.0);
     const double w0 = 2.0 * kPi * f0_hz / fs_hz;
     const double cw = cos(w0);
@@ -48,6 +62,8 @@ void dsp_coef_low_shelf(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double
 
 void dsp_coef_high_shelf(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double slope,
                          double gain_db) {
+    f0_hz = safe_f0(fs_hz, f0_hz);
+    slope = safe_slope(slope);
     const double a = pow(10.0, gain_db / 40.0);
     const double w0 = 2.0 * kPi * f0_hz / fs_hz;
     const double cw = cos(w0);
@@ -58,6 +74,8 @@ void dsp_coef_high_shelf(DspBiquadCoefsD *out, double fs_hz, double f0_hz, doubl
 }
 
 void dsp_coef_lowpass(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double q) {
+    f0_hz = safe_f0(fs_hz, f0_hz);
+    q = safe_q(q);
     const double w0 = 2.0 * kPi * f0_hz / fs_hz;
     const double cw = cos(w0);
     const double alpha = sin(w0) / (2.0 * q);
@@ -66,6 +84,8 @@ void dsp_coef_lowpass(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double q
 }
 
 void dsp_coef_highpass(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double q) {
+    f0_hz = safe_f0(fs_hz, f0_hz);
+    q = safe_q(q);
     const double w0 = 2.0 * kPi * f0_hz / fs_hz;
     const double cw = cos(w0);
     const double alpha = sin(w0) / (2.0 * q);
@@ -74,6 +94,7 @@ void dsp_coef_highpass(DspBiquadCoefsD *out, double fs_hz, double f0_hz, double 
 }
 
 void dsp_coef_lowpass1(DspBiquadCoefsD *out, double fs_hz, double f0_hz) {
+    f0_hz = safe_f0(fs_hz, f0_hz);
     const double k = tan(kPi * f0_hz / fs_hz);
     out->b0 = k / (1.0 + k);
     out->b1 = out->b0;
@@ -83,6 +104,7 @@ void dsp_coef_lowpass1(DspBiquadCoefsD *out, double fs_hz, double f0_hz) {
 }
 
 void dsp_coef_highpass1(DspBiquadCoefsD *out, double fs_hz, double f0_hz) {
+    f0_hz = safe_f0(fs_hz, f0_hz);
     const double k = tan(kPi * f0_hz / fs_hz);
     out->b0 = 1.0 / (1.0 + k);
     out->b1 = -out->b0;
@@ -144,8 +166,22 @@ void dsp_coef_to_f32(const DspBiquadCoefsD *in, DspBiquadCoefsF32 *out) {
     out->a2 = (float)in->a2;
 }
 
+int dsp_coef_is_stable(double a1, double a2) {
+    /* Both poles inside the unit circle: the stability triangle. */
+    return a2 < 1.0 && a2 > -1.0 && a1 < 1.0 + a2 && -a1 < 1.0 + a2;
+}
+
+int dsp_coef_f32_is_stable(const DspBiquadCoefsF32 *c) {
+    return dsp_coef_is_stable((double)c->a1, (double)c->a2);
+}
+
 int dsp_coef_to_q31(const DspBiquadCoefsD *in, DspBiquadCoefsQ31 *out, double *max_error) {
     const double values[5] = {in->b0, in->b1, in->b2, in->a1, in->a2};
+    for (int i = 0; i < 5; ++i) {
+        if (!isfinite(values[i])) {
+            return -1; /* llround of NaN or infinity is undefined. */
+        }
+    }
     /* Bound on the accumulator: |acc| <= sum |C| x 2^31 + err, with err < 2^30. With
      * sum |C| <= 2^32 - 1 that is at most 2^63 - 2^31 + 2^30 - 1, inside int64. */
     const int64_t sum_limit = ((int64_t)1 << 32) - 1;
@@ -164,6 +200,9 @@ int dsp_coef_to_q31(const DspBiquadCoefsD *in, DspBiquadCoefsQ31 *out, double *m
         }
         if (!fits || sum > sum_limit) {
             continue;
+        }
+        if (!dsp_coef_is_stable((double)q[3] / scale, (double)q[4] / scale)) {
+            return -1; /* Quantisation moved a pole onto or outside the unit circle. */
         }
         out->b0 = (int32_t)q[0];
         out->b1 = (int32_t)q[1];

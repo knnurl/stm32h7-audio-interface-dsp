@@ -203,3 +203,17 @@ def test_zipper_noise_of_a_full_sweep(lib):
         results[freq] = 20 * np.log10(np.sqrt(np.mean(side ** 2)) + 1e-30)
     print(f"zipper sidebands: {results}")
     assert results[50.0] < -100.0 and results[5000.0] < -100.0
+
+
+def test_flat_with_one_channel_in_place(lib):
+    """Found in the transcript pass review: with every band skipped, the right output must be
+    written even when only the left channel is processed in place."""
+    x_l = noise(64, seed=8)
+    x_r = noise(64, seed=9)
+    tone = make(lib)
+    out_r = np.full_like(x_r, 7.0)
+    in_place_l = x_l.copy()
+    lib.dsp_tone_f32_process(ctypes.byref(tone), dsplib.f32(in_place_l), dsplib.f32(x_r),
+                             dsplib.f32(in_place_l), dsplib.f32(out_r), 64)
+    assert in_place_l.tobytes() == x_l.tobytes()
+    assert out_r.tobytes() == x_r.tobytes()

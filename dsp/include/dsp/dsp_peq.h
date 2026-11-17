@@ -9,7 +9,7 @@
  * stable); settings change at control rate, not audio rate.
  *
  * Arithmetic: float in and out, double-precision coefficients and state (dsp_biquad_f64_section).
- * Float32 state gives only 59 to 120 dB signal-to-noise on low-frequency sections; double gives
+ * Float32 state gives only 59 to 111 dB signal-to-noise on low-frequency sections; double gives
  * about 152 dB, the floor of the float32 output itself (docs/results/b3_filter_noise.md).
  * Provisional until the M7 cycle cost is measured (SPEC decision log).
  *
