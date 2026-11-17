@@ -105,6 +105,10 @@ void console_flush(void) {
 
 uint32_t console_dropped(void) { return s_dropped; }
 
+size_t console_free(void) {
+    return (size_t)((s_tx_tail + TX_BYTES - s_tx_head - 1u) % TX_BYTES);
+}
+
 bool console_read_line(char *line, size_t capacity) {
     if (!s_line_ready || capacity == 0u) {
         return false;

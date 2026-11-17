@@ -1,6 +1,7 @@
 # Firmware for both cores of the STM32H755 on the Nucleo-H755ZI-Q.
 #   dsp_cm7.elf  the application: audio DSP, console, benchmarks (flash bank 1)
-#   dsp_cm4.elf  parks the Cortex-M4 in stop mode (flash bank 2)
+#   dsp_cm4.elf  parks the Cortex-M4 in stop mode (flash bank 2, less its last two sectors,
+#                which hold the presets)
 # Configure from the repository root after fw/fetch_deps.ps1:  cmake --preset fw
 enable_language(ASM)
 
@@ -18,7 +19,8 @@ set(DEVICE ${TP}/cmsis_device_h7/Source/Templates)
 
 set(HAL_SOURCES
     ${HAL}/stm32h7xx_hal.c ${HAL}/stm32h7xx_hal_cortex.c ${HAL}/stm32h7xx_hal_dma.c
-    ${HAL}/stm32h7xx_hal_dma_ex.c ${HAL}/stm32h7xx_hal_gpio.c ${HAL}/stm32h7xx_hal_hsem.c
+    ${HAL}/stm32h7xx_hal_dma_ex.c ${HAL}/stm32h7xx_hal_flash.c ${HAL}/stm32h7xx_hal_flash_ex.c
+    ${HAL}/stm32h7xx_hal_gpio.c ${HAL}/stm32h7xx_hal_hsem.c
     ${HAL}/stm32h7xx_hal_pwr.c ${HAL}/stm32h7xx_hal_pwr_ex.c ${HAL}/stm32h7xx_hal_rcc.c
     ${HAL}/stm32h7xx_hal_rcc_ex.c ${HAL}/stm32h7xx_hal_uart.c ${HAL}/stm32h7xx_hal_uart_ex.c)
 # ST's start-up and system files for the dual-core parts, as shipped. Start-up calls
@@ -57,12 +59,13 @@ endfunction()
 # ---- Cortex-M7: the application -------------------------------------------------------------
 set(CM7_SOURCES
     cm7/src/main.c cm7/src/board.c cm7/src/bench.c cm7/src/console.c cm7/src/fault.c
-    cm7/src/interrupts.c cm7/src/syscalls.c)
-add_executable(dsp_cm7 ${CM7_SOURCES} ${DSP_SOURCES} ${ST_BOOT_SOURCES} ${HAL_SOURCES})
-target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR})
+    cm7/src/flash_store.c cm7/src/interrupts.c cm7/src/syscalls.c)
+add_executable(dsp_cm7 ${CM7_SOURCES} ${DSP_SOURCES} ${CTL_SOURCES} ${ST_BOOT_SOURCES}
+    ${HAL_SOURCES})
+target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR} ${CTL_INCLUDE_DIR})
 # Float policy (SPEC section 7): no fused multiply-add contraction until batch 3 decides, so the
 # target computes what the PC library computes.
-set_source_files_properties(${DSP_SOURCES}
+set_source_files_properties(${DSP_SOURCES} ${CTL_SOURCES}
     PROPERTIES COMPILE_OPTIONS "${OWN_WARNINGS};-O2;-ffp-contract=off")
 set_source_files_properties(${CM7_SOURCES} PROPERTIES COMPILE_OPTIONS "${OWN_WARNINGS}")
 dsp_firmware(dsp_cm7 CORE_CM7

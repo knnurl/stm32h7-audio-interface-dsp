@@ -5,7 +5,8 @@ ENTRY(Reset_Handler)
 
 MEMORY
 {
-    FLASH (rx)  : ORIGIN = 0x08100000, LENGTH = 1024K
+    /* Bank 2 less sectors 6 and 7 (0x081C0000 on): the M7's preset store. */
+    FLASH (rx)  : ORIGIN = 0x08100000, LENGTH = 768K
     RAM (xrw)   : ORIGIN = 0x10000000, LENGTH = 256K
 }
 
