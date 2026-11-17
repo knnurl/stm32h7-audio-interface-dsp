@@ -9,7 +9,7 @@ void dsp_limiter_f32_init(DspLimiterF32 *lim, float sample_rate_hz, float ceilin
                           float lookahead_ms, float release_ms) {
     memset(lim, 0, sizeof(*lim));
     lim->sample_rate_hz = sample_rate_hz;
-    lim->ceiling = powf(10.0f, ceiling_db / 20.0f);
+    lim->ceiling = powf(10.0f, (ceiling_db - DSP_LIMITER_TRUE_PEAK_MARGIN_DB) / 20.0f);
     lim->release_coef = dsp_env_coef(sample_rate_hz, release_ms);
     int32_t l = (int32_t)(lookahead_ms * 0.001f * sample_rate_hz + 0.5f);
     if (l < kDspLimiterMinLookahead) {

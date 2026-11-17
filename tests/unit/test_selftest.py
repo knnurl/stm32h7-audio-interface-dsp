@@ -139,4 +139,4 @@ def test_batch6_cases_are_the_blocks(lib):
         assert blocks(lib.dsp_saturator_f32_process, sat, x).tobytes() == \
             dsplib.selftest_run(lib, case_index(lib, name))[1].tobytes(), name
     _, y = dsplib.selftest_run(lib, case_index(lib, "limiter_f32"))
-    assert np.all(np.isfinite(y)) and np.max(np.abs(y)) <= 10 ** (-6 / 20) * (1 + 1e-6)
+    assert np.all(np.isfinite(y)) and np.max(np.abs(y)) <= 10 ** (-6.5 / 20) * (1 + 1e-6)

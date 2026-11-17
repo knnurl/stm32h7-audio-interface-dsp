@@ -121,7 +121,8 @@ The review pack every batch ends with:
 
 ## Git
 
-Local repository, branch `main`. Small commits, one concern per commit. Docs change in the same
+Branch `main`, remote `origin` on GitHub (pushing still needs the owner's go each time). Small
+commits, one concern per commit. Docs change in the same
 commit as the code they describe: the SPEC section, a decision-log row for every decision,
 `docs/PROGRESS.md`, and the commands below.
 

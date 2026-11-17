@@ -4,6 +4,20 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: owner decisions after batch 6; repository pushed
+
+**Transcripts read:** none (no new block).
+
+- Pushed to `https://github.com/knnurl/stm32h7-audio-interface-dsp` (remote `origin`).
+- Limiter: the owner chose the 0.5 dB margin. `DSP_LIMITER_TRUE_PEAK_MARGIN_DB`; the detector's
+  threshold is the set ceiling less 0.5 dB. Measured: the true peak stays 0.30 dB under the set
+  ceiling at every look-ahead (`python -m pytest tests/unit/test_limiter.py -s`). The bit-exact
+  test's noise went from 0.5 to 0.4 peak, because white noise's inter-sample peaks reached the
+  lower threshold.
+- Defaults recorded in the SPEC decision log: compressor release 50 ms, saturation 4x, tone
+  corners 100 Hz, 1 kHz, 10 kHz (provisional until the owner listens).
+- Unit tests: 222 pass (`python -m pytest`).
+
 ## 2026-11-17: batch 6, host part (dynamics, oversampling, saturation, limiter)
 
 **Transcripts read in full:** Audio Compressor Software Implementation, Noise Gate (#58),

@@ -35,7 +35,8 @@ is delayed by L + 24 samples so each drop has finished before the loud sample ar
 | After a release | bit-exact again | `test_release_returns_to_bit_exact` |
 | NaN and infinity in | finite out, under the ceiling | `test_bad_input_cannot_get_through` |
 | Sample counter wrapping at 2^32 | holds | `test_sample_counter_wrap` |
-| True peak of the output over the ceiling, worst of the hostile set | 0.198 to 0.199 dB at 32, 48, 96 and 240 samples of look-ahead | `test_true_peak_overshoot_against_lookahead` |
+| True peak of the output over the detection threshold, worst of the hostile set | 0.198 to 0.199 dB at 32, 48, 96 and 240 samples of look-ahead | `test_true_peak_stays_under_the_set_ceiling` |
+| True peak of the output against the set ceiling (threshold 0.5 dB lower) | about -0.30 dB, under at every look-ahead | `test_true_peak_stays_under_the_set_ceiling` |
 
 **The true-peak overshoot, and its cause.** The overshoot does not change with the look-ahead,
 and band-limiting the test bursts to 18 kHz leaves 0.16 dB of it, so it is neither the gain's
@@ -61,9 +62,12 @@ delay is 23.25 samples; the 24 and the window of L + 3 leave a sample of slack) 
 correct; its explanation of the true-peak overshoot as gain sidebands was not borne out by the
 measurement above, and ours stands.
 
-## Decision for the owner
+## Decision (owner, 2026-11-17)
 
-How to close the 0.2 to 0.5 dB true-peak gap, given this block protects the speakers:
+Option 1, the 0.5 dB margin: the detector works against a threshold 0.5 dB under the set
+ceiling (`DSP_LIMITER_TRUE_PEAK_MARGIN_DB`). Option 3 stays the measured improvement for later.
+The options were, to close the 0.2 to 0.5 dB true-peak gap, given this block protects the
+speakers:
 1. **A margin:** run the detector against a ceiling 0.5 dB lower than the one the owner sets.
    Free; costs 0.5 dB of loudness at the limit.
 2. **8x detection:** halves the worst case (cos(π f / 8 fs)); costs another upsampling stage per

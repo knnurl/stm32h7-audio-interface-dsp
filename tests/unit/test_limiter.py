@@ -12,6 +12,8 @@ import dsplib_b6 as b6
 FS = 48000.0
 CEILING_DB = -1.0
 CEILING = 10 ** (CEILING_DB / 20)
+MARGIN_DB = 0.5  # DSP_LIMITER_TRUE_PEAK_MARGIN_DB
+THRESHOLD = 10 ** ((CEILING_DB - MARGIN_DB) / 20)
 
 
 @pytest.fixture(scope="module")
@@ -59,24 +61,23 @@ def test_no_sample_exceeds_the_ceiling(lib6, lookahead_ms):
     for name, x in hostile().items():
         x = x.astype(np.float32)
         y, _ = run(lib6, make(lib6, lookahead_ms), x, -x)
-        assert np.max(np.abs(y)) <= CEILING * (1 + 1e-6), name
+        assert np.max(np.abs(y)) <= THRESHOLD * (1 + 1e-6), name
 
 
-def test_true_peak_overshoot_against_lookahead(lib6):
-    """The guarantee is per sample; the true peak can exceed the ceiling by the gain's own
-    sidebands. Measured for several look-aheads (printed; the table is in docs/notes/limiter.md).
-    Held at the measured worst case for the 32-sample minimum, 0.25 dB, until the owner decides
-    between a longer minimum look-ahead and a margin below the ceiling."""
+def test_true_peak_stays_under_the_set_ceiling(lib6):
+    """The per-sample guarantee is against the threshold (ceiling less 0.5 dB). 4x detection
+    under-reads inter-sample peaks, so the true peak can exceed the threshold (0.198 dB measured,
+    printed); the margin keeps it under the set ceiling at every look-ahead."""
     table = {}
     for lookahead_ms in (0.0, 1.0, 2.0, 5.0):  # 32, 48, 96, 240 samples
-        worst = 0.0
+        worst = -99.0
         for name, x in hostile().items():
             x = x.astype(np.float32)
             y, _ = run(lib6, make(lib6, lookahead_ms), x, x)
-            worst = max(worst, true_peak_db(y[2000:]) - CEILING_DB)
+            worst = max(worst, true_peak_db(y[2000:]) - (CEILING_DB - MARGIN_DB))
         table[lookahead_ms] = round(worst, 3)
-    print(f"worst true-peak overshoot (dB) by look-ahead (ms): {table}")
-    assert table[0.0] < 0.25
+    print(f"worst true-peak over the threshold (dB) by look-ahead (ms): {table}")
+    assert max(table.values()) < MARGIN_DB
 
 
 def test_latency_is_lookahead_plus_24(lib6):
@@ -90,7 +91,9 @@ def test_latency_is_lookahead_plus_24(lib6):
 
 
 def test_below_the_ceiling_is_bit_exact(lib6):
-    x = (np.random.default_rng(5).uniform(-1, 1, 9600) * 0.5).astype(np.float32)
+    # White noise has inter-sample peaks well above its sample peak: 0.4 keeps them under the
+    # threshold (0.5 reached it once the margin lowered the threshold to -1.5 dBFS).
+    x = (np.random.default_rng(5).uniform(-1, 1, 9600) * 0.4).astype(np.float32)
     lim = make(lib6, 1.0)
     y, _ = run(lib6, lim, x)
     d = lib6.dsp_limiter_f32_latency(ctypes.byref(lim))
@@ -114,7 +117,7 @@ def test_bad_input_cannot_get_through(lib6):
     x[2000] = np.inf
     x[3000] = -np.inf
     y, _ = run(lib6, make(lib6, 1.0), x, x)
-    assert np.all(np.isfinite(y)) and np.max(np.abs(y)) <= CEILING * (1 + 1e-6)
+    assert np.all(np.isfinite(y)) and np.max(np.abs(y)) <= THRESHOLD * (1 + 1e-6)
 
 
 def test_sample_counter_wrap(lib6):
@@ -123,7 +126,7 @@ def test_sample_counter_wrap(lib6):
     lim.t = 2 ** 32 - 500
     x = hostile()["bursts"].astype(np.float32)
     y, _ = run(lib6, lim, x)
-    assert np.max(np.abs(y)) <= CEILING * (1 + 1e-6)
+    assert np.max(np.abs(y)) <= THRESHOLD * (1 + 1e-6)
 
 
 def test_stereo_link(lib6):

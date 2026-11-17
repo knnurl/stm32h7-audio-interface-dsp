@@ -366,4 +366,8 @@ Settled, with the source:
 | 2026-11-17 | Compressor after Giannoulis et al. (instantaneous detector, gain reduction smoothed in dB); times are time constants | Measured: static curve within 0.1 dB, times within 5 %; bass distortion documented against release |
 | 2026-11-17 | Saturation by tanh at 4x through polyphase half-band filters (83 and 23 taps), with 2x and ADAA as options | Measured aliasing at 5 kHz: -131 dB at 4x against -27 dB plain; latency 46.5 samples |
 | 2026-11-17 | Limiter: stereo-linked, 4x true-peak detection, sliding minimum then moving average; at least 32 samples of look-ahead; non-finite input replaced by 0 | No output sample above the ceiling by construction; the true-peak gap (up to 0.47 dB) awaits the owner's choice of remedy |
+| 2026-11-17 | Limiter true-peak remedy: detect against a threshold 0.5 dB under the set ceiling; interpolation between the four detector samples later, if measured to help | Owner. Measured: true peak 0.198 dB over the threshold at every look-ahead, so about 0.3 dB under the set ceiling |
+| 2026-11-17 | Strip compressor default release 50 ms; saturation default 4x oversampled | Owner, from the measured bass distortion (-33 dB THD at 50 ms) and aliasing (-131 dB at 4x) |
+| 2026-11-17 | Tone corners 100 Hz, 1 kHz (Q 0.7), 10 kHz adopted as defaults, provisional | Owner: accepted, to be checked by ear on the hardware |
+| 2026-11-17 | Repository published at github.com/knnurl/stm32h7-audio-interface-dsp | Owner created it and gave the URL |
 

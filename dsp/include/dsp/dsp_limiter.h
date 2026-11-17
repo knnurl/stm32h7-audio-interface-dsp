@@ -4,7 +4,8 @@
  * of the 4 phases is that sample's true peak; the larger of the two channels counts. This
  * catches the peaks between samples that a DAC's reconstruction filter will produce (the idea
  * of ITU-R BS.1770's true-peak meter, with a sharper interpolator than the standard's).
- * Required gain: r[t] = min(1, ceiling / peak[t]).
+ * Required gain: r[t] = min(1, threshold / peak[t]), the threshold being the set ceiling less
+ * kDspLimiterTruePeakMarginDb (0.5 dB; owner's decision 2026-11-17).
  *
  * Gain, so the ceiling is never crossed:
  *   1. a sliding minimum of r over W = L + 3 samples (L = look-ahead; the 3 cover the
@@ -17,10 +18,12 @@
  * Every gain value in the average is at most the required gain of the sample it is applied to,
  * so the average is too.
  *
- * What is guaranteed: no output *sample* exceeds the ceiling. The output's true peak can exceed
- * it slightly, because the gain's own movement adds sidebands: about +0.12 dB with a look-ahead
- * of 1 to 4 samples, +0.01 dB from 20 samples (from the batch 6 review; measured in
- * tests/unit/test_limiter.py). The look-ahead is therefore at least 32 samples.
+ * What is guaranteed: no output *sample* exceeds the threshold. The output's true peak can
+ * exceed the threshold, because 4x detection under-reads peaks between its samples by up to
+ * cos(pi f / 4 fs): 0.198 dB measured on the hostile set at every look-ahead, 0.47 dB in theory
+ * for 20 kHz content at 48 kHz. The 0.5 dB margin covers that, so the true peak stays under the
+ * set ceiling (tests/unit/test_limiter.py). Interpolating between the four detector samples is
+ * the measured improvement left for later. The look-ahead is at least 32 samples.
  * Non-finite input (NaN, infinity) is replaced by 0 before it reaches the detector or the delay
  * line: this is the last block before the converters and the speakers.
  *
@@ -36,6 +39,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* The true-peak margin below the set ceiling, in dB. */
+#define DSP_LIMITER_TRUE_PEAK_MARGIN_DB 0.5f
+
 enum {
     kDspLimiterMinLookahead = 32,
     kDspLimiterMaxLookahead = 480, /* 5 ms at 96 kHz */
@@ -46,7 +52,7 @@ enum {
 
 typedef struct {
     float sample_rate_hz;
-    float ceiling;      /* Linear. */
+    float ceiling;      /* Linear: the threshold, the set ceiling less the margin. */
     float release_coef;
     int32_t lookahead;  /* L */
     int32_t delay_len;  /* L + 24 */
