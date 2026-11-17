@@ -4,11 +4,13 @@
 #include "dsp/dsp_comp.h"
 #include "dsp/dsp_delayline.h"
 #include "dsp/dsp_env.h"
+#include "dsp/dsp_fxslot.h"
 #include "dsp/dsp_gate.h"
 #include "dsp/dsp_lfo.h"
 #include "dsp/dsp_limiter.h"
 #include "dsp/dsp_oversample.h"
 #include "dsp/dsp_peq.h"
+#include "dsp/dsp_reverb.h"
 #include "dsp/dsp_saturate.h"
 #include "dsp/dsp_svf.h"
 #include "dsp/dsp_tone.h"
@@ -39,7 +41,18 @@ size_t dsp_abi_sizeof(const char *name) {
         {"DspDelaylineApF32", sizeof(DspDelaylineApF32)},
         {"DspLfoF32", sizeof(DspLfoF32)},
         {"DspSvfF32", sizeof(DspSvfF32)},
-        /* B8B_ABI_END */
+        {"DspRampF32", sizeof(DspRampF32)},
+        {"DspOnePoleF32", sizeof(DspOnePoleF32)},
+        {"DspFxEchoF32", sizeof(DspFxEchoF32)},
+        {"DspFxChorusF32", sizeof(DspFxChorusF32)},
+        {"DspFxFlangerF32", sizeof(DspFxFlangerF32)},
+        {"DspFxPhaserF32", sizeof(DspFxPhaserF32)},
+        {"DspFxTremoloF32", sizeof(DspFxTremoloF32)},
+        {"DspFxSweepF32", sizeof(DspFxSweepF32)},
+        {"DspFxOverdriveF32", sizeof(DspFxOverdriveF32)},
+        {"DspFxCrusherF32", sizeof(DspFxCrusherF32)},
+        {"DspFxSlotF32", sizeof(DspFxSlotF32)},
+        {"DspReverbF32", sizeof(DspReverbF32)},
     };
     for (size_t i = 0; i < sizeof(kSizes) / sizeof(kSizes[0]); ++i) {
         if (strcmp(kSizes[i].name, name) == 0) {

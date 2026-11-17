@@ -64,6 +64,25 @@ def lfo_value(shape, phase, edge=0.05):
     return 2 * x
 
 
+_C = [np.float32(v) for v in (6.283161163330078, -41.336708068847656, 81.32439422607422,
+                              -70.82131958007812)]
+
+
+def lfo_value_f32(shape, phase_u32):
+    """The C LFO's value, step for step in float32 (dsp_lfo.c), for models whose modulation
+    depth would magnify the polynomial's 8e-7 error (a 336-sample chorus depth: -71 dB)."""
+    p = int(phase_u32) % 2 ** 32
+    x = np.float32(p - 2 ** 32 if p >= 2 ** 31 else p) / np.float32(4294967296.0)
+    if x > np.float32(0.25):
+        x = np.float32(0.5) - x
+    elif x < np.float32(-0.25):
+        x = np.float32(-0.5) - x
+    if shape == 1:
+        return np.float32(4.0) * x
+    x2 = x * x
+    return x * (_C[0] + x2 * (_C[1] + x2 * (_C[2] + x2 * _C[3])))
+
+
 # ---- State-variable filter --------------------------------------------------------------------
 
 def svf_coefs(fs, fc, q):
