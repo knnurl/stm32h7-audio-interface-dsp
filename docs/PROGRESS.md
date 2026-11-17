@@ -4,6 +4,46 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: budget round 1 on the board (owner's go on five steps)
+
+**Transcripts read:** none (no new block).
+
+Measured before and after each step, all on the Nucleo; every case still matches the PC (the
+`tanhf` cases now bit-identical too). Details: `docs/results/budget_target.md`.
+
+1. **48 kHz for rev A:** recorded (SPEC decision log). Ceiling 5833 cycles per frame.
+2. **tanh:** decomposed first. The C library's `tanhf` is 178 cycles, the 4x oversampler's filters
+   952 per sample: the filters were the larger part, contrary to my guess. `dsp_fast_tanhf` (121
+   cycles, error 1.9e-7) replaces `tanhf` anyway; the half-band kernel now folds its symmetric taps
+   into four partial sums: 4x saturator 1678 to 1204, limiter 1241 to 993, overdrive 3661 to 2479.
+3. **ITCM:** the whole DSP library (27.6 KB) runs from ITCM. No measurable gain: the I-cache
+   already held the loops. Kept. The first linker pattern also caught the start-up code (ld's `*`
+   matches `/`); caught in the size and symbol check before flashing.
+4. **Float32 PEQ sections:** not done. By the noise study, only sections at 1 kHz and above can
+   change (110 to 120 dB in float32); at the measured kernel costs that saves about 400 cycles in
+   all, under 4 %.
+5. **Cheaper true-peak detector:** not done. The detector is about half of the limiter's 993; the
+   saving is a similar few per cent.
+   Steps 4 and 5 were the owner's go, held back because the measurements show they cannot close
+   the gap; the decision below comes first.
+
+**Found and fixed:** every flash wrote a HardFault into the fault record (pc in ST's flash loader).
+Reproduced (resets: none; each flash: one), fixed by flashing in one programmer session.
+
+**Now:** about 11 700 cycles per frame at 48 kHz, 2.0 times the ceiling; with saturation at 2x
+(measured 570 against 1204) about 9200, 1.6 times. Unit tests 510 pass.
+
+**For the owner: the batch 8c gate, round 2.** No single block closes it; options, with what each
+buys (cycles per frame at 48 kHz):
+- saturation at 2x in the strips and the overdrive (SPEC's first fallback): about 2500;
+- exercise EX6, a shorter half-band filter: it sits under the saturators, the overdrive and both
+  limiters, so a 90 dB design instead of 113 dB would take a share of about 5000 cycles;
+- a sample-peak limiter on the headphones, keeping the true-peak one for the speakers: about 600;
+- float32 PEQ sections above 1 kHz and a cheaper detector: about 400 each;
+- giving the M4 (200 MHz, idle) a stage of its own, the headphone path for one, in batch 11;
+- a rule that the most expensive options cannot all be on at once (strip saturation and the
+  overdrive, for one).
+
 ## 2026-11-17: first board run (Nucleo-H755ZI-Q)
 
 **Transcripts read:** none (no new block).

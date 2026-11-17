@@ -395,4 +395,7 @@ Settled, with the source:
 | 2026-11-17 | Accepted as built: the FX AMOUNT macro table, glide on echo time changes, the 60 ms dry gap on an effect change, two preset flash sectors, mute never restored, a four-beat tempo window | Owner: "as you recommend" |
 | 2026-11-17 | First board run: all 24 self-test cases match the PC (22 bit-identical, 2 within -132 dBFS); 400 MHz confirmed against the HSE; the M4 parks; console, protocol and preset store work | Measured on the Nucleo-H755ZI-Q (`docs/results/bench_target.md`) |
 | 2026-11-17 | The bench times processing only (cases mark the end of their set-up) and reports cycles per frame | The first run's whole-run figures were up to 10 times too high where set-up cleared delay memory |
+| 2026-11-17 | Rev A runs at 48 kHz: the budget is judged at 48 kHz (8333 cycles per frame, ceiling 5833); 96 kHz stays a rev B target | Owner; rev A's USB duplex is 48 kHz anyway; the measured path is 4.9 times over the 96 kHz ceiling |
+| 2026-11-17 | Saturators use `dsp_fast_tanhf`; the half-band kernel folds symmetric taps into four partial sums; the DSP library runs from ITCM | Measured on the M7 (`docs/results/budget_target.md`): 4x saturator 1678 to 1204, limiter 1241 to 993, overdrive 3661 to 2479; ITCM itself no measurable change; still bit-identical with the PC |
+| 2026-11-17 | `flash.ps1` writes both images in one programmer session | Two sessions left the core in ST's flash loader and faulted on every flash (reproduced, then fixed) |
 

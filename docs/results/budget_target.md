@@ -47,3 +47,39 @@ ITCM (SPEC 6.2, not done yet) gains.
 | First preset-store write: sector erase (128 KB) plus a record | 960 ms | `ptime` on a blank store |
 | A record of 1.3 KB | 4.5 ms (about 110 us per 32-byte flash word) | `ptime` |
 | Power-on record and a preset across a hardware reset | restored; mute back on | `-hardRst`, then `get`, `preset load 1` |
+
+## First optimisation round (2026-11-17, owner's go)
+
+Each step measured before and after on the board (`python tools/target_test.py --port COMx`),
+every case still matching the PC.
+
+| Step | What it measured | Result |
+|---|---|---|
+| Decompose the 4x saturator | `tanhf` from the C library 178 cycles per call; the 4x oversampler alone 952 per sample | The filters, not `tanhf`, were the larger part: the guess in the first table was wrong |
+| `dsp_fast_tanhf` (exp2 polynomial and one division; absolute error 1.9e-7) | 121 cycles per call | Only a third cheaper; kept, as it is also bit-identical between the PC and the M7 (no library call) |
+| Half-band kernel: symmetric taps folded, four partial sums | oversampler 952 to 715; 4x saturator 1678 to 1204; limiter 1241 to 993; 96 kHz echo 800 to 537; overdrive 3661 to 2479 | The generated loop is now about 3 to 4 cycles per tap pair; six calls per input sample remain |
+| The whole DSP library in ITCM (27.6 KB) | no change beyond noise (within 10 cycles on every case) | The I-cache already held the loops; kept, harmless |
+| Saturation at 2x (`sat_os2_f32`, new case) | 570 against 1204 at 4x | Aliasing at 5 kHz: -64 dB at 2x, -131 dB at 4x (`b6_aliasing.md`) |
+
+Found on the way: every flash added a HardFault to the fault record (pc 0x24000000, in ST's flash
+loader in AXI SRAM). Reproduced: three resets added none, each flash one. Cause: `flash.ps1` ran
+two programmer sessions and the core was left running in the loader between them. Fixed with one
+session and one reset; two further flashes added none.
+
+## Where it stands at 48 kHz (the rate rev A runs at, owner 2026-11-17)
+
+| Block | Cycles per frame |
+|---|---|
+| Two input strips (trim, PEQ, gate, compressor, 4x saturation) | 2 x 1789 = 3578 |
+| Reverb | 898 |
+| Dearest effect: the overdrive (4x) | 2499 |
+| Tone | 397 |
+| Speaker stage: PEQ, delay, limiter, room FIR (estimate 900) | 2473 |
+| Headphone stage: PEQ, crossfeed (estimate 50), limiter | 1613 |
+| Conversion, mixer, metering (estimates) | 220 |
+| **Total** | **about 11 700, against a ceiling of 5833 (2.0 times over)** |
+
+With saturation at 2x in the strips and the overdrive (the overdrive's 2x figure estimated from
+the saturator's ratio): about 9200, 1.6 times over. What is left is spread out: two limiters
+2000, the PEQs about 1700, the reverb 900, the room FIR 900 (estimate).
+
