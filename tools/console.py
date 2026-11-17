@@ -2,7 +2,8 @@
 
     python tools/console.py --port COM5
 
-Type a command (info, list, bench, vec <name>, fault) and press Enter. Ctrl+C leaves.
+Type a command (info, cases, bench, vec <name>, fault, ptime, or any control protocol command:
+hello, list, get, set, mode, meters, preset, src, tempo, stat) and press Enter. Ctrl+C leaves.
 """
 import argparse
 import sys

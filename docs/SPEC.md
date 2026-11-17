@@ -301,7 +301,9 @@ sides until batch 3 measures both and decides.
 | V14 | The stack height (Nucleo, headers, main board, tallest rear connector) fits a 55 mm high case | Batch 5, stage 2 |
 | V15 | The MCU's built-in USB bootloader can update the firmware through the rear USB port | Batch 4 |
 | V16 | The OTG_FS peripheral has the endpoints and FIFO space for UAC2, MIDI and CDC at once | Batch 4, first step |
-| V17 | Flash bank 2's last sector size, and that writing it does not stall the M7 running from bank 1 | Batch 8a |
+| V17 | Flash bank 2's sectors 6 and 7 are 128 KB each, and writing them does not stall the M7 running from bank 1 | Batch 8a, on the board |
+| V18 | A double ECC error on a flash load is masked by FAULTMASK with CCR.BFHFNMIGN and shows in FLASH_SR2 (the preset store's read path relies on it) | Batch 8a, on the board, by cutting the supply during a write |
+| V19 | A bank 2 sector erase takes up to about 2 s, and the flash endures 10 000 cycles | Batch 8a, on the board |
 | V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running | Batch 1, on the board |
 
 Settled, with the source:
@@ -370,4 +372,10 @@ Settled, with the source:
 | 2026-11-17 | Strip compressor default release 50 ms; saturation default 4x oversampled | Owner, from the measured bass distortion (-33 dB THD at 50 ms) and aliasing (-131 dB at 4x) |
 | 2026-11-17 | Tone corners 100 Hz, 1 kHz (Q 0.7), 10 kHz adopted as defaults, provisional | Owner: accepted, to be checked by ear on the hardware |
 | 2026-11-17 | Repository published at github.com/knnurl/stm32h7-audio-interface-dsp | Owner created it and gave the URL |
+| 2026-11-17 | Control library `ctl/` beside `dsp/`: one const parameter table (169 entries, ids by group with gaps, never reused), knob ownership with pick-up (1 % hysteresis), text protocol version 1, fixed MIDI map on the 40 undefined CC numbers, presets by id | Batch 8a; notes `ctl_registry.md`, `knob_pickup.md`, `control_protocol.md`, `midi_map.md`, `preset_store.md` |
+| 2026-11-17 | The audio hand-off queue holds each parameter at most once, so it cannot overflow and the newest value always wins | Replaces "newest wins on overflow" with no overflow; tested with 10 000 writes and no consumer |
+| 2026-11-17 | Preset store on two sectors of flash bank 2 (6 and 7), not one; the M4's flash shrinks to 768 KB | With one sector, a power cut during the erase before a rewrite loses every preset |
+| 2026-11-17 | Mute is neither a preset nor a setting: the outputs always start muted | Hardware safety rule |
+| 2026-11-17 | Speaker and headphone corrections, knob modes, MIDI channel and the tone corners are settings (power-on record only), not preset contents | A preset recall must not change the room correction or the volume |
+| 2026-11-17 | The board's self-test list command is renamed `cases`; `list` belongs to the control protocol | One console carries both until batch 4 |
 

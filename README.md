@@ -23,13 +23,18 @@ and the front panel.
 | 0 | Project documents | Done |
 | 1 | Host library, test harness, firmware skeleton | Built; target run waits for the board |
 | 2 | Audio pass-through on breakouts | Waiting for the modules |
-| 3 | Filters, float and Q31, tone control | Not started |
+| 3 | Filters, float and Q31, tone control | PC part done; target run waits for the board |
 | 4 | USB audio, USB MIDI, Ableton | Not started |
 | 5 | Rev A boards: main board and control panel | Outline drafted |
-| 6 to 13 | See `docs/PLAN.md` (batch 8 is in four parts, 8a to 8d) | Not started |
+| 6 | Dynamics, oversampled saturation, true-peak limiter | PC part done; target run waits for the board |
+| 7 | Bring-up and lab session | Not started |
+| 8a | Control core: parameters, knob pick-up, protocol, MIDI, presets | PC part and firmware build done |
+| 8b to 13 | See `docs/PLAN.md` | 8b in progress |
 
-No measured figures yet. They appear here, with the command that reproduces each, as the batches
-produce them.
+Measured on the PC so far (each with its command in `docs/PROGRESS.md`): biquad noise floors in
+float32 and double state; aliasing of the saturator, plain to 4x oversampled (-27 to -131 dB at
+5 kHz); the limiter's true peak 0.3 dB under its ceiling; the preset store surviving a power cut
+at every byte of a write. Cycle counts on the M7 wait for the board.
 
 ## Build and test
 

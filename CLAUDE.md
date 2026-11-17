@@ -139,14 +139,19 @@ From the repository root. Keep this section accurate.
 - Flash both cores: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1`
 - Serial console: `python tools/console.py --port COMx`
 - Target tests: `python tools/target_test.py --port COMx`
+- Control client: `python tools/ctl.py --port COMx <command>`, or `--sim` for the C library on
+  the PC (`python tools/ctl.py --sim list`)
+- Protocol fuzz under the address sanitiser: `build\host\ctl\Release\ctl_fuzz.exe 200000 7`
+  (also run by `python -m pytest`)
 
 ## Repository layout
 
 ```
 dsp/      include/dsp/  src/           hardware-free C11 library
+ctl/      include/ctl/  src/  fuzz/    control library: parameters, protocol, MIDI, presets
 tests/    unit/  exercises/  ref/      pytest suites and Python reference models
 fw/       cmake/  common/  cm7/  cm4/  firmware for both cores; third_party/ is fetched
-tools/    flash.ps1  console.py  target_test.py
+tools/    flash.ps1  console.py  target_test.py  ctl.py
 hw/       shield-a/                    KiCad project (batch 5)
 docs/     SPEC, plans, PROGRESS, notes/, exercises/, results/
 ```

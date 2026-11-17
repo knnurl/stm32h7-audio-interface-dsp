@@ -4,6 +4,62 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: batch 8a, control core (host part and firmware build)
+
+**Transcripts read:** none listed for 8a in `transcripts_index.md`. All 29 searched for how the
+videos handle potentiometers; the passages in #117, #153 and #58 read and used (#58's 1 % change
+threshold agrees with the pick-up hysteresis here).
+
+**Done**
+- `ctl/`, a hardware-free C11 library beside `dsp/`, built into the M7 image and, on the PC, into
+  `ctl_host.dll` and the sanitised `ctl_fuzz.exe`:
+  - `ctl_params`, `ctl_param_table.c`: 169 parameters in one const table (capacity 192), ids by
+    group, curves linear, log, volume and step.
+  - `ctl_queue`: the hand-off to the audio interrupt; each parameter queued at most once, so it
+    cannot overflow.
+  - `ctl_core`: values, sources, knob ownership with pick-up, change notification, CC out.
+  - `ctl_proto`: protocol version 1 (`docs/notes/control_protocol.md`).
+  - `ctl_midi`: parser and the fixed map on the 40 undefined CC numbers.
+  - `ctl_preset`: 8 presets and a power-on record as a log on two flash sectors, by id.
+- Firmware: `fw/cm7/src/flash_store.c` (bank 2 sectors 6 and 7, ECC-safe reads, cache
+  invalidation); `main.c` answers the protocol on the console, writes the power-on record, sends
+  meters at 30 Hz when asked; new `ptime` command. The bench `list` command is now `cases`. The
+  M4's flash region is 768 KB.
+- `tools/ctl.py`: client over a serial port or `--sim` (the C library on the PC).
+- Notes: `ctl_registry.md`, `knob_pickup.md`, `control_protocol.md`, `midi_map.md`,
+  `preset_store.md`. Exercise: `docs/exercises/EX8a_cc14.md` (checked solvable with a solution
+  that was then removed; 3 of its 9 tests fail with the stub, as intended).
+
+**Found by the tests:** a power-on restore applied the volume before its knob mode (the mode
+ids are higher), so a PC-wins volume was refused and lost; loads now apply the modes first. Two
+test expectations were wrong and the code right: a power cut in a record's padding leaves a good
+record (the padding is erased flash), and a preset load refuses the five knob parameters while
+they are in knob-wins mode.
+
+**Measured (PC)**
+
+| Item | Value | Command |
+|---|---|---|
+| Unit tests | 365 pass | `python -m pytest` |
+| Fuzz under the address sanitiser | 200 000 iterations, 12 MB, clean, 3.4 s | `build\host\ctl\Release\ctl_fuzz.exe 200000 7` |
+| Power cut at every byte of a 928-byte record | old or new preset, never anything else | `test_power_cut_at_every_byte_of_a_write` |
+| Power cut during compaction (every 97th byte, and mid-erase) | every slot kept | `test_power_cut_during_compaction` |
+| Knob re-attach, largest step | 0.288 dB on the +/-12 dB tone range | `test_no_jump_on_re_attach_from_either_side` |
+| M7 image | 67.2 KB flash, 64.9 KB DTCM (was 42.8 and 57) | `cmake --build --preset fw` |
+
+**Not done, needs the board:** `tools/ctl.py --port COMx` get, set, presets, power cycle;
+`ptime`; the read path's ECC masking with a supply cut during a write (SPEC V18); erase time and
+the M7's fetches during it (V17, V19). The audio-undisturbed check needs batch 2.
+
+**For the owner (the plan's stop for 8a)**
+1. Review the parameter table (`python tools/ctl.py --sim list`, or `ctl/src/ctl_param_table.c`)
+   and the MIDI map (`docs/notes/midi_map.md`): names, ranges, defaults, curves, which 40
+   parameters get a CC.
+2. Decision-log rows to confirm: two flash sectors instead of one; mute never restored; the room
+   and headphone corrections, knob modes and tone corners as settings rather than preset
+   contents.
+3. Exercise 8a: `docs/exercises/EX8a_cc14.md`.
+
 ## 2026-11-17: owner decisions after batch 6; repository pushed
 
 **Transcripts read:** none (no new block).

@@ -16,7 +16,7 @@ One batch is one session. It ends with the build clean, the tests passing, its n
 | 5 | Rev A boards: main board and control panel, five stages | No | 0 | Outline drafted |
 | 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Host part done 2026-11-17; target part open |
 | 7 | Bring-up of both boards, lab session | Both boards, lab analyser | 4, 5 | Not started |
-| 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console for the target part) | 1 | Not started |
+| 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console for the target part) | 1 | Host part and firmware build done 2026-11-17; board run open |
 | 8b | Effect slot, reverb and tempo | Host part: none. Target part: Nucleo | 3, 6 | Not started |
 | 8c | The full signal path on the boards | Both boards | 6, 7, 8a, 8b | Not started |
 | 8d | Control panel firmware | Panel board, or a breadboard | 8a (7 for the real panel) | Not started |
