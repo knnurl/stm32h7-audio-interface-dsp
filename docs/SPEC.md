@@ -114,7 +114,7 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 900 | estimate | 9 |
 | Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8c |
 | Tone: three bands, stereo | 60 | estimate | 3 |
-| Effect slot: the dearest single effect, stereo | 250 | estimate (self-test case fx_overdrive_f32; docs/results/b8b_cycles.md) | 8b |
+| Effect slot: the dearest single effect, stereo | 250 | estimate (self-test cases fx_overdrive_f32, and fx_echo96_f32 for the 96 kHz echo; docs/results/b8b_cycles.md) | 8b |
 | Metering | 100 | estimate | 8c |
 | **Total** (two strips) | **3940** | estimate | |
 
@@ -256,8 +256,8 @@ All in `dsp/`, hardware-free C11, API `dsp_<block>_<fmt>_init / _reset / _proces
 | `dsp_limiter` | f32 | Look-ahead, true-peak detection at 4x | the look-ahead, reported | 6 |
 | `dsp_oversample`, `dsp_saturate` | f32 | Polyphase half-band 2x and 4x; soft waveshaper | filter group delay, reported | 6 |
 | `dsp_mixer`, `dsp_meter`, `dsp_crossfeed` | f32 | Matrix mixer; BS.1770 meters; crossfeed | 0 | 8c |
-| `dsp_reverb` | f32 | 8-line FDN on the mixer's send and return | pre-delay only | 8b |
-| `dsp_delayline`, `dsp_lfo`, `dsp_svf` | f32 | Delay line of any length with linear, Lagrange and all-pass reads; 32-bit phase LFO with tempo sync; TPT state-variable filter | n/a | 8b |
+| `dsp_reverb` | f32 | 8-line FDN on the mixer's send and return, 50 ms pre-delay, decay anchored at DC and 8 kHz | pre-delay only | 8b |
+| `dsp_delayline`, `dsp_lfo`, `dsp_svf` | f32 | Delay line of any length with linear, Lagrange and all-pass reads, and a 16-bit line for the echo; 32-bit phase LFO with tempo sync; TPT state-variable filter | n/a | 8b |
 | `dsp_tone` | f32 | Low shelf, mid peak, high shelf from `dsp_biquad`, +/-12 dB, smoothed | 0 | 3 |
 | `dsp_fx_*`, `dsp_fxslot` | f32 | Effect slot: echo, chorus, flanger, phaser, tremolo, sweep filter, overdrive, bit crusher; switching with fades and trails | 0; the overdrive 46.5 samples | 8b |
 | `dsp_pconv` | f32 | Uniformly partitioned FFT convolution | one partition | 9 |
@@ -385,4 +385,9 @@ Settled, with the source:
 | 2026-11-17 | FX AMOUNT macros as proposed in PLAN_BATCHES 8b.2; echo time changes glide over 50 ms | Proposals built pending the owner's review |
 | 2026-11-17 | Reverb: 8-line FDN, Hadamard feedback, prime lengths 19.3 to 47.9 ms, Jot absorbent filters, two modulated lines | Measured: T60 within 3.7 %; Hadamard reaches echo density 0.9 at 405 ms on the model, Householder not within 0.5 s |
 | 2026-11-17 | Large self-test buffers live in AXI SRAM (`.axi_bss`) on the target, where the real delay lines go | Cycle counts must reflect the real memory; DTCM went from 107 KB to 76 KB of 128 |
+| 2026-11-17 | Echo lines 16-bit (2^13 per 1.0, saturating, no dither); echo core at fs / 2 above 48 kHz between the 83-tap half-bands; resting delay in whole samples | Owner chose 16-bit at 48 kHz; measured: 141 KB for 0.75 s, repeat within 1 sample of the set time, passband 0.001 dB to 18 kHz, image -113 dB |
+| 2026-11-17 | Echo quantiser rounds toward zero below 16 LSB (nearest above) | Owner: "as you recommend". Measured: pure nearest hung a feedback-0.95 tail at -59 dBFS forever; this ends every tail, at -74.2 instead of -79.5 dBFS error. `DSP_DELAYLINE_S16_SNAP_LSB` 0 restores pure nearest |
+| 2026-11-17 | Reverb pre-delay up to 50 ms, stereo; T_hi anchored at 8 kHz | Owner ("as you recommend"); memory 140 KB at 96 kHz; Schroeder T60 within 3.5 % at 500 Hz, 4 and 8 kHz |
+| 2026-11-17 | Reverb matrix: Hadamard kept; the density claim withdrawn; input diffusers not built | Measured with the 8 kHz anchor: Hadamard and Householder close and mixed. Both left to the owner's ears |
+| 2026-11-17 | Accepted as built: the FX AMOUNT macro table, glide on echo time changes, the 60 ms dry gap on an effect change, two preset flash sectors, mute never restored, a four-beat tempo window | Owner: "as you recommend" |
 

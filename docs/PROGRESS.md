@@ -4,6 +4,46 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: batch 8b follow-up (owner's decisions: 16-bit echo, reverb pre-delay and T_hi)
+
+**Transcripts read:** none new.
+
+**Decisions:** the owner chose a 16-bit echo at 48 kHz and "the rest as you recommend": FX
+AMOUNT macros, glide, the 60 ms dry gap, two preset sectors, mute never restored and a four-beat
+tempo window accepted as built; reverb pre-delay to 50 ms; T_hi anchored at 8 kHz; diffusers
+and the reverb matrix left for listening. SPEC decision log has the rows.
+
+**Done**
+- Echo: 16-bit lines (2^13 per 1.0, saturating, no dither), core at fs up to 48 kHz and at fs / 2
+  at 88.2 and 96 kHz between the 83-tap half-bands, the resampling latency taken off the delay;
+  the pool stays float, int16 accessed by memcpy (no aliasing rule broken). Self-test case
+  fx_echo96_f32.
+- Reverb: pre-delay up to 50 ms; T_hi anchored at 8 kHz (0.45 fs if lower).
+- `ctl/`: `rev_predelay_ms` 0 to 50 ms; `rev_hf_ratio` labelled for 8 kHz.
+
+**Fixed, each with a test:** pure round-to-nearest trapped echo tails in a -59 dBFS limit cycle
+(now toward zero below 16 LSB; kept on the main session's recommendation); a resting fractional
+read dulled the repeats (-5.3 dB at 18 kHz, also in the first float echo; now whole samples at
+rest); reverb DC gain rounding at extreme settings. Four test expectations were wrong and the
+code right (impulse-based passband, window scalloping, a single-tone fit leaking, an 8 kHz band
+compared with a centre-frequency value). One note claim (Hadamard builds density faster) was
+withdrawn rather than the test loosened.
+
+**Measured (PC)**
+
+| Item | Value | Command |
+|---|---|---|
+| Unit tests | 507 pass | `python -m pytest` |
+| Echo error, no feedback / feedback 0.95 | -88.4 / -74.2 dBFS RMS; tails end in exact zero | `python -m pytest tests/unit/test_fx_echo16.py -s` |
+| Echo at 96 kHz: repeat time, passband to 18 kHz, image | within 1 sample; 0.001 dB; -113 dB | same |
+| Reverb T60 by octave, 500 Hz / 4 kHz / 8 kHz | within 3.5 % of design | `python -m pytest tests/unit/test_reverb.py -s` |
+| AXI SRAM at 96 kHz: echo + reverb + room FIR estimate | 420 KB of 512 | `python tools/studies/b8b_memory.py` |
+| M7 image | 90.8 KB flash, 80.5 KB DTCM, 30 KB AXI | `cmake --build --preset fw` |
+
+**For the owner:** by ear, once audio runs: the reverb matrix (Hadamard or Householder) and
+input diffusers; the echo's rounding rule if the tails ever sound wrong. Exercises open: EX1,
+EX3, EX6, EX8a, EX8b.
+
 ## 2026-11-17: batch 8b, host part (delay line, LFO, SVF, effects, slot, reverb)
 
 Written by a second agent on branch `b8b` in a worktree, in parallel with 8a, and merged.
