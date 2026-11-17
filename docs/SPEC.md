@@ -107,26 +107,35 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Input strip, each: trim, HPF, 4-band PEQ | 110 | estimate | 3 |
 | Input strip, each: gate and compressor | 120 | estimate | 6 |
 | Input strip, each: saturation at 4x oversampling | 400 | estimate | 6 |
-| Monitor mixer | 60 | estimate | 8 |
-| Reverb, 8-line FDN | 350 | estimate | 8 |
+| Monitor mixer | 60 | estimate | 8c |
+| Reverb, 8-line FDN | 350 | estimate | 8b |
 | Speaker stage: PEQ and delay, stereo | 210 | estimate | 3 |
 | Speaker stage: true-peak limiter, stereo | 300 | estimate | 6 |
 | Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 900 | estimate | 9 |
-| Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8 |
+| Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8c |
 | Tone: three bands, stereo | 60 | estimate | 3 |
-| Effect slot: the dearest single effect, stereo | 250 | estimate | 8 |
-| Metering | 100 | estimate | 8 |
+| Effect slot: the dearest single effect, stereo | 250 | estimate | 8b |
+| Metering | 100 | estimate | 8c |
 | **Total** (two strips) | **3940** | estimate | |
 
-The estimated total is over the ceiling, by more since the effect slot and tone were added. Nothing is cut on the strength of estimates. If the
-measurements agree, the fallbacks in order are: saturation at 2x oversampling; the room FIR at
-48 kHz; the reverb at 48 kHz. Batch 8 has a gate on this table.
+The estimated total is over the ceiling, by more since the effect slot and tone were added.
+Nothing is cut on the strength of estimates. If the measurements agree, the fallbacks in order
+are: saturation at 2x oversampling; the room FIR at 48 kHz; the reverb at 48 kHz. Batch 8c has a
+gate on this table.
 
-## 4. Hardware rev A: the shield
+## 4. Hardware rev A: main board and control panel
 
-A 4-layer board that plugs onto the Nucleo-H755ZI-Q and carries everything analogue. The draft
-outline is `docs/notes/shield_outline.md`. Batch 5 fills this section in, in five stages:
-part selection, architecture, schematic, layout, order package.
+Two boards (revised 2026-11-17; the earlier 100 by 100 mm "shield" is replaced):
+
+- **Main board**, 4 layers, about 160 by 100 mm, with the Nucleo-H755ZI-Q plugged in underneath.
+  It carries everything analogue and every rear connector, on its rear edge, including USB-C.
+- **Control panel board** behind the front panel, on a ribbon: the knobs, buttons, LEDs and the
+  headphone jack.
+
+The drafts are `docs/notes/shield_outline.md` (sections 9 to 11) and
+`docs/notes/device_look.svg`. Batch 5 fills this section in, in five stages: part selection,
+architecture, schematic, layout, order package. The enclosure is designed later, from the
+mechanical interface table batch 5 produces.
 
 Blocks: 12 V input with protection; analogue rails and digital rails; two audio oscillators
 (22.5792 and 24.576 MHz) selected by GPIO; converters on one TDM bus; two balanced line input
@@ -134,7 +143,9 @@ stages; a balanced monitor output pair with mute; a headphone amplifier; optical
 out; a front-panel header; the Nucleo's supply.
 
 Open choices, settled in batch 5: the converter; the dBu value of 0 dBFS; how the analogue rails
-are made; whether the shield mounts on the Zio sockets or the morpho rows; who routes the board.
+are made; whether the main board meets the Nucleo on the Zio sockets or the morpho rows; whether
+the headphone amplifier sits on the main board or the panel board; seven ADC pins or a
+multiplexer for the potentiometers. Decided: the owner routes the analogue and clock nets.
 
 ## 5. Hardware rev B: the delta
 
@@ -199,7 +210,7 @@ The M7 runs audio and USB audio. The M4 is parked in stop mode from batch 1 (a m
 option bytes changed). In batch 11 it takes control, the protocol and the front panel under
 FreeRTOS, talking to the M7 through a mailbox in SRAM4 guarded by a hardware semaphore.
 
-### 6.7 Parameters and control (batch 8)
+### 6.7 Parameters and control (batches 8a and 8d)
 
 A registry declares every parameter once: id, label, unit, range, default, smoothing time. The
 control protocol over the USB serial port reads and writes by id. Parameter changes reach the
@@ -221,7 +232,7 @@ Each parameter that has a potentiometer has a setting, held on the PC side of th
 **knob wins** (the PC shows the value, read-only) or **PC wins** (the PC and MIDI set the value;
 the knob takes over again only once it is turned through the current value, so nothing jumps).
 
-Presets: the full parameter set saved to and recalled from flash (batch 8). A recalled preset
+Presets: the full parameter set saved to and recalled from flash (batch 8a). A recalled preset
 behaves like "PC wins" for the parameters that have knobs.
 
 Volume is applied in the DSP on rev A. That costs converter resolution at low volume; whether
@@ -244,9 +255,11 @@ All in `dsp/`, hardware-free C11, API `dsp_<block>_<fmt>_init / _reset / _proces
 | `dsp_env`, `dsp_comp`, `dsp_gate` | f32 | Detectors; feed-forward log-domain compressor; gate with hysteresis and hold | 0 | 6 |
 | `dsp_limiter` | f32 | Look-ahead, true-peak detection at 4x | the look-ahead, reported | 6 |
 | `dsp_oversample`, `dsp_saturate` | f32 | Polyphase half-band 2x and 4x; soft waveshaper | filter group delay, reported | 6 |
-| `dsp_mixer`, `dsp_reverb`, `dsp_meter`, `dsp_crossfeed` | f32 | Matrix mixer; 8-line FDN; BS.1770 meters; crossfeed | 0 | 8 |
+| `dsp_mixer`, `dsp_meter`, `dsp_crossfeed` | f32 | Matrix mixer; BS.1770 meters; crossfeed | 0 | 8c |
+| `dsp_reverb` | f32 | 8-line FDN on the mixer's send and return | pre-delay only | 8b |
+| `dsp_delayline`, `dsp_lfo`, `dsp_svf` | f32 | Interpolated delay line; LFO with tempo sync; state-variable filter | n/a | 8b |
 | `dsp_tone` | f32 | Low shelf, mid peak, high shelf from `dsp_biquad`, +/-12 dB, smoothed | 0 | 3 |
-| `dsp_fx_*` | f32 | Effect slot: echo, chorus, flanger, phaser, tremolo, sweep filter, overdrive, bit crusher | 0, or reported | 8 |
+| `dsp_fx_*`, `dsp_fxslot` | f32 | Effect slot: echo, chorus, flanger, phaser, tremolo, sweep filter, overdrive, bit crusher; switching with fades and trails | 0, or reported | 8b |
 | `dsp_pconv` | f32 | Uniformly partitioned FFT convolution | one partition | 9 |
 | `dsp_asrc` | f32 | Polyphase interpolator with a rate-tracking loop | filter group delay | 10 |
 
@@ -287,6 +300,8 @@ sides until batch 3 measures both and decides.
 | V13 | The Nucleo's user USB data pins can be driven from a socket on the main board (solder bridges, the Nucleo's USB power switch) | Batch 5, stage 2 |
 | V14 | The stack height (Nucleo, headers, main board, tallest rear connector) fits a 55 mm high case | Batch 5, stage 2 |
 | V15 | The MCU's built-in USB bootloader can update the firmware through the rear USB port | Batch 4 |
+| V16 | The OTG_FS peripheral has the endpoints and FIFO space for UAC2, MIDI and CDC at once | Batch 4, first step |
+| V17 | Flash bank 2's last sector size, and that writing it does not stall the M7 running from bank 1 | Batch 8a |
 | V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running | Batch 1, on the board |
 
 Settled, with the source:
@@ -342,4 +357,7 @@ Settled, with the source:
 | 2026-11-17 | Front-panel order confirmed; monitor volume is the large knob | Owner |
 | 2026-11-17 | `dsp_gain` snaps to its target once the float32 recursion has stalled; its coefficient uses `expm1` | The stall was measured at 3.6e-6 (-109 dBFS); a settled gain should equal what was set |
 | 2026-11-17 | pytest pinned to 8.3.5 | 9.2.0 fails with an internal error on the owner's Python 3.10 |
+| 2026-11-17 | Batch 8 split into 8a (control core), 8b (effect slot, reverb, tempo), 8c (full signal path) and 8d (control panel firmware) | Too large for one session; 8a and the host parts of 8b need no audio hardware |
+| 2026-11-17 | Control code (`ctl/`) is hardware-free C under the same rules as `dsp/`, tested on the PC | Knob ownership, the protocol, MIDI and presets can then be proven before any board exists |
+| 2026-11-17 | Presets in an append-only log in the last sector of flash bank 2 | The M7 runs from bank 1, so writing presets should not interrupt audio (SPEC V17) |
 

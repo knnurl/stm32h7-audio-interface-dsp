@@ -3,6 +3,33 @@
 The handoff log, newest entry first. Each entry: what was done, measured numbers, exact
 commands, what the owner decides or does next.
 
+## 2026-11-17: batch plan rewritten with the feature review
+
+`docs/PLAN_BATCHES.md` now carries the owner's additions inside the batches instead of in a
+side table:
+
+- Batch 3: the tone control `dsp_tone_f32` (corner frequencies 100 Hz, 1 kHz, 10 kHz proposed;
+  the owner confirms), bit-exact when flat.
+- Batch 4: a composite USB device (UAC2, USB MIDI, CDC) with an endpoint budget checked first,
+  the record-source switch, and Ableton tests with written procedures.
+- Batch 5: a main board (160 by 100 mm, Nucleo underneath, rear connectors, USB-C) and a control
+  panel board, in two KiCad projects; a mechanical interface table for the later enclosure.
+- Batch 8 split into four parts, each specified in full: 8a control core (registry, knob
+  ownership, text protocol, MIDI mapping, presets in flash bank 2), 8b effect slot (8 effects
+  with a proposed FX AMOUNT macro table), reverb and tempo, 8c the full signal path, 8d the
+  control panel firmware.
+
+SPEC (sections 3.4, 4, 6.7, 7, 9 and the decision log), `docs/PLAN.md` and the README follow it.
+New dependency named for test tools only: `mido` with `python-rtmidi`, from batch 4.
+
+For the owner:
+1. The proposals to confirm when their batch starts: tone corner frequencies (3); the FX AMOUNT
+   macro per effect and the echo's glide on tempo change (8b); mute and dim on the monitors only,
+   the volume law, and the button mapping (8c, 8d).
+2. The memory budget in 8b.6 is over the M7's 512 KB of AXI SRAM by the estimates: a decision
+   comes when 8b starts, from measured sizes.
+3. Without hardware, the next batches that can run are the host parts of 3, 6 and 8b, and 8a.
+
 ## 2026-11-17: batch 1, foundation (built; not yet run on the board)
 
 **Done**

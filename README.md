@@ -22,11 +22,11 @@ and the front panel.
 |---|---|---|
 | 0 | Project documents | Done |
 | 1 | Host library, test harness, firmware skeleton | Built; target run waits for the board |
-| 2 | Audio pass-through on breakouts | Not started |
-| 3 | Filters, float and Q31 | Not started |
-| 4 | USB audio, full speed | Not started |
-| 5 | Shield rev A design | Outline drafted |
-| 6 to 13 | See `docs/PLAN.md` | Not started |
+| 2 | Audio pass-through on breakouts | Waiting for the modules |
+| 3 | Filters, float and Q31, tone control | Not started |
+| 4 | USB audio, USB MIDI, Ableton | Not started |
+| 5 | Rev A boards: main board and control panel | Outline drafted |
+| 6 to 13 | See `docs/PLAN.md` (batch 8 is in four parts, 8a to 8d) | Not started |
 
 No measured figures yet. They appear here, with the command that reproduces each, as the batches
 produce them.
