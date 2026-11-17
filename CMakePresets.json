@@ -1,0 +1,33 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {"major": 3, "minor": 25, "patch": 0},
+    "configurePresets": [
+        {
+            "name": "host",
+            "displayName": "DSP library for the PC (MSVC)",
+            "generator": "Visual Studio 17 2022",
+            "architecture": "x64",
+            "binaryDir": "${sourceDir}/build/host"
+        },
+        {
+            "name": "host-ninja",
+            "displayName": "DSP library for the PC (any compiler, used by CI on Linux)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/host",
+            "cacheVariables": {"CMAKE_BUILD_TYPE": "Release"}
+        },
+        {
+            "name": "fw",
+            "displayName": "Firmware, both cores (arm-none-eabi-gcc)",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/fw",
+            "toolchainFile": "${sourceDir}/fw/cmake/arm-none-eabi.cmake",
+            "cacheVariables": {"CMAKE_BUILD_TYPE": "RelWithDebInfo"}
+        }
+    ],
+    "buildPresets": [
+        {"name": "host-release", "configurePreset": "host", "configuration": "Release"},
+        {"name": "host-ninja", "configurePreset": "host-ninja"},
+        {"name": "fw", "configurePreset": "fw"}
+    ]
+}
