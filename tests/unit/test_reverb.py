@@ -45,18 +45,41 @@ def expected_t60(rev, f, fs=FS):
     return float(np.mean(t)), float(np.ptp(t))
 
 
-def schroeder_t60(h, f, fs=FS):
-    """Octave band around f, backward-integrated energy, slope fitted from -5 to -25 dB."""
-    sos = signal.butter(4, [f / math.sqrt(2), f * math.sqrt(2)], btype="band", fs=fs,
-                        output="sos")
-    y = signal.sosfilt(sos, h.astype(np.float64))
-    edc = np.cumsum(y[::-1] ** 2)[::-1]
-    edc_db = 10 * np.log10(edc / edc[0])
+def band_sos(f, fs=FS):
+    return signal.butter(4, [f / math.sqrt(2), f * math.sqrt(2)], btype="band", fs=fs,
+                         output="sos")
+
+
+def fit_t60(edc_db, fs):
     i5 = np.argmax(edc_db <= -5)
     i25 = np.argmax(edc_db <= -25)
     t = np.arange(i5, i25) / fs
-    slope = np.polyfit(t, edc_db[i5:i25], 1)[0]
-    return -60.0 / slope
+    return -60.0 / np.polyfit(t, edc_db[i5:i25], 1)[0]
+
+
+def designed_band_t60(rev, f, fs=FS, seconds=4.0):
+    """The decay the design gives an octave band measured the same way: every frequency in the
+    band decays at its own designed rate (the mean over the lines), weighted by the band
+    filter's power; that sum of exponentials is backward-integrated and fitted from -5 to
+    -25 dB like the measurement. Comparing a band to the design value at its centre is wrong
+    where the decay time changes fast across the band (5.7 to 11.3 kHz for the 8 kHz band:
+    measured +11 % against the centre value, the first version of this test)."""
+    sos = band_sos(f, fs)
+    freqs = np.geomspace(f / 2, min(f * 2, 0.49 * fs), 200)
+    _, h = signal.sosfreqz(sos, worN=freqs, fs=fs)
+    w = np.abs(h) ** 2 * freqs  # power per log-spaced point: df is proportional to f
+    t60 = np.array([expected_t60(rev, fk, fs)[0] for fk in freqs])
+    t = np.arange(int(seconds * fs)) / fs
+    energy = (w[:, None] * 10 ** (-6 * t[None, :] / t60[:, None])).sum(axis=0)
+    edc = np.cumsum(energy[::-1])[::-1]
+    return fit_t60(10 * np.log10(edc / edc[0]), fs)
+
+
+def schroeder_t60(h, f, fs=FS):
+    """Octave band around f, backward-integrated energy, slope fitted from -5 to -25 dB."""
+    y = signal.sosfilt(band_sos(f, fs), h.astype(np.float64))
+    edc = np.cumsum(y[::-1] ** 2)[::-1]
+    return fit_t60(10 * np.log10(edc / edc[0]), fs)
 
 
 def test_lengths_are_distinct_primes(lib8):
@@ -74,19 +97,47 @@ def test_memory_check(lib8):
     assert lib8.dsp_reverb_f32_init(ctypes.byref(b8.DspReverbF32()), FS, dsplib.f32(mem),
                                     need - 1) == -1
     print(f"memory: {need} floats at 48 kHz, {lib8.dsp_reverb_f32_mem_needed(96000.0)} at 96 kHz")
+    assert lib8.dsp_reverb_f32_mem_needed(96000.0) == 35718  # 50 ms stereo pre-delay: 9608
 
 
 @pytest.mark.parametrize("low,high", [(2.0, 0.8), (1.0, 1.0), (4.0, 1.5)])
 def test_decay_time_by_schroeder_integration(lib8, low, high):
-    """Within 10 % of the designed decay at 500 Hz and 4 kHz (8b.4)."""
+    """Within 10 % of the designed decay at 500 Hz, 4 kHz and 8 kHz (8b.4; 8 kHz since T_hi is
+    anchored there, owner 2026-11-17)."""
     r = make(lib8, low=low, high=high)
     hl, _ = impulse_response(lib8, r, 1.5 * low)
-    for f in (500.0, 4000.0):
-        want, spread = expected_t60(r.state, f)
+    for f in (500.0, 4000.0, 8000.0):
+        point, spread = expected_t60(r.state, f)
+        want = designed_band_t60(r.state, f, seconds=1.5 * low)
         got = schroeder_t60(hl, f)
-        print(f"T60 set {low}/{high} s, at {f:g} Hz: designed {want:.3f} s (lines within "
-              f"{spread:.3f}), measured {got:.3f} s")
+        print(f"T60 set {low}/{high} s, octave at {f:g} Hz: designed {want:.3f} s (at the "
+              f"centre {point:.3f}, lines within {spread:.3f}), measured {got:.3f} s")
         assert abs(got / want - 1) < 0.10
+
+
+@pytest.mark.parametrize("fs", [44100.0, 48000.0, 96000.0])
+@pytest.mark.parametrize("low,high", [(2.0, 0.5), (20.0, 0.05), (1.0, 1.0)])
+def test_high_decay_is_anchored_at_8_khz(lib8, fs, low, high):
+    """The absorbent filter's design: each line's loss per second is 60 / T_lo dB at DC and
+    60 / T_hi dB at 8 kHz exactly; the pole stays in [0, 1) and the gain never exceeds the DC
+    gain (so the loop gain is below 1)."""
+    r = make(lib8, fs=fs, low=low, high=high)
+    rv = r.state
+    assert rv.high_anchor_hz == pytest.approx(8000.0)
+    for f, want in ((0.0, low), (8000.0, high)):
+        got, spread = expected_t60(rv, f, fs) if f > 0 else expected_t60(rv, 1e-6, fs)
+        assert got == pytest.approx(want, rel=2e-3) and spread < 2e-3 * want, (f, got, spread)
+    for i in range(8):
+        a1, b0 = rv.a1[i], rv.b0[i]
+        assert 0.0 <= a1 < 1.0
+        assert b0 / (1 - a1) < 1.0  # the DC gain, the largest
+
+
+def test_anchor_clamps_below_045_fs(lib8):
+    r = make(lib8, fs=16000.0, low=2.0, high=0.5)
+    assert r.state.high_anchor_hz == pytest.approx(0.45 * 16000.0)
+    got, _ = expected_t60(r.state, 0.45 * 16000.0, 16000.0)
+    assert got == pytest.approx(0.5, rel=2e-3)
 
 
 def test_no_growth_over_a_minute_at_the_longest_decay(lib8):
@@ -144,19 +195,23 @@ def test_matches_the_model_without_modulation(lib8):
 
 
 def test_matrix_choice(lib8):
-    """The design note's reason for Hadamard: echo density builds faster than with a
-    Householder matrix of the same order (measured on the model, same lengths and filters)."""
+    """Hadamard against Householder on the model, same lengths and filters: the echo density at
+    50 to 300 ms and when it first reaches 0.9, printed for docs/notes/reverb.md. With the
+    Nyquist-anchored filters Hadamard was clearly ahead and this test asserted it; with the
+    8 kHz anchor the two are close and mixed, so the claim was withdrawn from the note (not the
+    test loosened to pass). What is asserted is what holds for both: both matrices are
+    orthogonal, so the loop is lossless before the filters."""
     r = make(lib8, low=2.0, high=1.0)
     rv = r.state
     x = np.zeros(int(0.5 * FS))
     x[0] = 1.0
-    times = {}
     for name, m in (("Hadamard", ref.hadamard8()), ("Householder", ref.householder8())):
+        assert np.allclose(m @ m.T, np.eye(8))
         hl, _ = ref.reverb(x, np.zeros_like(x), list(rv.len), list(rv.b0), list(rv.a1), 0, m)
         d, hop = ned(hl)
-        times[name] = int(np.argmax(d >= 0.9)) * hop / FS * 1000 if np.any(d >= 0.9) else 1e9
-    print("echo density 0.9 reached at (ms):", times)
-    assert times["Hadamard"] < times["Householder"]
+        at = [round(float(d[int(ms * FS / 1000 / hop)]), 2) for ms in (50, 100, 150, 200, 300)]
+        first = int(np.argmax(d >= 0.9)) * hop / FS * 1000 if np.any(d >= 0.9) else None
+        print(f"{name}: density at 50/100/150/200/300 ms {at}; 0.9 first at {first} ms")
 
 
 def test_left_and_right_are_decorrelated(lib8):
@@ -167,11 +222,13 @@ def test_left_and_right_are_decorrelated(lib8):
     assert abs(c) < 0.2
 
 
-def test_predelay(lib8):
-    r = make(lib8, predelay_ms=25.0)
+@pytest.mark.parametrize("ms,expect_ms", [(25.0, 25.0), (50.0, 50.0), (80.0, 50.0)])
+def test_predelay(lib8, ms, expect_ms):
+    """Pre-delay up to 50 ms (owner 2026-11-17); longer settings clamp to 50."""
+    r = make(lib8, predelay_ms=ms)
     hl, hr = impulse_response(lib8, r, 0.2)
     first = int(np.flatnonzero(np.abs(hl) + np.abs(hr) > 0)[0])
-    assert first == round(0.025 * FS) + r.state.len[0]
+    assert first == round(expect_ms * 0.001 * FS) + r.state.len[0]
 
 
 def test_deterministic(lib8):

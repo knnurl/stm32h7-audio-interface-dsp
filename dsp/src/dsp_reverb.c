@@ -7,7 +7,8 @@ static const float kBaseMs[kDspReverbLines] = {19.3f, 23.9f, 27.1f, 31.7f,
 static const int32_t kModLine[2] = {2, 6};
 static const float kModHz[2] = {0.31f, 0.43f};
 static const float kModMs = 0.3f;
-static const float kMaxPredelayMs = 100.0f;
+static const float kMaxPredelayMs = 50.0f; /* Owner, 2026-11-17: was 100 ms. */
+static const double kHighAnchorHz = 8000.0;  /* T_hi is the decay here (owner, 2026-11-17). */
 /* Output sign patterns: orthogonal rows, so left and right are decorrelated. */
 static const float kOutL[kDspReverbLines] = {1, 1, -1, -1, 1, 1, -1, -1};
 static const float kOutR[kDspReverbLines] = {1, -1, 1, -1, -1, 1, -1, 1};
@@ -71,6 +72,9 @@ int32_t dsp_reverb_f32_init(DspReverbF32 *rev, float sample_rate_hz, float *mem,
     p += pre_len(sample_rate_hz);
     dsp_delayline_f32_init(&rev->pre[1], p, pre_len(sample_rate_hz));
     rev->mod_depth = kModMs * 0.001f * sample_rate_hz;
+    rev->high_anchor_hz = kHighAnchorHz < 0.45 * (double)sample_rate_hz
+                              ? (float)kHighAnchorHz
+                              : 0.45f * sample_rate_hz;
     for (int k = 0; k < 2; ++k) {
         dsp_lfo_f32_init(&rev->mod[k], sample_rate_hz, kDspLfoSine);
         dsp_lfo_f32_set_rate(&rev->mod[k], kModHz[k]);
@@ -100,6 +104,23 @@ void dsp_reverb_f32_reset(DspReverbF32 *rev, int32_t clear_memory) {
     }
 }
 
+/* The pole a1 of b0 / (1 - a1 z^-1), b0 = g_lo (1 - a1), whose magnitude at f is r times its
+ * magnitude at DC (0 < r <= 1). From r^2 |1 - a1 e^-jw|^2 = (1 - a1)^2:
+ *   A a1^2 + B a1 + A = 0,  A = r^2 - 1 (<= 0),  B = 2 (1 - r^2 cos w);
+ * its roots are reciprocal, and the one inside the unit circle is a1 = -2A / (B + sqrt(B^2 - 4A^2)),
+ * in [0, 1). B^2 - 4A^2 = (B - 2A)(B + 2A) = 4 (2 - r^2 (1 + cos w)) r^2 (1 - cos w) >= 0 for
+ * r <= 1. The filter peaks at DC, so the loop gain stays g_lo < 1. */
+static double absorbent_a1(double r, double f_hz, double fs_hz) {
+    if (!(r < 1.0)) {
+        return 0.0;
+    }
+    const double c = cos(6.283185307179586 * f_hz / fs_hz);
+    const double a = r * r - 1.0;
+    const double b = 2.0 * (1.0 - r * r * c);
+    const double disc = b * b - 4.0 * a * a;
+    return -2.0 * a / (b + sqrt(disc > 0.0 ? disc : 0.0));
+}
+
 void dsp_reverb_f32_set_decay(DspReverbF32 *rev, float rt60_low_s, float rt60_high_s) {
     if (!(rt60_low_s >= 0.1f)) {
         rt60_low_s = 0.1f;
@@ -117,9 +138,13 @@ void dsp_reverb_f32_set_decay(DspReverbF32 *rev, float rt60_low_s, float rt60_hi
         const double l = (double)rev->len[i] / (double)rev->sample_rate_hz;
         const double g_lo = pow(10.0, -3.0 * l / (double)rt60_low_s);
         const double g_hi = pow(10.0, -3.0 * l / (double)rt60_high_s);
-        const double a1 = (g_lo - g_hi) / (g_lo + g_hi);
-        rev->a1[i] = (float)a1;
-        rev->b0[i] = (float)(g_lo * (1.0 - a1));
+        const double a1 = absorbent_a1(g_hi / g_lo, rev->high_anchor_hz, rev->sample_rate_hz);
+        /* b0 from the float32 a1, not the double one: with a1 near 1 (a long low decay and a
+         * short high one) the rounding of a1 alone moved the DC gain b0 / (1 - a1), and T_lo by
+         * up to 0.35 % (measured at 20 s / 0.05 s, 96 kHz). This keeps the DC gain exact. */
+        const float a1f = (float)a1;
+        rev->a1[i] = a1f;
+        rev->b0[i] = (float)(g_lo * (1.0 - (double)a1f));
     }
 }
 

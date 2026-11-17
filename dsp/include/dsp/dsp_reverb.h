@@ -15,16 +15,18 @@
  * next prime number of samples at the running rate, so the lengths are mutually prime at every
  * rate and no two lines' echoes keep coinciding.
  * Absorbent filter per line (Jot): a one-pole low-pass y = b0 x + a1 y1 whose gain at DC is
- * g_lo = 10^(-3 L / (fs T_lo)) and at Nyquist g_hi = 10^(-3 L / (fs T_hi)):
- *   a1 = (g_lo - g_hi) / (g_lo + g_hi),  b0 = g_lo (1 - a1).
- * Every line then loses 60 dB in T_lo at low frequencies and in T_hi at high ones; in between
- * the decay time moves smoothly from one to the other.
+ * g_lo = 10^(-3 L / (fs T_lo)) and at the high anchor (8 kHz, or 0.45 fs if lower) is
+ * g_hi = 10^(-3 L / (fs T_hi)); b0 = g_lo (1 - a1), and a1 solves the quadratic in
+ * dsp_reverb.c (owner's decision 2026-11-17: T_hi at 8 kHz, not at Nyquist, where the decay
+ * at 4 kHz stayed close to T_lo). Every line then loses 60 dB in T_lo at low frequencies and in
+ * T_hi at 8 kHz; above 8 kHz it decays faster still. a1 is in [0, 1) and the filter peaks at
+ * DC, so the loop gain is g_lo < 1.
  * Modulation: lines 2 and 6 are read at L +/- 0.3 ms, at 0.31 and 0.43 Hz, through third-order
  * Lagrange reads, which breaks up the metallic ringing of fixed lengths.
- * Pre-delay: 0 to 100 ms, stereo.
+ * Pre-delay: 0 to 50 ms, stereo (owner's decision 2026-11-17; was 100 ms).
  *
- * Memory: caller-provided; dsp_reverb_f32_mem_needed(fs) floats: 45318 at 96 kHz (177 KB), of
- * which the 100 ms stereo pre-delay is 19208 (75 KB); see docs/results/b8b_memory.md.
+ * Memory: caller-provided; dsp_reverb_f32_mem_needed(fs) floats: 35718 at 96 kHz (140 KB), of
+ * which the 50 ms stereo pre-delay is 9608 (38 KB); see docs/results/b8b_memory.md.
  * Assumptions: stereo; any block size. Latency: the pre-delay. Cycles: not yet measured.
  */
 #ifndef DSP_REVERB_H
@@ -48,6 +50,7 @@ typedef struct {
     float z[kDspReverbLines];
     DspLfoF32 mod[2];
     float mod_depth;    /* Samples. */
+    float high_anchor_hz; /* Where T_hi applies. */
     float rt60_low_s;
     float rt60_high_s;
     int32_t predelay;   /* Samples. */
@@ -59,7 +62,8 @@ int32_t dsp_reverb_f32_mem_needed(float sample_rate_hz);
  * 1 s high, 10 ms pre-delay. */
 int32_t dsp_reverb_f32_init(DspReverbF32 *rev, float sample_rate_hz, float *mem, int32_t mem_len);
 void dsp_reverb_f32_reset(DspReverbF32 *rev, int32_t clear_memory);
-/* Decay times to -60 dB at low and high frequency; low in [0.1, 20] s, high in [0.05, low]. */
+/* Decay times to -60 dB at DC and at the high anchor (8 kHz); low in [0.1, 20] s, high in
+ * [0.05, low]. */
 void dsp_reverb_f32_set_decay(DspReverbF32 *rev, float rt60_low_s, float rt60_high_s);
 void dsp_reverb_f32_set_predelay_ms(DspReverbF32 *rev, float ms);
 void dsp_reverb_f32_process(DspReverbF32 *rev, const float *in_l, const float *in_r,

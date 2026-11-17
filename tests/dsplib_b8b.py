@@ -110,7 +110,8 @@ class DspReverbF32(ctypes.Structure):
     _fields_ = [("sample_rate_hz", c_float), ("line", DspDelaylineF32 * LINES),
                 ("pre", DspDelaylineF32 * 2), ("len", c_int32 * LINES), ("b0", c_float * LINES),
                 ("a1", c_float * LINES), ("z", c_float * LINES), ("mod", DspLfoF32 * 2),
-                ("mod_depth", c_float), ("rt60_low_s", c_float), ("rt60_high_s", c_float),
+                ("mod_depth", c_float), ("high_anchor_hz", c_float), ("rt60_low_s", c_float),
+                ("rt60_high_s", c_float),
                 ("predelay", c_int32), ("max_predelay", c_int32)]
 
 
