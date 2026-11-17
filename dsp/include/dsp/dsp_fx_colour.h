@@ -13,14 +13,15 @@
  *
  * Overdrive, FX AMOUNT = drive, 0 to 36 dB:
  *   one-pole high-pass at 100 Hz (#153's cure for mud) -> optional bias for an asymmetric curve
- *   (0.3 / d added before tanh: even harmonics) -> dsp_saturate at 4x (batch 6) -> one-pole
+ *   (0.3 / d added before tanh: even harmonics) -> dsp_saturate at 2x (batch 6) -> one-pole
  *   high-pass at 10 Hz (removes the bias's DC) -> one-pole low-pass, tone 0 to 1 = 1 kHz to
  *   12 kHz -> level compensation -> output level (dB).
  * Level compensation: a table, built at init, of the gain that keeps a -18 dBFS sine at the same
  * RMS through the symmetric curve at each whole dB of drive (37 entries, interpolated), so
  * turning the drive up changes the character more than the loudness.
- * Latency: 46.5 samples (the 4x oversampler): a cross-fade with the dry signal comb-filters for
- * its 30 ms, which is the slot's fade time.
+ * Latency: 41 samples (the 2x oversampler): a cross-fade with the dry signal comb-filters for
+ * its 30 ms, which is the slot's fade time. 2x, not 4x, since the budget round of 2026-11-17
+ * (owner): it halves the cost; aliasing at 5 kHz -64 dB instead of -131 (b6_aliasing.md).
  *
  * Bit crusher, FX AMOUNT = amount a in [0, 1], applied to the `bits` and `rate` settings:
  *   effective bits = 16 + a (bits - 16), effective rate = fs (rate / fs)^a,

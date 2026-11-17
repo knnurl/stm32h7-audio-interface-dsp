@@ -81,6 +81,8 @@ static const char *result_reason(CtlResult r) {
         return "read-only";
     case kCtlErrNotKnob:
         return "parameter has no knob";
+    case kCtlErrBudget:
+        return "budget: the overdrive and strip saturation cannot run together";
     default:
         return "failed";
     }

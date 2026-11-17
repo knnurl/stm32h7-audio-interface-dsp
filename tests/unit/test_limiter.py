@@ -40,7 +40,12 @@ def run(lib6, lim, left, right=None, block=16):
 
 
 def true_peak_db(y):
-    return 20 * np.log10(np.max(np.abs(signal.resample_poly(y.astype(np.float64), 8, 1))))
+    """True peak by 8x resampling, the first and last 200 input samples' worth left out:
+    resample_poly pads with zeros, and the cut edges ring (Gibbs, up to about 0.77 dB). Found
+    2026-11-17: a quarter-rate sine read 3.77 dB over its sample peak instead of the 3.01 of
+    theory. The batch 6 worst case (the noise bursts) did not change."""
+    up = signal.resample_poly(y.astype(np.float64), 8, 1)
+    return 20 * np.log10(np.max(np.abs(up[8 * 200:-8 * 200])))
 
 
 def hostile():
@@ -80,10 +85,10 @@ def test_true_peak_stays_under_the_set_ceiling(lib6):
     assert max(table.values()) < MARGIN_DB
 
 
-def test_latency_is_lookahead_plus_24(lib6):
+def test_latency_is_lookahead_plus_9(lib6):
     lim = make(lib6, 2.0)
     latency = lib6.dsp_limiter_f32_latency(ctypes.byref(lim))
-    assert latency == 96 + 24
+    assert latency == 96 + 9
     x = np.zeros(1000, dtype=np.float32)
     x[100] = 0.5
     y, _ = run(lib6, lim, x)
@@ -136,7 +141,70 @@ def test_stereo_link(lib6):
     right = np.full(n, 0.5, dtype=np.float32)
     left[2000:2200] = 2.0
     yl, yr = run(lib6, make(lib6, 1.0), left, right)
-    d = 48 + 24
+    d = 48 + 9
     gain_l = yl[2000 + d + 50] / left[2000 + 50]
     gain_r = yr[2000 + d + 50] / right[2000 + 50]
     assert gain_l < 0.5 and abs(gain_l - gain_r) < 1e-6
+
+
+# ---- Sample-peak mode (the headphones) --------------------------------------------------------
+
+SAMPLE_PEAK = 1
+
+
+def make_sp(lib6, lookahead_ms=1.0, release_ms=50.0):
+    lim = b6.DspLimiterF32()
+    lib6.dsp_limiter_f32_init_mode(ctypes.byref(lim), FS, CEILING_DB, lookahead_ms, release_ms,
+                                   SAMPLE_PEAK)
+    return lim
+
+
+@pytest.mark.parametrize("lookahead_ms", [0.0, 2.0, 10.0])
+def test_sample_peak_no_sample_exceeds_the_ceiling(lib6, lookahead_ms):
+    """The threshold is the ceiling itself in this mode (no true-peak margin)."""
+    for name, x in hostile().items():
+        x = x.astype(np.float32)
+        y, yr = run(lib6, make_sp(lib6, lookahead_ms), x, -x)
+        assert max(np.max(np.abs(y)), np.max(np.abs(yr))) <= CEILING * (1 + 1e-6), name
+
+
+def test_sample_peak_latency_is_lookahead_plus_1(lib6):
+    lim = make_sp(lib6, 2.0)
+    latency = lib6.dsp_limiter_f32_latency(ctypes.byref(lim))
+    assert latency == 96 + 1
+    x = np.zeros(1000, dtype=np.float32)
+    x[100] = 0.5
+    y, _ = run(lib6, lim, x)
+    assert np.argmax(np.abs(y)) == 100 + latency and y[100 + latency] == np.float32(0.5)
+
+
+def test_sample_peak_below_the_ceiling_is_bit_exact_and_releases(lib6):
+    lim = make_sp(lib6, 1.0, release_ms=20.0)
+    loud = np.full(4800, 3.0, dtype=np.float32)
+    quiet = (np.random.default_rng(6).uniform(-1, 1, 96000) * 0.5).astype(np.float32)
+    x = np.concatenate([loud, quiet])
+    y, _ = run(lib6, lim, x)
+    d = lib6.dsp_limiter_f32_latency(ctypes.byref(lim))
+    tail = slice(len(x) - 4800, len(x))
+    assert y[tail].tobytes() == x[tail.start - d:tail.stop - d].tobytes()
+
+
+def test_sample_peak_true_peak_overshoot_is_documented(lib6):
+    """Not guaranteed in this mode: the inter-sample peaks. Measured and bounded here so a change
+    shows; the figure is in the header and docs/notes/limiter.md."""
+    worst = -99.0
+    for name, x in hostile().items():
+        x = x.astype(np.float32)
+        y, _ = run(lib6, make_sp(lib6, 1.0), x, x)
+        worst = max(worst, true_peak_db(y[2000:]) - CEILING_DB)
+    print(f"sample-peak mode: worst true peak over the ceiling {worst:.2f} dB")
+    assert worst < 3.2
+
+
+def test_sample_peak_bad_input(lib6):
+    x = (np.random.default_rng(7).uniform(-1, 1, 4800) * 0.5).astype(np.float32)
+    x[1000] = np.nan
+    x[2000] = np.inf
+    y, _ = run(lib6, make_sp(lib6, 1.0), x, x)
+    assert np.all(np.isfinite(y)) and np.max(np.abs(y)) <= CEILING * (1 + 1e-6)
+

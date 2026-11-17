@@ -116,6 +116,33 @@ static void apply(CtlCore *core, size_t index, float v, CtlSource src) {
     }
 }
 
+#define FX_OVERDRIVE 6.0f
+
+static float value_of(const CtlCore *core, const char *name, size_t len) {
+    const int32_t i = ctl_param_find(name, len);
+    return i < 0 ? 0.0f : core->value[i];
+}
+
+/* 1 if writing v to `index` would run the overdrive and a strip's saturation together. */
+static int budget_conflict(const CtlCore *core, size_t index, float v) {
+    const uint16_t id = ctl_param_desc(index)->id;
+    const int strip_sat =
+        value_of(core, "in1_sat_on", 10u) >= 0.5f || value_of(core, "in2_sat_on", 10u) >= 0.5f;
+    const int fx_on = value_of(core, "fx_on", 5u) >= 0.5f;
+    const float select = value_of(core, "fx_select", 9u);
+    switch (id) {
+    case 150u: /* in1_sat_on */
+    case 250u: /* in2_sat_on */
+        return v >= 0.5f && fx_on && select == FX_OVERDRIVE;
+    case 401u: /* fx_on */
+        return v >= 0.5f && select == FX_OVERDRIVE && strip_sat;
+    case 400u: /* fx_select */
+        return v == FX_OVERDRIVE && fx_on && strip_sat;
+    default:
+        return 0;
+    }
+}
+
 CtlResult ctl_core_set(CtlCore *core, size_t index, float value, CtlSource src, float *applied) {
     const CtlParamDesc *d = ctl_param_desc(index);
     if (d == NULL) {
@@ -136,6 +163,13 @@ CtlResult ctl_core_set(CtlCore *core, size_t index, float value, CtlSource src, 
         core->knob_locked[index] = 0u;
     }
     const float v = ctl_param_clamp(d, value);
+    if (budget_conflict(core, index, v)) {
+        ++core->refused;
+        if (applied != NULL) {
+            *applied = core->value[index];
+        }
+        return kCtlErrBudget;
+    }
     apply(core, index, v, src);
     if (applied != NULL) {
         *applied = v;

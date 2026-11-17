@@ -222,6 +222,18 @@ static void limiter_f32_run(const void *in, void *out) {
     }
 }
 
+/* The headphones' limiter: the same, detecting sample peaks. */
+static void limiter_sp_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    const size_t half = kDspSelftestFrames / 2;
+    dsp_limiter_f32_init_mode(&s_limiter, 48000.0f, -6.0f, 1.0f, 20.0f, kDspLimiterSamplePeak);
+    mark();
+    for (size_t i = 0; i < half; i += 16) {
+        dsp_limiter_f32_process(&s_limiter, x + i, x + half + i, y + i, y + half + i, 16);
+    }
+}
+
 static DspSaturatorF32 s_saturator;
 
 static void saturate_run(const void *in, void *out, int32_t mode) {
@@ -464,6 +476,7 @@ static const SelftestCase kCases[] = {
     {"comp_f32", kDspFmtF32, 1, bursts_f32_input, comp_f32_run},
     {"gate_f32", kDspFmtF32, 1, bursts_f32_input, gate_f32_run},
     {"limiter_f32", kDspFmtF32, 2, bursts_f32_input, limiter_f32_run},
+    {"limiter_sp_f32", kDspFmtF32, 2, bursts_f32_input, limiter_sp_f32_run},
     {"sat_os4_f32", kDspFmtF32, 1, bursts_f32_input, sat_os4_f32_run},
     {"sat_adaa_f32", kDspFmtF32, 1, bursts_f32_input, sat_adaa_f32_run},
     {"sat_os2_f32", kDspFmtF32, 1, bursts_f32_input, sat_os2_f32_run},

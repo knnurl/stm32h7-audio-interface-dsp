@@ -116,7 +116,7 @@ void dsp_fx_overdrive_f32_init(DspFxOverdriveF32 *fx, float sample_rate_hz) {
     dsp_ramp_jump(&fx->amount, 0.5f);
     fx->drive_db = 18.0f;
     for (int ch = 0; ch < 2; ++ch) {
-        dsp_saturator_f32_init(&fx->sat[ch], kDspSatOs4, fx->drive_db);
+        dsp_saturator_f32_init(&fx->sat[ch], kDspSatOs2, fx->drive_db);
         fx->pre[ch].a = dsp_onepole_coef(sample_rate_hz, 100.0f);
         fx->dc[ch].a = dsp_onepole_coef(sample_rate_hz, 10.0f);
     }

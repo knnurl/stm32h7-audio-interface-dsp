@@ -309,7 +309,7 @@ def test_overdrive_level_compensation(lib8):
 
 def test_overdrive_latency(lib8):
     fx = make_overdrive(lib8, 0.0)
-    assert lib8.dsp_fx_overdrive_f32_latency(ctypes.byref(fx)) == pytest.approx(46.5)
+    assert lib8.dsp_fx_overdrive_f32_latency(ctypes.byref(fx)) == pytest.approx(41.0)  # 2x
 
 
 # ---- Bit crusher -------------------------------------------------------------------------------

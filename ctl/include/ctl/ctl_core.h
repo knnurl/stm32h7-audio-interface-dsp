@@ -12,6 +12,10 @@
  *   hysteresis, the value stays put until the knob has moved more than the hysteresis from the
  *   pick-up point, so reading noise near the value changes nothing; after that it follows.
  * - Switching a detached knob to knob wins sets the value from the knob at once.
+ *
+ * Budget rule (2026-11-17, docs/results/budget_target.md): the overdrive in the effect slot and
+ * the strips' saturation do not run at the same time, so the worst case pays for one of them.
+ * Turning either on while the other runs is refused with kCtlErrBudget, from any source.
  */
 #ifndef CTL_CORE_H
 #define CTL_CORE_H
@@ -46,6 +50,7 @@ typedef enum {
     kCtlErrPreset = 7,
     kCtlErrTooLong = 8,
     kCtlErrNotKnob = 9,
+    kCtlErrBudget = 10, /* The CPU budget forbids it with what is on (docs/notes/ctl_registry.md). */
 } CtlResult;
 
 /* A set of parameter indices waiting to be reported, in first-changed order, each at most

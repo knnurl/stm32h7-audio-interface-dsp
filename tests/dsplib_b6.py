@@ -12,7 +12,7 @@ HB_MAX = 48
 OS_BLOCK = 64
 LIM_MAX = 480
 LIM_WINDOW = LIM_MAX + 3
-LIM_DELAY = LIM_MAX + 24
+LIM_DELAY = LIM_MAX + 9  # kDspLimiterDetectorDelay
 
 
 class DspEnvF32(ctypes.Structure):
@@ -70,14 +70,14 @@ class DspSaturatorF32(ctypes.Structure):
 class DspLimiterF32(ctypes.Structure):
     _fields_ = [("sample_rate_hz", c_float), ("ceiling", c_float), ("release_coef", c_float),
                 ("lookahead", c_int32), ("delay_len", c_int32),
-                ("detector", DspOversampleF32 * 2), ("tp_buf", c_float * (4 * OS_BLOCK)),
+                ("tp_hist", (c_float * 32) * 2), ("tp_pos", c_int32),
                 ("peak", c_float * OS_BLOCK), ("clean", (c_float * OS_BLOCK) * 2),
                 ("delay", (c_float * LIM_DELAY) * 2), ("delay_pos", c_int32),
                 ("queue_val", c_float * (LIM_WINDOW + 1)),
                 ("queue_idx", c_uint32 * (LIM_WINDOW + 1)), ("queue_head", c_int32),
                 ("queue_count", c_int32), ("t", c_uint32), ("held", c_float),
                 ("box", c_float * LIM_MAX), ("box_pos", c_int32), ("box_sum", c_double),
-                ("gain", c_float), ("min_gain", c_float)]
+                ("gain", c_float), ("min_gain", c_float), ("mode", c_int32)]
 
 
 MIRRORS = [DspEnvF32, DspCompF32, DspGateF32, DspHalfbandUpF32, DspHalfbandDownF32,
@@ -134,6 +134,8 @@ def bind(lib):
     sig("dsp_saturator_f32_latency", c_float, P(DspSaturatorF32))
 
     sig("dsp_limiter_f32_init", None, P(DspLimiterF32), c_float, c_float, c_float, c_float)
+    sig("dsp_limiter_f32_init_mode", None, P(DspLimiterF32), c_float, c_float, c_float, c_float,
+        c_int32)
     sig("dsp_limiter_f32_reset", None, P(DspLimiterF32))
     sig("dsp_limiter_f32_latency", c_int32, P(DspLimiterF32))
     sig("dsp_limiter_f32_take_min_gain", c_float, P(DspLimiterF32))

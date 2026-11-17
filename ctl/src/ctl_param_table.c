@@ -73,7 +73,7 @@
         P((b) + 51, pfx "sat_drive_db", lpfx "saturation drive", "dB", 0.0f, 36.0f, 6.0f, LIN,     \
           PRESET, 20.0f),                                                                          \
         P((b) + 52, pfx "sat_mode", lpfx "saturation mode (0 plain, 1 2x, 2 4x, 3 ADAA)", "",      \
-          0.0f, 3.0f, 2.0f, STEP, PRESET, 0.0f)
+          0.0f, 3.0f, 1.0f, STEP, PRESET, 0.0f)
 
 /* Note values for synced effects: 0 1/2, 1 1/4, 2 dotted 1/8, 3 1/8, 4 1/8 triplet, 5 1/16. */
 #define NOTE_MAX 5.0f
