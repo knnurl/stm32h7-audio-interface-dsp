@@ -552,3 +552,20 @@ command.
 | 5 | Nothing until stage 5; then the shield order and the hand-fitted parts |
 | 7 | A 12 V supply; a session with the university audio analyser |
 | 9 | A session with the university measurement microphone |
+
+## 11. Additions of 2026-11-17 (owner's feature review)
+
+SPEC sections 2, 6.7 and 7 hold the requirements. Where they land:
+
+| Addition | Batch | Work |
+|---|---|---|
+| Tone: bass, mid, treble | 3 | `dsp_tone_f32` from the biquad and coefficient code, with a self-test case and a cycle count. Driven from the console until the panel exists. |
+| USB MIDI | 4 | Add the MIDI class to the composite device and prove enumeration beside UAC2 on Windows. Control change handling arrives with the registry in batch 8. |
+| Ableton | 4 | Test with an ASIO wrapper over the in-box driver; record the buffer size and latency that work. |
+| Record-source switch and the record tap | 4, 8 | Batch 4 switches between two sources; batch 8 adds the real tap after the effect slot. |
+| Control panel board | 5 | A second small board in the same KiCad project: potentiometers, buttons, LEDs, footswitch jack, the OLED and encoder header, a ribbon to the shield. Stage 2 settles the ADC pins or a multiplexer. |
+| Panel firmware: ADC scan, filtering, hysteresis, buttons, LEDs | 8 | On the M7 main loop first; it moves to the M4 in batch 11. |
+| Knob wins or PC wins, with soft takeover | 8 | Part of the registry. Unit-tested on the PC: no jump on takeover. |
+| Effect slot | 8 | One effect at a time; each effect is its own block with a reference model. Gate: the budget table. Read the transcripts listed for batch 8 first. |
+| Tempo from MIDI clock and tap tempo | 8 | For the echo and the modulated effects. |
+| Presets in flash | 8 | |

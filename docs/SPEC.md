@@ -29,9 +29,22 @@ LINE IN 1-2 -> ADC -> [ Input strip x2: trim, HPF, 4-band PEQ, gate, compressor,
                               '-> MONITOR MIXER <- USB play 1-2, S/PDIF in, reverb return
                                         |             ^ send
                                         |             '-- FDN reverb
+                                        v
+                                  [ Effect slot: one effect at a time ]
+                                        |-> record tap (to USB when selected)
+                                        v
+                                  [ Tone: bass, mid, treble knobs ]
                                         |-> [ Speaker stage: room FIR, PEQ, delay, limiter ] -> OUT 1-2
                                         '-> [ Headphone stage: PEQ, crossfeed, limiter ]    -> OUT 3-4
 ```
+
+- **Effect slot:** one creative effect at a time on the monitor mix: echo, chorus, flanger,
+  phaser, tremolo, sweep filter, overdrive or bit crusher. The reverb stays on its send.
+- **Record source:** the USB record channels carry either the processed inputs or the record
+  tap. The tap is after the effect slot and before the tone knobs and the room correction, which
+  correct the listening and are never recorded. On rev B both sources go to the PC at once.
+- **Tone:** bass and treble shelves and a mid peak, +/-12 dB, flat at centre, on monitors and
+  headphones together.
 
 The monitor path never passes through the PC, so its latency is set by the converters and the
 block size alone.
@@ -52,7 +65,12 @@ block size alone.
 | S/PDIF | Optical in and out (stretch, batch 10) | Same | target |
 | M7 clock | 400 MHz (direct SMPS limit) | Decided with rev B's supply scheme | measured in batch 1 |
 | Power | 12 V DC; USB carries data only | Same | target |
-| Front panel | Header for an OLED and two encoders | Fitted | target |
+| USB MIDI | Yes: parameters by control change, tempo from MIDI clock | Same | target |
+| Control panel | A separate board behind the front panel, on a ribbon inside the case: 7 potentiometers, 5 buttons, LEDs, the headphone jack | Same board | target |
+| Enclosure | Yes: an aluminium desktop case the owner makes (CNC or waterjet), about 170 x 55 x 140 mm, with legends on the front and rear panels | Same case and panels | target |
+| USB connector | USB-C on the rear panel, data only, wired to the MCU through the headers | USB-C | target |
+| Main board outline | 160 x 100 mm, Nucleo plugged in underneath | Same outline, MCU on board | target, proposed |
+| Display | Header for an OLED and two encoders (batch 11) | Fitted | target |
 
 ### 3.2 Performance
 
@@ -95,10 +113,12 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Speaker stage: true-peak limiter, stereo | 300 | estimate | 6 |
 | Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 900 | estimate | 9 |
 | Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8 |
+| Tone: three bands, stereo | 60 | estimate | 3 |
+| Effect slot: the dearest single effect, stereo | 250 | estimate | 8 |
 | Metering | 100 | estimate | 8 |
-| **Total** (two strips) | **3630** | estimate | |
+| **Total** (two strips) | **3940** | estimate | |
 
-The estimated total is over the ceiling. Nothing is cut on the strength of estimates. If the
+The estimated total is over the ceiling, by more since the effect slot and tone were added. Nothing is cut on the strength of estimates. If the
 measurements agree, the fallbacks in order are: saturation at 2x oversampling; the room FIR at
 48 kHz; the reverb at 48 kHz. Batch 8 has a gate on this table.
 
@@ -185,6 +205,28 @@ A registry declares every parameter once: id, label, unit, range, default, smoot
 control protocol over the USB serial port reads and writes by id. Parameter changes reach the
 audio level through a lock-free queue and are smoothed there.
 
+Ways in, all onto the same registry:
+
+- **Control panel.** Potentiometers (centre detent on the tone three): bass, mid, treble,
+  monitor volume, headphone volume, effect amount, input and playback blend. Buttons: effect
+  select, effect on and off, mute, dim (-20 dB), tap tempo. A footswitch jack that mirrors
+  effect on and off. LEDs: signal and clip for each input, and one for each of mute, dim and
+  effect on. The potentiometers are read by the MCU's ADC, filtered, with hysteresis so a still
+  knob sends nothing.
+- **PC control link** (USB serial): every parameter and the meters.
+- **USB MIDI:** control change in and out for every parameter; MIDI clock sets the tempo of
+  timed effects. Mapping is by a fixed table first, MIDI learn later.
+
+Each parameter that has a potentiometer has a setting, held on the PC side of the protocol:
+**knob wins** (the PC shows the value, read-only) or **PC wins** (the PC and MIDI set the value;
+the knob takes over again only once it is turned through the current value, so nothing jumps).
+
+Presets: the full parameter set saved to and recalled from flash (batch 8). A recalled preset
+behaves like "PC wins" for the parameters that have knobs.
+
+Volume is applied in the DSP on rev A. That costs converter resolution at low volume; whether
+rev B uses an analogue volume stage is decided there.
+
 ## 7. DSP blocks
 
 All in `dsp/`, hardware-free C11, API `dsp_<block>_<fmt>_init / _reset / _process`.
@@ -203,6 +245,8 @@ All in `dsp/`, hardware-free C11, API `dsp_<block>_<fmt>_init / _reset / _proces
 | `dsp_limiter` | f32 | Look-ahead, true-peak detection at 4x | the look-ahead, reported | 6 |
 | `dsp_oversample`, `dsp_saturate` | f32 | Polyphase half-band 2x and 4x; soft waveshaper | filter group delay, reported | 6 |
 | `dsp_mixer`, `dsp_reverb`, `dsp_meter`, `dsp_crossfeed` | f32 | Matrix mixer; 8-line FDN; BS.1770 meters; crossfeed | 0 | 8 |
+| `dsp_tone` | f32 | Low shelf, mid peak, high shelf from `dsp_biquad`, +/-12 dB, smoothed | 0 | 3 |
+| `dsp_fx_*` | f32 | Effect slot: echo, chorus, flanger, phaser, tremolo, sweep filter, overdrive, bit crusher | 0, or reported | 8 |
 | `dsp_pconv` | f32 | Uniformly partitioned FFT convolution | one partition | 9 |
 | `dsp_asrc` | f32 | Polyphase interpolator with a rate-tracking loop | filter group delay | 10 |
 
@@ -238,6 +282,11 @@ sides until batch 3 measures both and decides.
 | V7 | The Nucleo may be powered from the shield, and through which pin and jumper | Batch 5, stage 2 |
 | V8 | The full signal path fits under 70 % at 96 kHz (the estimates say it does not) | Batches 3, 6, 8 |
 | V9 | Two 96 kHz stereo streams do not fit full-speed USB (source: Apple TN3190; our arithmetic is an estimate) | Batch 4, if tried |
+| V11 | Ableton on Windows runs the device through an ASIO wrapper (ASIO4ALL or FlexASIO) over the in-box driver, at a usable latency | Batch 4 |
+| V12 | Seven ADC inputs and the panel's GPIO are free on the Nucleo headers; if not, an analogue multiplexer on the panel board | Batch 5 |
+| V13 | The Nucleo's user USB data pins can be driven from a socket on the main board (solder bridges, the Nucleo's USB power switch) | Batch 5, stage 2 |
+| V14 | The stack height (Nucleo, headers, main board, tallest rear connector) fits a 55 mm high case | Batch 5, stage 2 |
+| V15 | The MCU's built-in USB bootloader can update the firmware through the rear USB port | Batch 4 |
 | V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running | Batch 1, on the board |
 
 Settled, with the source:
@@ -278,3 +327,16 @@ Settled, with the source:
 | 2026-11-17 | Start-up and system code are ST's dual-core files; both linker scripts are our own | ST's scripts know nothing of the memory plan |
 | 2026-11-17 | The same self-test cases are compiled into the host library and the firmware | Host and target cannot drift apart |
 | 2026-11-17 | Float contraction off on both sides until batch 3 decides | Keeps host and target comparable from the first block |
+| 2026-11-17 | Tone knobs: bass, mid, treble, +/-12 dB, flat at centre, on monitors and headphones, never recorded | Owner |
+| 2026-11-17 | Potentiometers, with a per-parameter setting: knob wins, or PC wins with soft takeover | Owner |
+| 2026-11-17 | An effect slot on the monitor mix, one effect at a time, plus the reverb send | Owner asked for more effects; one at a time keeps the budget honest |
+| 2026-11-17 | Record-source switch; the record tap sits after the effects and before tone and room correction | Owner wants the altered output in Ableton; listening corrections do not belong in a recording |
+| 2026-11-17 | USB MIDI in the composite device | Owner; lets Ableton map and automate parameters and send tempo |
+| 2026-11-17 | Full control set: 7 potentiometers, 5 buttons, LEDs, footswitch jack, presets in flash | Owner chose every option |
+| 2026-11-17 | The controls sit on a separate panel board on a ribbon, not on the shield itself | Seven potentiometers and five buttons do not fit a 100 mm edge beside the jacks; the panel carries over to rev B |
+| 2026-11-17 | Rev A gets an enclosure; the control panel sits inside it behind the front panel | Owner: build it as a product |
+| 2026-11-17 | Proposed: USB-C on the rear panel; an extruded aluminium case with circuit-board panels; a 160 x 100 mm main board whose outline rev B keeps | Professional finish at low cost; nothing is thrown away at rev B. Awaiting the owner's word |
+| 2026-11-17 | Headphone jack on the front panel, footswitch jack on the rear | Front for what is plugged often, rear for what stays plugged |
+| 2026-11-17 | USB-C confirmed | Owner |
+| 2026-11-17 | The owner makes the aluminium case himself by CNC or waterjet; no bought extrusion | Owner. The case is designed around the boards, so the board outline is no longer tied to a catalogue size |
+| 2026-11-17 | Front-panel order confirmed; monitor volume is the large knob | Owner |

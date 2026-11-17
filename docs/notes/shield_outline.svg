@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 990" font-family="Segoe UI, Arial, sans-serif" font-size="13">
+  <rect width="900" height="990" fill="#ffffff"/>
+  <text x="30" y="32" font-size="19" font-weight="600" fill="#1a1a1a">Shield rev A: draft floor plan (top view, 5 px per mm)</text>
+  <text x="30" y="52" fill="#555">Draft only. Sizes and positions are estimates, not checked against the Nucleo drawing or any part.</text>
+
+  <!-- Nucleo underneath: 70 x 133 mm -->
+  <rect x="60" y="90" width="350" height="665" rx="6" fill="#eef1f4" stroke="#8a94a0" stroke-width="2" stroke-dasharray="8 5"/>
+  <text x="70" y="110" fill="#5b6672">Nucleo-H755ZI-Q underneath (70 x 133 mm)</text>
+  <rect x="270" y="92" width="60" height="26" fill="#cfd6dd" stroke="#8a94a0"/>
+  <text x="336" y="110" fill="#5b6672" font-size="11">ST-LINK USB</text>
+  <rect x="150" y="728" width="50" height="25" fill="#cfd6dd" stroke="#8a94a0"/>
+  <text x="96" y="746" fill="#5b6672" font-size="11">user USB</text>
+  <rect x="230" y="716" width="90" height="37" fill="#cfd6dd" stroke="#8a94a0"/>
+  <text x="326" y="740" fill="#5b6672" font-size="11">Ethernet</text>
+
+  <!-- Shield: 100 x 100 mm, overhanging to the right -->
+  <rect x="60" y="170" width="500" height="500" rx="6" fill="#f7fbf7" stroke="#1f6f43" stroke-width="3"/>
+  <text x="70" y="664" fill="#1f6f43" font-weight="600">Shield, about 100 x 100 mm, 4 layers</text>
+
+  <!-- Header rows to the Nucleo -->
+  <rect x="78" y="250" width="16" height="380" fill="#3a3a3a"/>
+  <rect x="376" y="250" width="16" height="380" fill="#3a3a3a"/>
+  <text x="100" y="640" fill="#333" font-size="11">headers to the Nucleo</text>
+
+  <!-- Power zone -->
+  <rect x="70" y="180" width="230" height="62" rx="4" fill="#fde8d0" stroke="#c7772a"/>
+  <text x="80" y="200" fill="#7a4310" font-weight="600">Power</text>
+  <text x="80" y="218" fill="#7a4310" font-size="11">protection, 5 V buck, split-rail</text>
+  <text x="80" y="232" fill="#7a4310" font-size="11">converter (kept far from the inputs)</text>
+  <rect x="100" y="150" width="50" height="34" fill="#c7772a"/>
+  <text x="156" y="164" fill="#7a4310" font-size="11">12 V DC jack</text>
+
+  <!-- Digital zone -->
+  <rect x="104" y="252" width="262" height="150" rx="4" fill="#dfe9fb" stroke="#3c63b0"/>
+  <text x="114" y="272" fill="#1f3d7a" font-weight="600">Digital</text>
+  <text x="114" y="290" fill="#1f3d7a" font-size="11">3.3 V LDO, level and mute logic,</text>
+  <text x="114" y="304" fill="#1f3d7a" font-size="11">rail supervisor, I2C pull-ups</text>
+  <rect x="114" y="320" width="150" height="70" rx="3" fill="#ffffff" stroke="#3c63b0"/>
+  <text x="122" y="340" fill="#1f3d7a" font-size="11">Ribbon to the panel</text>
+  <text x="122" y="356" fill="#1f3d7a" font-size="11">knobs, buttons, LEDs,</text>
+  <text x="122" y="372" fill="#1f3d7a" font-size="11">OLED, encoders</text>
+
+  <!-- Clock zone -->
+  <rect x="104" y="412" width="150" height="90" rx="4" fill="#efe3fb" stroke="#7a47b5"/>
+  <text x="114" y="432" fill="#4a2380" font-weight="600">Clocks</text>
+  <text x="114" y="450" fill="#4a2380" font-size="11">22.5792 MHz osc</text>
+  <text x="114" y="464" fill="#4a2380" font-size="11">24.576 MHz osc</text>
+  <text x="114" y="478" fill="#4a2380" font-size="11">select and buffer</text>
+
+  <!-- Converter at the boundary -->
+  <rect x="270" y="412" width="96" height="90" rx="4" fill="#fff6c9" stroke="#a88b00" stroke-width="2"/>
+  <text x="280" y="434" fill="#5e4e00" font-weight="600">Converter</text>
+  <text x="280" y="452" fill="#5e4e00" font-size="11">2 ADC, 4 DAC</text>
+  <text x="280" y="466" fill="#5e4e00" font-size="11">TDM, I2C</text>
+  <text x="280" y="484" fill="#5e4e00" font-size="11">+ quiet LDO</text>
+  <line x1="254" y1="457" x2="270" y2="457" stroke="#7a47b5" stroke-width="2"/>
+
+  <!-- S/PDIF -->
+  <rect x="104" y="512" width="262" height="60" rx="4" fill="#dfe9fb" stroke="#3c63b0"/>
+  <text x="114" y="534" fill="#1f3d7a" font-weight="600">S/PDIF</text>
+  <text x="114" y="552" fill="#1f3d7a" font-size="11">optical receiver and transmitter</text>
+  <rect x="150" y="652" width="44" height="36" fill="#3c63b0"/>
+  <rect x="210" y="652" width="44" height="36" fill="#3c63b0"/>
+  <text x="140" y="706" fill="#1f3d7a" font-size="11">Toslink in, out</text>
+
+  <!-- Analogue zone -->
+  <rect x="402" y="180" width="150" height="480" rx="4" fill="#dff3e4" stroke="#1f6f43"/>
+  <text x="412" y="200" fill="#14502f" font-weight="600">Analogue</text>
+  <rect x="410" y="212" width="134" height="150" rx="3" fill="#ffffff" stroke="#1f6f43"/>
+  <text x="418" y="232" fill="#14502f" font-size="11">Line input stages x2</text>
+  <text x="418" y="248" fill="#14502f" font-size="11">protection, attenuator,</text>
+  <text x="418" y="262" fill="#14502f" font-size="11">balanced receiver,</text>
+  <text x="418" y="276" fill="#14502f" font-size="11">anti-alias filter</text>
+  <rect x="410" y="372" width="134" height="150" rx="3" fill="#ffffff" stroke="#1f6f43"/>
+  <text x="418" y="392" fill="#14502f" font-size="11">Monitor outputs x2</text>
+  <text x="418" y="408" fill="#14502f" font-size="11">filter, balanced</text>
+  <text x="418" y="422" fill="#14502f" font-size="11">driver, mute relays</text>
+  <rect x="410" y="532" width="134" height="118" rx="3" fill="#ffffff" stroke="#1f6f43"/>
+  <text x="418" y="552" fill="#14502f" font-size="11">Headphone amplifier</text>
+  <text x="418" y="568" fill="#14502f" font-size="11">filter, amp, mute</text>
+  <line x1="366" y1="440" x2="410" y2="300" stroke="#a88b00" stroke-width="2"/>
+  <line x1="366" y1="457" x2="410" y2="447" stroke="#a88b00" stroke-width="2"/>
+  <line x1="366" y1="474" x2="410" y2="590" stroke="#a88b00" stroke-width="2"/>
+
+  <!-- Jacks on the right edge -->
+  <g fill="#1f6f43">
+    <rect x="548" y="200" width="46" height="70"/>
+    <rect x="548" y="282" width="46" height="70"/>
+    <rect x="548" y="386" width="46" height="60"/>
+    <rect x="548" y="456" width="46" height="60"/>
+    <rect x="548" y="556" width="46" height="70"/>
+  </g>
+  <g fill="#14502f">
+    <text x="604" y="240">LINE IN L (6.35 mm TRS)</text>
+    <text x="604" y="322">LINE IN R</text>
+    <text x="604" y="421">MONITOR OUT L</text>
+    <text x="604" y="491">MONITOR OUT R</text>
+    <text x="604" y="596">PHONES</text>
+  </g>
+
+  <!-- Notes -->
+  <g fill="#333" font-size="12">
+    <text x="604" y="660" font-weight="600">Reading the plan</text>
+    <text x="604" y="680">Noisy to quiet runs left to right:</text>
+    <text x="604" y="697">power and digital over the Nucleo,</text>
+    <text x="604" y="714">converter at the boundary,</text>
+    <text x="604" y="731">analogue and jacks on the overhang.</text>
+    <text x="604" y="752">One unbroken ground plane under all of it.</text>
+    <text x="604" y="769">Both Nucleo USB ports stay clear of the shield.</text>
+  </g>
+
+  <!-- Control panel board: about 140 x 30 mm, on a ribbon -->
+  <rect x="60" y="800" width="700" height="150" rx="6" fill="#f7fbf7" stroke="#1f6f43" stroke-width="3"/>
+  <text x="70" y="822" fill="#1f6f43" font-weight="600">Control panel board, about 140 x 30 mm, joined to the shield by a ribbon</text>
+  <g fill="#ffffff" stroke="#333" stroke-width="2">
+    <circle cx="110" cy="875" r="24"/><circle cx="195" cy="875" r="24"/><circle cx="280" cy="875" r="24"/>
+    <circle cx="380" cy="875" r="24"/><circle cx="465" cy="875" r="24"/>
+    <circle cx="565" cy="875" r="24"/><circle cx="650" cy="875" r="24"/>
+  </g>
+  <g fill="#333" font-size="11" text-anchor="middle">
+    <text x="110" y="915">BASS</text><text x="195" y="915">MID</text><text x="280" y="915">TREBLE</text>
+    <text x="380" y="915">MONITOR</text><text x="465" y="915">PHONES</text>
+    <text x="565" y="915">FX AMOUNT</text><text x="650" y="915">BLEND</text>
+  </g>
+  <g fill="#cfd6dd" stroke="#555">
+    <rect x="700" y="835" width="22" height="16"/><rect x="728" y="835" width="22" height="16"/>
+    <rect x="700" y="858" width="22" height="16"/><rect x="728" y="858" width="22" height="16"/>
+    <rect x="700" y="881" width="22" height="16"/>
+  </g>
+  <text x="725" y="915" fill="#333" font-size="11" text-anchor="middle">5 buttons</text>
+  <text x="70" y="940" fill="#555" font-size="11">Also on this board: signal and clip LEDs, mute, dim and effect LEDs, the footswitch jack, the header for the OLED and encoders.</text>
+</svg>

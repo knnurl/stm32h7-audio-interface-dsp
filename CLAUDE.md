@@ -17,6 +17,10 @@ and control systems. Treat him as an expert. Be direct, skip the basics, and fla
 2. `docs/SPEC.md`: requirements and design. The source of truth.
 3. `docs/PLAN_BATCHES.md`: what each batch delivers. `docs/PLAN.md` has the status.
 4. `docs/PLAN_ASSESSMENT.md`: why the plan is what it is. It wins over `PLAN_INTERVIEW.md`.
+5. `docs/notes/transcripts_index.md`: which Phil's Lab transcripts to read before each batch. The
+   owner treats them as reliable notes. They are automatic captions of videos made on other
+   hardware, so check numbers and formulas, and this project's decisions and measurements win
+   where they differ.
 
 ## Priorities (highest first)
 

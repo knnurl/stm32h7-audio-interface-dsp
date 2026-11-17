@@ -21,6 +21,10 @@ __pycache__/
 fp-info-cache
 *.bak
 
+# Transcripts of third-party videos: the owner's reference notes, not ours to publish
+docs/transcripts/
+docs/transcripts_no_timestamp/
+
 # Captures and logs from the bench (scope shots, serial logs, recordings)
 captures/
 *.wav
