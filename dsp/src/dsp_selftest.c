@@ -209,11 +209,19 @@ static void sat_os4_f32_run(const void *in, void *out) { saturate_run(in, out, k
 static void sat_adaa_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatAdaa); }
 
 /* Batch 8b. The cases share one state union and one memory pool (they never run at the same
- * time): about 41 KB in all, in the firmware's .bss. Stereo cases: left = first half of the
- * buffer, right = second half. The input is the bursts pattern above, so delay and reverb
- * tails show between the bursts. The tremolo has no case until the owner writes it. */
+ * time): about 41 KB in all. Stereo cases: left = first half of the buffer, right = second
+ * half. The input is the bursts pattern above, so delay and reverb tails show between the
+ * bursts. The tremolo has no case until the owner writes it.
+ * On the M7 the 30 KB pool sits where the real delay lines will (AXI SRAM, `.axi_bss`, SPEC 6.2),
+ * so the cycle counts are the real ones and DTCM is not spent on a test; the section is not
+ * zeroed at start, and every init clears the memory it is given. Elsewhere, ordinary .bss. */
+#if defined(__arm__) && defined(__GNUC__)
+#define SELFTEST_AXI __attribute__((section(".axi_bss")))
+#else
+#define SELFTEST_AXI
+#endif
 enum { kPool8b = 7680 };
-static float s_pool8b[kPool8b];
+static float s_pool8b[kPool8b] SELFTEST_AXI;
 static union {
     DspDelaylineF32 delay;
     DspSvfF32 svf;
@@ -282,9 +290,6 @@ static void overdrive_fn(void *s, const float *a, const float *b, float *c, floa
 }
 static void crusher_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
     dsp_fx_crusher_f32_process((DspFxCrusherF32 *)s, a, b, c, d, n);
-}
-static void slot_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
-    dsp_fxslot_f32_process((DspFxSlotF32 *)s, a, b, c, d, n);
 }
 static void reverb_fn(void *s, const float *a, const float *b, float *c, float *d, size_t n) {
     dsp_reverb_f32_process((DspReverbF32 *)s, a, b, c, d, n);

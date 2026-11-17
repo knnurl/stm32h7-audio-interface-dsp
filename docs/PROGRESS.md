@@ -4,6 +4,64 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: batch 8b, host part (delay line, LFO, SVF, effects, slot, reverb)
+
+Written by a second agent on branch `b8b` in a worktree, in parallel with 8a, and merged.
+
+**Transcripts read in full:** Comb Filters & Delay Lines (#124), Delay-Based Audio FX (#140),
+Tremolo Effect (#3); re-read where relevant: All-Pass Filter (#162), DSP Overdrive (#117),
+Asymmetrical Clipping (#153). Findings in each design note's "From the transcripts".
+
+**Done**
+- `dsp_delayline`, `dsp_lfo`, `dsp_svf`, `dsp_fx_echo`, `dsp_fx_mod` (chorus, flanger, phaser),
+  `dsp_fx_colour` (sweep filter, overdrive, bit crusher), `dsp_fx_tremolo` (stub: exercise),
+  `dsp_fxslot`, `dsp_reverb`; float64 models in `tests/ref/modulation.py` and `tests/ref/fx.py`.
+- Self-test cases: delay_lagrange_f32, svf_f32, fx_echo_f32, fx_chorus_f32, fx_flanger_f32,
+  fx_phaser_f32, fx_sweep_f32, fx_overdrive_f32, fx_crusher_f32, fxslot_f32, reverb_f32.
+- Studies: `tools/studies/b8b_interp.py`, `tools/studies/b8b_memory.py`; results in
+  `docs/results/b8b_interp.md`, `b8b_memory.md`, `b8b_cycles.md`.
+- Notes: `delay_lines.md`, `modulated_filters.md`, `effects.md`, `reverb.md`.
+  Exercise: `docs/exercises/EX8b_tremolo.md` (its 8 tests fail on the stub, as intended; checked
+  against a throw-away model that was then deleted).
+
+**Fixed, each with a test:** the echo glide drifted 0.42 samples and jumped at its end; the slot
+clicked when a delay effect started (input now fades in with the wet); NaN could reach an integer
+cast in the delay reads and the crusher.
+
+**At the merge:** the firmware build (GCC) caught an unused static function in the self-test
+that MSVC at /W4 did not; removed. The 30 KB self-test pool moved to AXI SRAM (`.axi_bss`),
+where the real delay lines will be, so the board's cycle counts are the real ones: DTCM 107 KB
+to 76 KB of 128.
+
+**Measured (PC)**
+
+| Item | Value | Command |
+|---|---|---|
+| Unit tests, everything | 479 pass | `python -m pytest` |
+| Swept-delay error at 1 kHz, linear / Lagrange / all-pass | -56 / -106 / -61 dB | `python tools/studies/b8b_interp.py` |
+| SVF vs biquad, cutoff jumping every 16 samples | SVF 1.64 (bound 3.19); biquad diverges | `test_svf_against_biquad_under_modulation` |
+| Overdrive harmonics against a continuous-time model | within 0.2 dB | `test_overdrive_harmonics_match_the_model` |
+| Overdrive level, 0 to 36 dB drive | within 0.13 dB | `test_overdrive_level_compensation` |
+| Echo trail repeat ratio at feedback 0.5 | 0.4951 to 0.4961 (0.4953 expected) | `test_echo_trails_decay_at_the_set_feedback` |
+| Reverb T60 at 500 Hz and 4 kHz | within 3.7 % of design (plan: 10 %) | `test_decay_time_by_schroeder_integration` |
+| Reverb, 60 s at 20 s decay | never rises | `test_no_growth_over_a_minute_at_the_longest_decay` |
+| Reverb echo density 0.9 | 195 ms | `test_echo_density` |
+| Memory at 96 kHz: float echo 0.75 s / reverb | 563 KB / 177 KB | `python tools/studies/b8b_memory.py` |
+| M7 image | 88.6 KB flash, 76.3 KB DTCM, 30 KB AXI SRAM | `cmake --build --preset fw` |
+
+**Not done, needs the board:** cycles of every block (`docs/results/b8b_cycles.md`); the
+listening check of each effect on the breakouts (batch 2).
+
+**For the owner**
+1. The FX AMOUNT macro table (`docs/notes/effects.md`), built as proposed.
+2. The memory decision (8b.6, `docs/results/b8b_memory.md`): a float echo at 96 kHz does not fit
+   AXI SRAM; 16-bit storage with the echo at 48 kHz does (458 KB with the room FIR estimate).
+   16-bit storage is not built yet.
+3. Glide (built) or cross-fade for synced echo time changes; the 60 ms of dry signal when the
+   effect changes; reverb pre-delay maximum (100 ms costs 75 KB); the reverb's high-frequency
+   decay anchor (Nyquist, built, or 8 kHz); input diffusers.
+4. Exercise 8b: `docs/exercises/EX8b_tremolo.md`.
+
 ## 2026-11-17: batch 8b.5, the tempo follower (in ctl/)
 
 **Transcripts read:** the batch 8 list is the effects' (the 8b agent reads it); all 29 searched
