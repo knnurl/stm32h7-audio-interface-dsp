@@ -7,9 +7,9 @@ stated; 1 KB = 1024 bytes.
 
 | Buffer | 48 kHz | 96 kHz | Notes |
 |---|---|---|---|
-| Echo, 0.75 s, stereo, float (as built) | 281.3 KB | 562.5 KB | the slot pool; chorus and flanger share it |
-| Echo, 0.75 s, stereo, 16-bit (not built) | 140.6 KB | 281.3 KB | the plan's assumption |
-| Reverb: 8 lines, modulation margin, 100 ms stereo pre-delay | 88.6 KB | 177.0 KB | dsp_reverb_f32_mem_needed |
+| Echo, 0.75 s, stereo, 16-bit, core at 48 kHz at most (as built) | 140.6 KB | 140.6 KB | the slot pool; chorus and flanger share it |
+| Echo, 0.75 s, stereo, float at the full rate (batch 8b, replaced) | 281.3 KB | 562.5 KB | for comparison |
+| Reverb: 8 lines, modulation margin, 50 ms stereo pre-delay | 69.9 KB | 139.5 KB | dsp_reverb_f32_mem_needed |
 | Chorus, stereo (inside the echo pool) | 10.5 KB | 21.0 KB | dsp_fx_chorus_f32_mem_needed |
 | Flanger, stereo (inside the echo pool) | 4.0 KB | 7.9 KB | dsp_fx_flanger_f32_mem_needed |
 
@@ -17,12 +17,12 @@ stated; 1 KB = 1024 bytes.
 
 | Struct | Bytes |
 |---|---|
-| `DspFxSlotF32` | 10984 |
+| `DspFxSlotF32` | 15168 |
 | `DspFxOverdriveF32` | 9704 |
+| `DspFxEchoF32` | 4304 |
 | `DspReverbF32` | 368 |
 | `DspFxCrusherF32` | 308 |
 | `DspFxPhaserF32` | 136 |
-| `DspFxEchoF32` | 120 |
 | `DspFxChorusF32` | 88 |
 | `DspFxFlangerF32` | 88 |
 | `DspFxSweepF32` | 84 |
@@ -30,20 +30,19 @@ stated; 1 KB = 1024 bytes.
 | `DspLfoF32` | 24 |
 | `DspSvfF32` | 28 |
 
-The slot holds every effect's state (the overdrive's two 4x oversamplers are
-most of it); only one effect runs, but their parameters persist.
+The slot holds every effect's state (the overdrive's two 4x oversamplers and the
+echo's four half-band filters are most of it); only one effect runs, but their
+parameters persist.
 
 ## Against 512 KB of AXI SRAM, at 96 kHz
 
 | Plan | Echo | Reverb | Room FIR (estimate) | Total | Fits |
 |---|---|---|---|---|---|
-| As built: float echo at 96 kHz | 563 | 177 | 140 | 880 KB | no |
-| 16-bit echo at 96 kHz | 281 | 177 | 140 | 598 KB | no |
-| Float echo at 48 kHz (echo resampled), reverb at 96 kHz | 281 | 177 | 140 | 598 KB | no |
-| 16-bit echo at 48 kHz, reverb at 96 kHz | 141 | 177 | 140 | 458 KB | yes |
-| 16-bit echo and reverb at 48 kHz | 141 | 89 | 140 | 369 KB | yes |
+| As built (owner, 2026-11-17): 16-bit echo with its core at 48 kHz, 50 ms pre-delay | 141 | 140 | 140 | 420 KB | yes |
+| Batch 8b as first built: float echo at 96 kHz, 100 ms pre-delay | 563 | 177 | 140 | 880 KB | no |
 
-SRAM1 (128 KB) given to the M7 would add a second region; a buffer cannot span
-the two, so it helps only if the echo or the reverb fits in it whole.
-The 16-bit echo is not implemented: its noise (about -96 dBFS before feedback)
-is not yet measured.
+The echo's pool is floats used as int16 storage (two samples per float, by
+memcpy, so the same pool serves the float chorus and flanger without breaking C's
+aliasing rules): 0.75 s at 48 kHz is 36004 floats, the same at 96 kHz, where the
+core runs at 48 kHz. The 16-bit storage's noise is measured in
+`tests/unit/test_fx_echo16.py` and stated in `docs/notes/effects.md`.

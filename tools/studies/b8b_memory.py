@@ -41,16 +41,17 @@ def main():
     rows = []
     for fs in (48000.0, 96000.0):
         rows.append({
-            "echo_f32": kb(4 * echo_floats(fs, 0.75)),
-            "echo_s16": kb(2 * echo_floats(fs, 0.75)),
+            "echo": kb(4 * lib.dsp_fx_echo_f32_mem_needed(fs, 0.75)),
+            "echo_f32_full": kb(4 * echo_floats(fs, 0.75)),
             "reverb": kb(4 * lib.dsp_reverb_f32_mem_needed(fs)),
             "chorus": kb(4 * lib.dsp_fx_chorus_f32_mem_needed(fs)),
             "flanger": kb(4 * lib.dsp_fx_flanger_f32_mem_needed(fs)),
         })
-    names = [("echo_f32", "Echo, 0.75 s, stereo, float (as built)",
+    names = [("echo", "Echo, 0.75 s, stereo, 16-bit, core at 48 kHz at most (as built)",
               "the slot pool; chorus and flanger share it"),
-             ("echo_s16", "Echo, 0.75 s, stereo, 16-bit (not built)", "the plan's assumption"),
-             ("reverb", "Reverb: 8 lines, modulation margin, 100 ms stereo pre-delay",
+             ("echo_f32_full", "Echo, 0.75 s, stereo, float at the full rate (batch 8b, replaced)",
+              "for comparison"),
+             ("reverb", "Reverb: 8 lines, modulation margin, 50 ms stereo pre-delay",
               "dsp_reverb_f32_mem_needed"),
              ("chorus", "Chorus, stereo (inside the echo pool)", "dsp_fx_chorus_f32_mem_needed"),
              ("flanger", "Flanger, stereo (inside the echo pool)",
@@ -58,31 +59,31 @@ def main():
     for key, label, note in names:
         lines.append(f"| {label} | {rows[0][key]:.1f} KB | {rows[1][key]:.1f} KB | {note} |")
     lines += ["", "## State structs (x64 build)", "", "| Struct | Bytes |", "|---|---|"]
-    for name in ("DspFxSlotF32", "DspFxOverdriveF32", "DspReverbF32", "DspFxCrusherF32",
-                 "DspFxPhaserF32", "DspFxEchoF32", "DspFxChorusF32", "DspFxFlangerF32",
+    for name in ("DspFxSlotF32", "DspFxOverdriveF32", "DspFxEchoF32", "DspReverbF32",
+                 "DspFxCrusherF32", "DspFxPhaserF32", "DspFxChorusF32", "DspFxFlangerF32",
                  "DspFxSweepF32", "DspFxTremoloF32", "DspLfoF32", "DspSvfF32"):
         lines.append(f"| `{name}` | {lib.dsp_abi_sizeof(name.encode())} |")
-    lines += ["", "The slot holds every effect's state (the overdrive's two 4x oversamplers are",
-              "most of it); only one effect runs, but their parameters persist.", "",
+    lines += ["", "The slot holds every effect's state (the overdrive's two 4x oversamplers and the",
+              "echo's four half-band filters are most of it); only one effect runs, but their",
+              "parameters persist.", "",
               "## Against 512 KB of AXI SRAM, at 96 kHz", "",
               "| Plan | Echo | Reverb | Room FIR (estimate) | Total | Fits |", "|---|---|---|---|---|---|"]
-    r96, r48 = rows[1], rows[0]
+    r96 = rows[1]
     options = [
-        ("As built: float echo at 96 kHz", r96["echo_f32"], r96["reverb"]),
-        ("16-bit echo at 96 kHz", r96["echo_s16"], r96["reverb"]),
-        ("Float echo at 48 kHz (echo resampled), reverb at 96 kHz", r48["echo_f32"],
-         r96["reverb"]),
-        ("16-bit echo at 48 kHz, reverb at 96 kHz", r48["echo_s16"], r96["reverb"]),
-        ("16-bit echo and reverb at 48 kHz", r48["echo_s16"], r48["reverb"]),
+        ("As built (owner, 2026-11-17): 16-bit echo with its core at 48 kHz, 50 ms pre-delay",
+         r96["echo"], r96["reverb"]),
+        ("Batch 8b as first built: float echo at 96 kHz, 100 ms pre-delay",
+         r96["echo_f32_full"], r96["reverb"] + kb(4 * 2 * int(0.05 * 96000))),
     ]
     for label, echo, rev in options:
         total = echo + rev + ROOM_FIR_KB
         lines.append(f"| {label} | {echo:.0f} | {rev:.0f} | {ROOM_FIR_KB:.0f} | {total:.0f} KB | "
                      f"{'yes' if total <= AXI_KB else 'no'} |")
-    lines += ["", "SRAM1 (128 KB) given to the M7 would add a second region; a buffer cannot span",
-              "the two, so it helps only if the echo or the reverb fits in it whole.",
-              "The 16-bit echo is not implemented: its noise (about -96 dBFS before feedback)",
-              "is not yet measured."]
+    lines += ["", "The echo's pool is floats used as int16 storage (two samples per float, by",
+              "memcpy, so the same pool serves the float chorus and flanger without breaking C's",
+              "aliasing rules): 0.75 s at 48 kHz is 36004 floats, the same at 96 kHz, where the",
+              "core runs at 48 kHz. The 16-bit storage's noise is measured in",
+              "`tests/unit/test_fx_echo16.py` and stated in `docs/notes/effects.md`."]
     pathlib.Path(args.out).write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     print("\n".join(lines))
 
