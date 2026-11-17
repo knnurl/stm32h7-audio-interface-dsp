@@ -4,6 +4,53 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: batch 6, host part, paused mid-way (work in progress)
+
+**State:** paused at the owner's request. Code and tests are committed as they stand; 8 of the
+48 new tests fail and are listed below. Not done yet: the aliasing study script, the self-test
+cases, the design notes with their "From the transcripts" sections, exercise 6, and the
+transcript index entry for batch 6.
+
+**Transcripts read in full:** Audio Compressor Software Implementation, Noise Gate (#58),
+Recursive RMS (#103), DSP Overdrive (#117), DSP Overdrive Asymmetrical Clipping (#153),
+Decimation Filters (#42). Read by a review agent in this session before any batch 6 test was
+written; its findings were checked here.
+
+**Built:** `dsp_fastmath` (log2 and exp2), `dsp_env` (peak, RMS), `dsp_comp` (Giannoulis et al.),
+`dsp_gate`, `dsp_oversample` (polyphase half-band, 2x and 4x), `dsp_saturate` (tanh: plain, 2x,
+4x, ADAA), `dsp_limiter` (stereo, look-ahead, 4x true-peak detection), `dsp_abi.c` (struct sizes
+for the ctypes mirrors), `tools/design/b6_coefficients.py`.
+
+**Fixed from the review, before testing:** ADAA glitch when the drive changes; undefined
+behaviour in `dsp_fast_exp2f(NaN)`; the oversampler's 64-frame scratch limit (now chunked) and
+its header's tap count; the limiter now has a 32-sample minimum look-ahead and replaces NaN and
+infinity with 0; a NaN can no longer leave the compressor's side-chain filter poisoned; the gate
+compares thresholds in the linear domain, clamps its range to 0 dB or below.
+
+**Confirmed by the review:** the polyphase index arithmetic (checked against direct convolution
+to 8e-7) and the limiter's alignment argument.
+
+**Measured so far (PC)**
+
+| Item | Value |
+|---|---|
+| 40 Hz tone 12 dB over threshold, THD against release 10 / 50 / 200 ms | -24.0 / -33.0 / -42.6 dB |
+| Limiter true-peak overshoot at the 32-sample look-ahead: square, inter-sample, bursts, spikes | +0.04, +0.11, +0.20, +0.01 dB |
+
+**Failing tests to resume with** (`python -m pytest tests/unit`):
+1. `test_log2_accuracy`: error 2.25e-5 against a 2e-5 limit. The limit is from the design figure
+   in double; float32 evaluation is worse. Measure and set the limit with the reason.
+2. `test_nan_does_not_poison_the_compressor`: to investigate.
+3. `test_polyphase_equals_direct_convolution[1]`: -129.2 dBFS against -130; the limit was a
+   guess. Float32 accumulation over 42 taps; set from measurement.
+4. `test_latency_and_bounds` for 2x and 4x: oversampled saturation overshoots more than 1.1;
+   measure the ringing and decide the bound.
+5. `test_oversampling_reduces_aliasing`: to investigate (the measure, or the claim).
+6. `test_true_peak_overshoot_is_small`: up to +0.20 dB on noise bursts at the minimum
+   look-ahead, against a 0.05 dB limit. Either a larger minimum look-ahead, a margin, or a
+   documented bound: an owner-visible decision for the speaker protection.
+7. `test_release_returns_to_bit_exact`: to investigate.
+
 ## 2026-11-17: transcript pass for batch 3
 
 **Transcripts read in full:** Biquad Filters (#172), Audio EQ Software Implementation (#89), IIR

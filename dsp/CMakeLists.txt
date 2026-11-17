@@ -2,8 +2,10 @@
 # Python tests load through ctypes. The firmware compiles the same sources into the M7 image
 # with the M7 flags (fw/CMakeLists.txt), so no library is built here when cross-compiling.
 set(_sources
-    src/dsp_biquad.c src/dsp_coef.c src/dsp_crc32.c src/dsp_dcblock.c src/dsp_gain.c
-    src/dsp_peq.c src/dsp_selftest.c src/dsp_testsig.c src/dsp_tone.c)
+    src/dsp_abi.c src/dsp_biquad.c src/dsp_coef.c src/dsp_comp.c src/dsp_crc32.c src/dsp_dcblock.c
+    src/dsp_env.c src/dsp_fastmath.c src/dsp_gain.c src/dsp_gate.c src/dsp_limiter.c
+    src/dsp_oversample.c src/dsp_peq.c src/dsp_saturate.c src/dsp_selftest.c src/dsp_testsig.c
+    src/dsp_tone.c)
 
 set(_absolute)
 foreach(_source ${_sources})
