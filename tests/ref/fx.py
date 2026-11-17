@@ -240,3 +240,44 @@ def crusher(x, steps, inc):
             held = r / float(steps)
         y[i] = held
     return y
+
+
+# ---- Reverb ------------------------------------------------------------------------------------
+
+OUT_L = np.array([1, 1, -1, -1, 1, 1, -1, -1], dtype=np.float64)
+OUT_R = np.array([1, -1, 1, -1, -1, 1, -1, 1], dtype=np.float64)
+INJECT = np.array([1, 1, -1, -1, 1, 1, -1, -1], dtype=np.float64)  # even lines left, odd right
+
+
+def hadamard8():
+    h = np.array([[1.0]])
+    for _ in range(3):
+        h = np.block([[h, h], [h, -h]])
+    return h / math.sqrt(8)
+
+
+def householder8():
+    return np.eye(8) - 2.0 / 8 * np.ones((8, 8))
+
+
+def reverb(xl, xr, lens, b0, a1, predelay, matrix=None):
+    """The FDN without the modulation (the test sets its depth to 0), float64."""
+    m = hadamard8() if matrix is None else matrix
+    lens = np.asarray(lens)
+    n = len(xl)
+    total = n + int(lens.max()) + predelay + 2
+    lines = np.zeros((8, total))
+    z = np.zeros(8)
+    yl, yr = np.empty(n), np.empty(n)
+    left = np.arange(8) % 2 == 0
+    for i in range(n):
+        ul = xl[i - predelay] if i >= predelay else 0.0
+        ur = xr[i - predelay] if i >= predelay else 0.0
+        idx = i - lens
+        s = np.where(idx >= 0, lines[np.arange(8), np.maximum(idx, 0)], 0.0)
+        yl[i] = 0.35 * OUT_L @ s
+        yr[i] = 0.35 * OUT_R @ s
+        z = np.asarray(b0) * s + np.asarray(a1) * z
+        v = m @ z + INJECT * np.where(left, ul, ur)
+        lines[:, i] = v
+    return yl, yr
