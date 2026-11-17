@@ -100,9 +100,10 @@ static const CtlParamDesc kTable[] = {
 
     /* Reverb. */
     P(350, "rev_decay_s", "Reverb decay", "s", 0.2f, 10.0f, 1.8f, LOG, PRESET, 0.0f),
-    P(351, "rev_hf_ratio", "Reverb high-frequency decay ratio", "", 0.1f, 1.0f, 0.5f, LIN, PRESET,
+    P(351, "rev_hf_ratio", "Reverb decay ratio at 8 kHz", "", 0.1f, 1.0f, 0.5f, LIN, PRESET,
       0.0f),
-    P(352, "rev_predelay_ms", "Reverb pre-delay", "ms", 0.0f, 100.0f, 10.0f, LIN, PRESET, 0.0f),
+    /* 50 ms, not 100: halves the pre-delay's 75 KB at 96 kHz (owner, 2026-11-17). */
+    P(352, "rev_predelay_ms", "Reverb pre-delay", "ms", 0.0f, 50.0f, 10.0f, LIN, PRESET, 0.0f),
 
     /* Effect slot: 0 echo, 1 chorus, 2 flanger, 3 phaser, 4 tremolo, 5 sweep filter,
      * 6 overdrive, 7 bit crusher. */
