@@ -11,7 +11,7 @@ One batch is one session. It ends with the build clean, the tests passing, its n
 | 0 | Project documents | No | Nothing | Done 2026-11-17 |
 | 1 | Foundation: host library, test harness, firmware skeleton | Nucleo, for the target run | 0 | Built 2026-11-17; target run open |
 | 2 | Audio pass-through on breakouts | Nucleo, two breakouts, scope | 1 | Waiting for the modules |
-| 3 | Filters, float and Q31, and the tone control | Host part: none. Target part: Nucleo | 1 | Not started |
+| 3 | Filters, float and Q31, and the tone control | Host part: none. Target part: Nucleo | 1 | Host part done 2026-11-17; target part open |
 | 4 | USB audio, USB MIDI, Ableton. **Portfolio checkpoint P1** | Nucleo, breakouts | 2, 3 | Not started |
 | 5 | Rev A boards: main board and control panel, five stages | No | 0 | Outline drafted |
 | 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Not started |

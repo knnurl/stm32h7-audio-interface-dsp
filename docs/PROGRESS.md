@@ -3,6 +3,49 @@
 The handoff log, newest entry first. Each entry: what was done, measured numbers, exact
 commands, what the owner decides or does next.
 
+## 2026-11-17: batch 3, host part (filters, Q31, tone control)
+
+**Done**
+
+- `dsp_biquad`: float32 TDF-II, a double-state TDF-II with float input and output, and Q31
+  direct form I with a 64-bit accumulator, per-section shift and optional error feedback.
+- `dsp_coef`: cookbook peak, shelves, low-pass, high-pass, first-order sections, Butterworth to
+  order 8, magnitude, quantisation to float32 and to Q31 with an overflow-proof shift rule.
+  Notch and all-pass are stubs for exercise 3.
+- `dsp_peq`: high-pass plus four bands, coefficient ramps over a set number of blocks.
+- `dsp_tone`: bass, mid, treble, -12 to +12 dB, smoothed in dB, exact at centre.
+- Self-test cases `biquad_f32`, `biquad_f64`, `biquad_q31_round`, `biquad_q31_ef`, `tone_f32`.
+- Studies: `tools/studies/b3_filter_noise.py`, `tools/studies/b3_cramping.py`.
+- Notes: `biquad.md`, `coefficient_design.md`, `tone.md`. Exercise:
+  `docs/exercises/EX3_notch_allpass.md`.
+
+**Measured (on the PC)**
+
+| Item | Value | Command |
+|---|---|---|
+| Unit tests | 116 pass | `python -m pytest` |
+| Float32 TDF-II, low-frequency sections, signal-to-noise | 59 to 97 dB (20 Hz high-pass at 48 kHz: 68 dB at -1 dBFS) | `python tools/studies/b3_filter_noise.py` |
+| Double-state TDF-II, same sections | 151 to 156 dB (the float output's own rounding) | same |
+| Q31 DF-I with error feedback, same sections | 98 to 190 dB; without it at -60 dBFS: 55 to 79 dB | same |
+| Cramping, +12 dB peak Q 1 at 15 kHz, 1.2 f0 | -4.25 dB at 48 kHz, -0.64 dB at 96 kHz | `python tools/studies/b3_cramping.py` |
+| Tone: zipper sidebands of a full sweep in 100 ms | -106 dBFS | `test_zipper_noise_of_a_full_sweep` |
+| Tone: flat at centre | bit-exact | `test_flat_at_centre_is_bit_exact` |
+| M7 image | 34 KB flash | `cmake --build --preset fw` |
+
+**Decided (provisional): the PEQ and the tone control run in double** (`dsp_biquad_f64_section`),
+because float32 state loses 40 to 90 dB on low-frequency sections. It stands or falls on the
+M7 cycle cost, which only the board can give.
+
+**Not done, needs the board:** cycles per sample of every kernel (float32 against double is the
+deciding number), the fused multiply-add and denormal studies, the PEQ and tone control in the
+pass-through.
+
+**For the owner**
+
+1. Confirm the tone corner frequencies (100 Hz, 1 kHz with Q 0.7, 10 kHz) or give others.
+2. Exercise 3: `docs/exercises/EX3_notch_allpass.md` (12 tests waiting).
+3. With the board: `python tools/target_test.py --port COMx` now also times the filters.
+
 ## 2026-11-17: batch plan rewritten with the feature review
 
 `docs/PLAN_BATCHES.md` now carries the owner's additions inside the batches instead of in a

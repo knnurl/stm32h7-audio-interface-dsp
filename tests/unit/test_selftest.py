@@ -1,10 +1,17 @@
 """The self-test cases the firmware also runs. Each case is checked here against its Python
 reference, so a target that matches the PC library also matches the reference."""
+import ctypes
+
 import numpy as np
 
 import dsplib
+from ref import biquad as biquad_ref
+from ref import coef
 from ref import gain as gain_ref
 from ref import testsig as testsig_ref
+
+CASCADE = [coef.highpass(48000.0, 30.0, 0.7071067811865476), coef.peak(48000.0, 1000.0, 1.0, 6.0),
+           coef.high_shelf(48000.0, 8000.0, 1.0, -4.0)]
 
 
 def case_index(lib, name):
@@ -44,3 +51,58 @@ def test_gain_f32_case_matches_reference(lib):
 def test_noise_q31_case_matches_reference(lib):
     _, y = dsplib.selftest_run(lib, case_index(lib, "noise_q31"))
     assert np.array_equal(y, testsig_ref.noise_q31(2, dsplib.SELFTEST_FRAMES))
+
+
+def test_biquad_case_constants_are_the_designs(lib):
+    """The constants in dsp_selftest.c are the float32 roundings and Q31 quantisations of the
+    designs; if a design changes, this says so."""
+    import re
+    import pathlib
+    text = (pathlib.Path(dsplib.ROOT) / "dsp/src/dsp_selftest.c").read_text()
+    floats = re.findall(r"\{([-0-9.e, f]+)\},", text.split("kCascadeF32")[1].split("};")[0])
+    for line, section in zip(floats, CASCADE):
+        values = [np.float32(v.strip().rstrip("f")) for v in line.split(",")]
+        assert values == list(np.float32(section))
+    ints = re.findall(r"\{([-0-9, ]+)\},", text.split("kCascadeQ31")[1].split("};")[0])
+    for line, section in zip(ints, CASCADE):
+        values = [int(v) for v in line.split(",")]
+        q, shift = coef.to_q31(section)
+        assert values == q + [shift]
+
+
+def test_biquad_f32_case_matches_reference(lib):
+    x, y = dsplib.selftest_run(lib, case_index(lib, "biquad_f32"))
+    expected = biquad_ref.f64_cascade(x, [np.float32(s).astype(np.float64) for s in CASCADE])
+    dsplib.assert_within_db(y, expected, -75.0)  # The 30 Hz high-pass: see test_biquad.py.
+
+
+def test_biquad_q31_cases_are_bit_exact(lib):
+    quantised = [coef.to_q31(s) for s in CASCADE]
+    for name, ef in (("biquad_q31_round", 0), ("biquad_q31_ef", 1)):
+        x, y = dsplib.selftest_run(lib, case_index(lib, name))
+        assert np.array_equal(y, biquad_ref.q31_cascade(x, quantised, ef)), name
+
+
+def test_tone_case_is_the_tone_block(lib):
+    x, y = dsplib.selftest_run(lib, case_index(lib, "tone_f32"))
+    half = len(x) // 2
+    tone = dsplib.DspToneF32()
+    lib.dsp_tone_f32_init(ctypes.byref(tone), 48000.0)
+    for band, gain in enumerate((6.0, -3.0, 9.0)):
+        lib.dsp_tone_f32_set_db(ctypes.byref(tone), band, gain)
+    lib.dsp_tone_f32_reset(ctypes.byref(tone))
+    out = np.zeros_like(x)
+    for i in range(0, half, 16):
+        if i == 256:
+            lib.dsp_tone_f32_set_db(ctypes.byref(tone), 0, -12.0)
+        l_in, r_in = x[i:i + 16].copy(), x[half + i:half + i + 16].copy()
+        l_out, r_out = np.zeros_like(l_in), np.zeros_like(r_in)
+        lib.dsp_tone_f32_process(ctypes.byref(tone), dsplib.f32(l_in), dsplib.f32(r_in),
+                                 dsplib.f32(l_out), dsplib.f32(r_out), 16)
+        out[i:i + 16], out[half + i:half + i + 16] = l_out, r_out
+    assert out.tobytes() == y.tobytes()
+
+
+def test_biquad_f64_case_matches_reference(lib):
+    x, y = dsplib.selftest_run(lib, case_index(lib, "biquad_f64"))
+    dsplib.assert_within_db(y, biquad_ref.f64_cascade(x, CASCADE), -135.0)
