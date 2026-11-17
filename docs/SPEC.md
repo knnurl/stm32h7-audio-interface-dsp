@@ -398,4 +398,8 @@ Settled, with the source:
 | 2026-11-17 | Rev A runs at 48 kHz: the budget is judged at 48 kHz (8333 cycles per frame, ceiling 5833); 96 kHz stays a rev B target | Owner; rev A's USB duplex is 48 kHz anyway; the measured path is 4.9 times over the 96 kHz ceiling |
 | 2026-11-17 | Saturators use `dsp_fast_tanhf`; the half-band kernel folds symmetric taps into four partial sums; the DSP library runs from ITCM | Measured on the M7 (`docs/results/budget_target.md`): 4x saturator 1678 to 1204, limiter 1241 to 993, overdrive 3661 to 2479; ITCM itself no measurable change; still bit-identical with the PC |
 | 2026-11-17 | `flash.ps1` writes both images in one programmer session | Two sessions left the core in ST's flash loader and faulted on every flash (reproduced, then fixed) |
+| 2026-11-17 | Saturation at 2x by default (strips) and in the overdrive | Owner (budget gate); measured 1204 to 578 and 2479 to 1284 cycles; aliasing at 5 kHz -64 dB instead of -131 |
+| 2026-11-17 | Headphone limiter detects sample peaks; the speaker limiter keeps true-peak detection | Owner; measured 214 against 665 cycles; headphone true peak can exceed the ceiling by up to 3 dB |
+| 2026-11-17 | The overdrive and the strips' saturation never run together (control core refuses, error 10) | Owner; the worst case pays for one |
+| 2026-11-17 | True-peak detector: a 63-tap Nyquist interpolator (three 16-tap phases) instead of the 4x oversampler; limiter latency L + 9 | Measured: 998 to 665 cycles; true peak still 0.24 dB under the set ceiling on the hostile set |
 

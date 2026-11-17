@@ -4,6 +4,38 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: budget round 2 on the board (owner: "keep on")
+
+**Transcripts read:** none (no new block).
+
+Done and measured on the M7 (`docs/results/budget_target.md`), every case still matching the PC:
+- saturation at 2x in the strips (default) and the overdrive: overdrive 2479 to 1284 cycles;
+- a sample-peak mode for the limiter, for the headphones: 214 cycles against 665 true-peak;
+- the budget rule in the control core: the overdrive and strip saturation never together
+  (`err 10`; tried on the board);
+- a true-peak detector built for the job (63-tap Nyquist interpolator, three 16-tap phases,
+  `tools/design/tp_detector.py`): limiter 998 to 665, latency L + 24 to L + 9, true peak still
+  0.24 dB under the set ceiling.
+Not done: float32 PEQ sections (the worst case lets every band below 1 kHz; about 300 cycles).
+
+Found on the way: the tests' true-peak measurement read the cut edges of its slice (up to 0.77 dB
+of ringing); fixed, and the batch 6 worst case did not change. My figure of "about 3 dB" for the
+sample-peak overshoot was right only after that fix (3.03 measured, 3.01 in theory).
+
+**Correction of my last report:** I said options 1, 3 and 6 "should fit". I had not added them
+up; they do not. Worst case now about 7400 cycles per frame at 48 kHz against a ceiling of 5833.
+Unit tests: 522 pass.
+
+**For the owner: what closes the last 1600 cycles**
+1. Run the reverb on the M4 (my recommendation). It is a send effect, so a block of latency is
+   inaudible; it is float32 throughout, which suits the M4's single-precision FPU; it frees 898
+   cycles on the M7. It brings part of batch 11 (the dual-core work) forward.
+2. Also the headphone stage on the M4 (828): with the reverb, about 5700 on the M7, under the
+   ceiling; the M4 would then carry about 1700 M7-equivalent cycles [Verify the M4's cycles].
+3. Or accept a higher ceiling (85 %: 7083) for a worst case that has every option on at once.
+4. Your exercise EX6 (a shorter half-band filter) still cuts the strip saturators and the
+   echo's 96 kHz path.
+
 ## 2026-11-17: budget round 1 on the board (owner's go on five steps)
 
 **Transcripts read:** none (no new block).

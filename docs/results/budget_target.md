@@ -83,3 +83,32 @@ With saturation at 2x in the strips and the overdrive (the overdrive's 2x figure
 the saturator's ratio): about 9200, 1.6 times over. What is left is spread out: two limiters
 2000, the PEQs about 1700, the reverb 900, the room FIR 900 (estimate).
 
+## Second round (2026-11-17, owner: "keep on")
+
+| Step | Measured on the M7 | Notes |
+|---|---|---|
+| Saturation at 2x: strip default and the overdrive | overdrive 2479 to 1284; strip saturator 1204 to 578 | aliasing at 5 kHz -64 dB instead of -131 |
+| Sample-peak limiter for the headphones (`kDspLimiterSamplePeak`) | 214 against 998 | no sample over the ceiling; true peak up to 3.03 dB over it (a quarter-rate sine at 45 degrees; theory 3.01) |
+| Budget rule: the overdrive and strip saturation never together | refused with `err 10` (checked on the board) | the worst case pays for one of them |
+| True-peak detector: 63-tap Nyquist interpolator, three 16-tap phases, instead of the 4x oversampler | limiter 998 to 665; latency L + 24 to L + 9; DTCM 8 KB smaller | true peak 0.262 dB over the internal threshold (0.198 before), still 0.24 dB under the set ceiling |
+| Float32 PEQ sections at 1 kHz and above | not done | the worst case lets every band sit below 1 kHz, where double is needed: about 300 cycles even with ranges restricted |
+
+Found on the way: the true-peak measurement in the tests read the cut edges of its slice (zero
+padding rings, up to 0.77 dB); it now leaves them out. The batch 6 worst case did not change.
+
+## Where it stands at 48 kHz, worst case
+
+| Block | Cycles per frame |
+|---|---|
+| Two strips saturating (trim, PEQ, gate, compressor, 2x saturation) | 2 x 1163 = 2326 |
+| Dearest effect allowed with them (the chorus; the overdrive is refused) | 609 |
+| Reverb | 898 |
+| Tone | 397 |
+| Speaker stage: PEQ, delay, true-peak limiter, room FIR (estimate 900) | 574 + 665 + 900 = 2139 |
+| Headphone stage: PEQ, crossfeed (estimate), sample-peak limiter | 564 + 50 + 214 = 828 |
+| Conversion, mixer, metering (estimates) | 220 |
+| **Total** | **about 7400, against 5833 (1.27 times)** |
+
+The other worst case, the overdrive with the strips not saturating: 1170 + 1284 = 2454 in place of
+2935, so about 6900.
+

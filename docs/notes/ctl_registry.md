@@ -70,6 +70,14 @@ Differs, and why: this device has four writers (knobs, PC, MIDI, presets), so ev
 through the registry and reaches the audio level only through the queue. Agrees: the 1 %
 threshold is the same figure as the pick-up hysteresis here (`knob_pickup.md`).
 
+## The budget rule
+
+Measured on the board (`docs/results/budget_target.md`), the overdrive and the strips'
+saturation cannot both run within the CPU budget. `ctl_core_set` refuses turning either on while
+the other runs (`kCtlErrBudget`, protocol error 10), from any source; a preset holding both loads
+everything else and counts the refusal. The panel (batch 8d) should step past the overdrive
+while a strip saturates rather than show a refusal.
+
 ## Open questions
 
 - Per-parameter smoothing times are guesses (20 ms for gains and frequencies). Batch 8c measures

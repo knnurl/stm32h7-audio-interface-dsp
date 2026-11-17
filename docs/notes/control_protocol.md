@@ -36,6 +36,7 @@ aside.
 | 7 | Preset store failed, or the slot is empty |
 | 8 | Line too long |
 | 9 | The parameter has no knob |
+| 10 | Budget: the overdrive and strip saturation cannot run together (`ctl_core.h`) |
 
 ## Commands
 

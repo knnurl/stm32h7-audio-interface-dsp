@@ -12,7 +12,11 @@ source (strips, makeup gain, oversampled clipping, the effect slot).
 Required gain per sample r = min(1, ceiling / true peak), the true peak taken from a 4x
 oversampled copy of both channels. The applied gain is a moving average over L samples of a
 held minimum of r over L + 3 samples, with a one-pole release when the minimum rises; the audio
-is delayed by L + 24 samples so each drop has finished before the loud sample arrives.
+is delayed by L + 9 samples so each drop has finished before the loud sample arrives (L + 24
+until the budget round of 2026-11-17, when the 4x oversampler gave way to a three-phase
+interpolator built for detection: `tools/design/tp_detector.py`; 998 to 665 cycles per frame).
+A sample-peak mode for the headphones skips the interpolator (214 cycles, latency L + 1, true
+peak not guaranteed: up to 3.03 dB over on a quarter-rate sine).
 
 ## Structure, and what was rejected
 
@@ -30,7 +34,7 @@ is delayed by L + 24 samples so each drop has finished before the loud sample ar
 | Measurement | Value | Test |
 |---|---|---|
 | No output sample above the ceiling: square, inter-sample-peak sine, noise bursts, spikes; look-ahead 32 to 480 samples | holds | `test_no_sample_exceeds_the_ceiling` |
-| Latency | L + 24, exact | `test_latency_is_lookahead_plus_24` |
+| Latency | L + 9, exact (L + 1 in sample-peak mode) | `test_latency_is_lookahead_plus_9` |
 | Below the ceiling | bit-exact, delayed | `test_below_the_ceiling_is_bit_exact` |
 | After a release | bit-exact again | `test_release_returns_to_bit_exact` |
 | NaN and infinity in | finite out, under the ceiling | `test_bad_input_cannot_get_through` |
