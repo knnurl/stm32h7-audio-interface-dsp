@@ -110,7 +110,11 @@ void dsp_limiter_f32_process(DspLimiterF32 *lim, const float *in_l, const float 
             if (m < lim->held) {
                 lim->held = m;
             } else {
-                lim->held = m + lim->release_coef * (lim->held - m);
+                const float next = m + lim->release_coef * (lim->held - m);
+                /* A float32 one-pole stalls short of its target (it stopped at 0.99997 here).
+                 * Finish the move when it stalls or is within 1e-6, so a released limiter is
+                 * exactly transparent again. */
+                lim->held = (next == lim->held || m - next < 1e-6f) ? m : next;
             }
             lim->box_sum += (double)lim->held - (double)lim->box[lim->box_pos];
             lim->box[lim->box_pos] = lim->held;

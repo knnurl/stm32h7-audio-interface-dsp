@@ -36,5 +36,6 @@ folders are gitignored: the text is the author's, and this repository is meant t
 | Date | Transcripts | For | Where the findings went |
 |---|---|---|---|
 | 2026-11-17 | #172, #89, #32, Bilinear Transform, #20, #27, #92, #49, #162 | Batch 3 | `biquad.md`, `coefficient_design.md`, `tone.md` |
+| 2026-11-17 | Audio Compressor, #58, #103, #117, #153, #42 | Batch 6 | `dynamics.md`, `oversampling_saturation.md`, `limiter.md` |
 
 The rest of the table above is by title only.

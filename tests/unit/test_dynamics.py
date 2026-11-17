@@ -123,12 +123,20 @@ def test_sidechain_highpass_ignores_bass(lib6):
 
 
 def test_nan_does_not_poison_the_compressor(lib6):
-    comp = make_comp(lib6, sidechain_hpf_hz=100.0)
-    x = np.full(4800, 0.5, dtype=np.float32)
+    """A NaN in the input must not leave the side-chain high-pass full of NaN: afterwards the
+    compressor still compresses a 1 kHz tone as a fresh one does. (A first version of this test
+    used DC, which the side-chain high-pass removes, so it could not see compression at all.)"""
+    tone = sine(-6.0, 9600, f=1000.0)
+    poisoned = make_comp(lib6, sidechain_hpf_hz=100.0)
+    x = tone.copy()
     x[100] = np.nan
-    run(lib6, lib6.dsp_comp_f32_process, comp, x)
-    y = run(lib6, lib6.dsp_comp_f32_process, comp, np.full(4800, 0.5, dtype=np.float32))
-    assert np.all(np.isfinite(y)) and comp.reduction_db > 1.0  # Still compressing.
+    run(lib6, lib6.dsp_comp_f32_process, poisoned, x)
+    y = run(lib6, lib6.dsp_comp_f32_process, poisoned, tone)
+    fresh = make_comp(lib6, sidechain_hpf_hz=100.0)
+    run(lib6, lib6.dsp_comp_f32_process, fresh, tone)
+    run(lib6, lib6.dsp_comp_f32_process, fresh, tone)
+    assert np.all(np.isfinite(y))
+    assert abs(poisoned.reduction_db - fresh.reduction_db) < 0.01 and fresh.reduction_db > 5.0
 
 
 # ---- Gate --------------------------------------------------------------------------------------

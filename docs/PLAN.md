@@ -14,7 +14,7 @@ One batch is one session. It ends with the build clean, the tests passing, its n
 | 3 | Filters, float and Q31, and the tone control | Host part: none. Target part: Nucleo | 1 | Host part done 2026-11-17; target part open |
 | 4 | USB audio, USB MIDI, Ableton. **Portfolio checkpoint P1** | Nucleo, breakouts | 2, 3 | Not started |
 | 5 | Rev A boards: main board and control panel, five stages | No | 0 | Outline drafted |
-| 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Not started |
+| 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Host part done 2026-11-17; target part open |
 | 7 | Bring-up of both boards, lab session | Both boards, lab analyser | 4, 5 | Not started |
 | 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console for the target part) | 1 | Not started |
 | 8b | Effect slot, reverb and tempo | Host part: none. Target part: Nucleo | 3, 6 | Not started |

@@ -106,3 +106,37 @@ def test_tone_case_is_the_tone_block(lib):
 def test_biquad_f64_case_matches_reference(lib):
     x, y = dsplib.selftest_run(lib, case_index(lib, "biquad_f64"))
     dsplib.assert_within_db(y, biquad_ref.f64_cascade(x, CASCADE), -135.0)
+
+
+def test_batch6_cases_are_the_blocks(lib):
+    """Each batch 6 case equals the block run through its Python binding with the same settings
+    (catches wiring mistakes in dsp_selftest.c), and stays finite and bounded."""
+    import dsplib_b6 as b6
+    b6.bind(lib)
+    x, _ = dsplib.selftest_run(lib, case_index(lib, "comp_f32"))
+
+    def blocks(fn, state, data):
+        out = np.zeros_like(data)
+        for i in range(0, len(data), 16):
+            xs, ys = data[i:i + 16].copy(), np.zeros(16, dtype=np.float32)
+            fn(ctypes.byref(state), dsplib.f32(xs), dsplib.f32(ys), 16)
+            out[i:i + 16] = ys
+        return out
+
+    comp = b6.DspCompF32()
+    lib.dsp_comp_f32_init(ctypes.byref(comp), 48000.0,
+                          ctypes.byref(b6.DspCompParams(-20.0, 4.0, 6.0, 1.0, 10.0, 3.0, 80.0)))
+    assert blocks(lib.dsp_comp_f32_process, comp, x).tobytes() == \
+        dsplib.selftest_run(lib, case_index(lib, "comp_f32"))[1].tobytes()
+    gate = b6.DspGateF32()
+    lib.dsp_gate_f32_init(ctypes.byref(gate), 48000.0,
+                          ctypes.byref(b6.DspGateParams(-30.0, 6.0, 1.0, 0.2, 2.0, -60.0, 1.0)))
+    assert blocks(lib.dsp_gate_f32_process, gate, x).tobytes() == \
+        dsplib.selftest_run(lib, case_index(lib, "gate_f32"))[1].tobytes()
+    for name, mode in (("sat_os4_f32", 2), ("sat_adaa_f32", 3)):
+        sat = b6.DspSaturatorF32()
+        lib.dsp_saturator_f32_init(ctypes.byref(sat), mode, 12.0)
+        assert blocks(lib.dsp_saturator_f32_process, sat, x).tobytes() == \
+            dsplib.selftest_run(lib, case_index(lib, name))[1].tobytes(), name
+    _, y = dsplib.selftest_run(lib, case_index(lib, "limiter_f32"))
+    assert np.all(np.isfinite(y)) and np.max(np.abs(y)) <= 10 ** (-6 / 20) * (1 + 1e-6)

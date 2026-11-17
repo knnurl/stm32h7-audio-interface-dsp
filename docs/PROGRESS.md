@@ -4,52 +4,52 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
-## 2026-11-17: batch 6, host part, paused mid-way (work in progress)
-
-**State:** paused at the owner's request. Code and tests are committed as they stand; 8 of the
-48 new tests fail and are listed below. Not done yet: the aliasing study script, the self-test
-cases, the design notes with their "From the transcripts" sections, exercise 6, and the
-transcript index entry for batch 6.
+## 2026-11-17: batch 6, host part (dynamics, oversampling, saturation, limiter)
 
 **Transcripts read in full:** Audio Compressor Software Implementation, Noise Gate (#58),
 Recursive RMS (#103), DSP Overdrive (#117), DSP Overdrive Asymmetrical Clipping (#153),
 Decimation Filters (#42). Read by a review agent in this session before any batch 6 test was
-written; its findings were checked here.
+written; its findings were checked here, and one (the cause of the limiter's true-peak
+overshoot) was contradicted by measurement.
 
-**Built:** `dsp_fastmath` (log2 and exp2), `dsp_env` (peak, RMS), `dsp_comp` (Giannoulis et al.),
-`dsp_gate`, `dsp_oversample` (polyphase half-band, 2x and 4x), `dsp_saturate` (tanh: plain, 2x,
-4x, ADAA), `dsp_limiter` (stereo, look-ahead, 4x true-peak detection), `dsp_abi.c` (struct sizes
-for the ctypes mirrors), `tools/design/b6_coefficients.py`.
+**Done**
+- `dsp_fastmath`, `dsp_env`, `dsp_comp`, `dsp_gate`, `dsp_oversample`, `dsp_saturate`,
+  `dsp_limiter`; `dsp_abi.c` checks every ctypes mirror's size against the compiler's.
+- Self-test cases `comp_f32`, `gate_f32`, `limiter_f32`, `sat_os4_f32`, `sat_adaa_f32`.
+- Studies: `tools/design/b6_coefficients.py`, `tools/studies/b6_aliasing.py`.
+- Notes: `dynamics.md`, `oversampling_saturation.md`, `limiter.md`, each with its "From the
+  transcripts" section. Exercise: `docs/exercises/EX6_halfband.md` (its tests checked against the
+  built-in filter, then left failing for the owner).
 
-**Fixed from the review, before testing:** ADAA glitch when the drive changes; undefined
-behaviour in `dsp_fast_exp2f(NaN)`; the oversampler's 64-frame scratch limit (now chunked) and
-its header's tap count; the limiter now has a 32-sample minimum look-ahead and replaces NaN and
-infinity with 0; a NaN can no longer leave the compressor's side-chain filter poisoned; the gate
-compares thresholds in the linear domain, clamps its range to 0 dB or below.
+**Fixed, each with a test:** ADAA spike when the drive changes; `dsp_fast_exp2f(NaN)` undefined
+behaviour; the 4x oversampler's scratch overflow above 64 frames; NaN leaving the compressor's
+side chain poisoned; the limiter's release stalling at 0.99997 so it never became transparent
+again; the limiter now replaces NaN and infinity with 0 and has a 32-sample minimum look-ahead.
 
-**Confirmed by the review:** the polyphase index arithmetic (checked against direct convolution
-to 8e-7) and the limiter's alignment argument.
+**Measured (PC)**
 
-**Measured so far (PC)**
+| Item | Value | Command |
+|---|---|---|
+| Unit tests | 222 pass | `python -m pytest` |
+| Aliasing at 5 kHz, plain / ADAA / 2x / 4x | -27.4 / -38.5 / -64.4 / -130.9 dB | `python tools/studies/b6_aliasing.py` |
+| 40 Hz, 12 dB over threshold, THD at release 10 / 50 / 200 ms | -24.0 / -33.0 / -42.6 dB | `test_bass_distortion_against_release` |
+| Limiter, no sample over the ceiling, hostile signals | holds | `test_no_sample_exceeds_the_ceiling` |
+| Limiter, true peak over the ceiling | 0.198 dB at every look-ahead from 32 to 240 samples | `test_true_peak_overshoot_against_lookahead` |
+| Oversampled clipping of full-band noise, peak | 1.45 (2x), 1.55 (4x) | `test_latency_and_bounds` |
+| Oversampler latency | 41 (2x), 46.5 (4x) samples | `test_round_trip_latency_and_flatness` |
+| M7 image | 42.8 KB flash, 57 KB DTCM (the self-test's static limiter is 30 KB of it) | `cmake --build --preset fw` |
 
-| Item | Value |
-|---|---|
-| 40 Hz tone 12 dB over threshold, THD against release 10 / 50 / 200 ms | -24.0 / -33.0 / -42.6 dB |
-| Limiter true-peak overshoot at the 32-sample look-ahead: square, inter-sample, bursts, spikes | +0.04, +0.11, +0.20, +0.01 dB |
+**Not done, needs the board:** cycles of every block, fast log and exp against the C library.
 
-**Failing tests to resume with** (`python -m pytest tests/unit`):
-1. `test_log2_accuracy`: error 2.25e-5 against a 2e-5 limit. The limit is from the design figure
-   in double; float32 evaluation is worse. Measure and set the limit with the reason.
-2. `test_nan_does_not_poison_the_compressor`: to investigate.
-3. `test_polyphase_equals_direct_convolution[1]`: -129.2 dBFS against -130; the limit was a
-   guess. Float32 accumulation over 42 taps; set from measurement.
-4. `test_latency_and_bounds` for 2x and 4x: oversampled saturation overshoots more than 1.1;
-   measure the ringing and decide the bound.
-5. `test_oversampling_reduces_aliasing`: to investigate (the measure, or the claim).
-6. `test_true_peak_overshoot_is_small`: up to +0.20 dB on noise bursts at the minimum
-   look-ahead, against a 0.05 dB limit. Either a larger minimum look-ahead, a margin, or a
-   documented bound: an owner-visible decision for the speaker protection.
-7. `test_release_returns_to_bit_exact`: to investigate.
+**For the owner**
+1. **The limiter's true-peak gap** (`docs/notes/limiter.md`): 4x detection under-reads peaks
+   between samples, by up to 0.47 dB for content near 20 kHz at 48 kHz. Options: a 0.5 dB
+   margin (recommended now), 8x detection, or interpolation between the four.
+2. The strips' default compressor release: 50 ms or more, from the distortion figures.
+3. The strips' saturation mode: 4x (0.97 ms of latency at 48 kHz) or 2x.
+4. Exercise 6: `docs/exercises/EX6_halfband.md`.
+5. Pushing: the repository has no remote yet. Say which: a private GitHub repository created
+   with `gh`, or a URL of one you create.
 
 ## 2026-11-17: transcript pass for batch 3
 

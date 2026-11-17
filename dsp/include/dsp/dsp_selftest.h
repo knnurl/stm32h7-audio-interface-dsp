@@ -4,7 +4,8 @@
  * point, tolerance for float).
  *
  * Samples are 4 bytes in every format (float or Q31), so buffers are arrays of 32-bit words.
- * A case builds the state of its block on the stack: the time of a run includes that set-up.
+ * A case builds the state of its block (on the stack, or in a static for the large ones):
+ * the time of a run includes that set-up. Not reentrant.
  */
 #ifndef DSP_SELFTEST_H
 #define DSP_SELFTEST_H

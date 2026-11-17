@@ -1,7 +1,11 @@
 #include "dsp/dsp_selftest.h"
 
 #include "dsp/dsp_biquad.h"
+#include "dsp/dsp_comp.h"
 #include "dsp/dsp_gain.h"
+#include "dsp/dsp_gate.h"
+#include "dsp/dsp_limiter.h"
+#include "dsp/dsp_saturate.h"
 #include "dsp/dsp_testsig.h"
 #include "dsp/dsp_tone.h"
 
@@ -144,6 +148,62 @@ static void tone_f32_run(const void *in, void *out) {
     }
 }
 
+/* Batch 6. Inputs: a 1 kHz-ish burst pattern made from the noise generator, so the dynamics
+ * blocks see loud and quiet passages. Every case runs in blocks of 16 like the audio interrupt. */
+static void bursts_f32_input(void *in) {
+    float *x = (float *)in;
+    DspNoise noise;
+    dsp_noise_seed(&noise, 5u);
+    dsp_noise_f32(&noise, x, kDspSelftestFrames, 1.0f);
+    for (size_t i = 0; i < kDspSelftestFrames; ++i) {
+        x[i] *= (i / 128u) % 2u == 0u ? 0.9f : 0.01f;
+    }
+}
+
+static void comp_f32_run(const void *in, void *out) {
+    const DspCompParams params = {-20.0f, 4.0f, 6.0f, 1.0f, 10.0f, 3.0f, 80.0f};
+    DspCompF32 comp;
+    dsp_comp_f32_init(&comp, 48000.0f, &params);
+    for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
+        dsp_comp_f32_process(&comp, (const float *)in + i, (float *)out + i, 16);
+    }
+}
+
+static void gate_f32_run(const void *in, void *out) {
+    const DspGateParams params = {-30.0f, 6.0f, 1.0f, 0.2f, 2.0f, -60.0f, 1.0f};
+    DspGateF32 gate;
+    dsp_gate_f32_init(&gate, 48000.0f, &params);
+    for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
+        dsp_gate_f32_process(&gate, (const float *)in + i, (float *)out + i, 16);
+    }
+}
+
+/* Left = first half, right = second half, as tone_f32. 4 ms of state lives in the struct, so it
+ * is static here rather than on the stack (about 30 KB). */
+static DspLimiterF32 s_limiter;
+
+static void limiter_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    const size_t half = kDspSelftestFrames / 2;
+    dsp_limiter_f32_init(&s_limiter, 48000.0f, -6.0f, 1.0f, 20.0f);
+    for (size_t i = 0; i < half; i += 16) {
+        dsp_limiter_f32_process(&s_limiter, x + i, x + half + i, y + i, y + half + i, 16);
+    }
+}
+
+static DspSaturatorF32 s_saturator;
+
+static void saturate_run(const void *in, void *out, int32_t mode) {
+    dsp_saturator_f32_init(&s_saturator, mode, 12.0f);
+    for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
+        dsp_saturator_f32_process(&s_saturator, (const float *)in + i, (float *)out + i, 16);
+    }
+}
+
+static void sat_os4_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatOs4); }
+static void sat_adaa_f32_run(const void *in, void *out) { saturate_run(in, out, kDspSatAdaa); }
+
 static const SelftestCase kCases[] = {
     {"gain_f32", kDspFmtF32, gain_f32_input, gain_f32_run},
     {"noise_q31", kDspFmtQ31, noise_q31_input, noise_q31_run},
@@ -152,6 +212,11 @@ static const SelftestCase kCases[] = {
     {"biquad_q31_round", kDspFmtQ31, noise_quarter_q31_input, biquad_q31_round_run},
     {"biquad_q31_ef", kDspFmtQ31, noise_quarter_q31_input, biquad_q31_ef_run},
     {"tone_f32", kDspFmtF32, noise_half_f32_input, tone_f32_run},
+    {"comp_f32", kDspFmtF32, bursts_f32_input, comp_f32_run},
+    {"gate_f32", kDspFmtF32, bursts_f32_input, gate_f32_run},
+    {"limiter_f32", kDspFmtF32, bursts_f32_input, limiter_f32_run},
+    {"sat_os4_f32", kDspFmtF32, bursts_f32_input, sat_os4_f32_run},
+    {"sat_adaa_f32", kDspFmtF32, bursts_f32_input, sat_adaa_f32_run},
 };
 
 size_t dsp_selftest_count(void) { return sizeof(kCases) / sizeof(kCases[0]); }

@@ -363,3 +363,7 @@ Settled, with the source:
 | 2026-11-17 | The PEQ and the tone control use double-precision state, float in and out (provisional until the M7 cycle cost is measured) | Measured: float32 TDF-II gives 59 to 111 dB signal-to-noise on low-frequency sections, double about 152 dB (docs/results/b3_filter_noise.md) |
 | 2026-11-17 | Q31 biquads: direct form I, per-section shift chosen so the 64-bit accumulator cannot overflow for any input; error feedback optional | Proven bound: sum of |coefficients| <= 2^32 - 1 |
 | 2026-11-17 | Tone defaults proposed: 100 Hz low shelf, 1 kHz peak Q 0.7, 10 kHz high shelf, 20 ms smoothing | Awaiting the owner's ears |
+| 2026-11-17 | Compressor after Giannoulis et al. (instantaneous detector, gain reduction smoothed in dB); times are time constants | Measured: static curve within 0.1 dB, times within 5 %; bass distortion documented against release |
+| 2026-11-17 | Saturation by tanh at 4x through polyphase half-band filters (83 and 23 taps), with 2x and ADAA as options | Measured aliasing at 5 kHz: -131 dB at 4x against -27 dB plain; latency 46.5 samples |
+| 2026-11-17 | Limiter: stereo-linked, 4x true-peak detection, sliding minimum then moving average; at least 32 samples of look-ahead; non-finite input replaced by 0 | No output sample above the ceiling by construction; the true-peak gap (up to 0.47 dB) awaits the owner's choice of remedy |
+

@@ -1,6 +1,6 @@
 /* Noise gate with hysteresis and hold.
  *
- * Detector: a peak envelope (instant attack, `detector_release_ms` release) in dB.
+ * Detector: a peak envelope (instant attack, `detector_release_ms` release).
  * State: it opens when the level reaches `open_db`; it closes only after the level has stayed
  * below `open_db - hysteresis_db` for `hold_ms`. Hysteresis stops chatter on a signal that hovers
  * at the threshold; the hold stops it closing between the notes of a phrase.

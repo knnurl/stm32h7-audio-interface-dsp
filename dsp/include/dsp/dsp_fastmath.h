@@ -7,8 +7,8 @@
  *
  * Domain: log2 of values at or below 1e-30, and of NaN, returns log2(1e-30) (-99.66), so silence
  * gives a finite level of about -600 dBFS. exp2 clamps its argument to [-126, 127]; NaN gives
- * 2^-126. Errors as evaluated in float32: log2 1.7e-5, exp2 2.4e-7 relative (the design figures
- * above are in double).
+ * 2^-126. Errors as evaluated in float32 (measured, tests/unit/test_fastmath_env.py): log2
+ * 2.3e-5 (1.4e-4 dB), exp2 2.4e-7 relative. The design figures above are in double.
  * Bit-identical on every IEEE-754 platform with fused multiply-add off (no library calls).
  */
 #ifndef DSP_FASTMATH_H
