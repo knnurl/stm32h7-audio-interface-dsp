@@ -4,6 +4,51 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-17: first board run (Nucleo-H755ZI-Q)
+
+**Transcripts read:** none (no new block).
+
+The owner connected the board. Read first, without writing: ST-LINK V3 (V3J16M9), 3.27 V,
+device 0x450 revision V, 2 MB; option bytes at factory defaults (both cores boot, M7 at
+0x08000000, M4 at 0x08100000, RDP 0, no bank swap). Then `tools/flash.ps1`: both images written
+and verified. Console on COM22.
+
+**Batch 1 on the board:** 400 MHz confirmed against the HSE (399 999 cycles per ms); direct SMPS;
+the M4 parks; no fault recorded; USART3 (domain 2) runs with the M4 parked (SPEC V10, in part).
+
+**Every self-test case against the PC** (`python tools/target_test.py --port COM22 --results
+docs/results/bench_target.md`): 24 of 24 pass; 22 bit-identical between MSVC x64 and GCC on the
+M7, including the double-state biquads, the limiter and the reverb; the two that call `tanhf`
+(4x saturator, overdrive) within -132.5 and -152.3 dBFS.
+
+**The bench now times processing only.** The first run timed each case's set-up as well, which
+inflated the delay effects up to 10 times (the slot: 2573 against 237 cycles per frame). Cases now
+call a mark hook when set-up ends; the bench reports cycles per frame with the channel count.
+
+**The budget does not fit** (`docs/results/budget_target.md`): about 14 300 cycles per frame with
+two strips and the dearest effect, against a 70 % ceiling of 2916 at 96 kHz (4.9 times over) and
+5833 at 48 kHz (2.4 times). The four largest: two 4x saturators 3356, the overdrive 3661, two
+limiters 2482, five double-state PEQ sets about 1700. How much of the saturators is `tanhf`, and
+what ITCM placement gains, is not measured yet.
+
+**Batch 8a on the board:** the protocol answers (`tools/ctl.py --port COM22`: hello, set,
+knob-wins refusal, mode, the 169-line list over the UART); the first store write including the
+sector erase 960 ms, a 1.3 KB record 4.5 ms; the power-on record and a preset survive a hardware
+reset, and mute comes back on. Not done: the supply cut during a write (SPEC V18).
+
+**Left on the board:** `tone_bass_db` in PC-wins mode at 3 dB, and preset 1 "Board test" (test
+values; `preset save` over it or erase as wanted).
+
+**For the owner: the batch 8c budget gate, now with numbers.** Options, in the order I would take
+them (each measured before and after):
+1. Run rev A at 48 kHz (its USB duplex is 48 kHz anyway): doubles the cycles per frame.
+2. Measure, then replace, `tanhf` in the saturator and overdrive with a bounded polynomial or
+   rational approximation (the largest single cost).
+3. Hot kernels into ITCM (planned in SPEC 6.2, not done).
+4. Float32 state for PEQ sections above a few hundred hertz; double only where the noise study
+   needs it.
+5. A cheaper true-peak detector for the two limiters.
+
 ## 2026-11-17: batch 8b follow-up (owner's decisions: 16-bit echo, reverb pre-delay and T_hi)
 
 **Transcripts read:** none new.

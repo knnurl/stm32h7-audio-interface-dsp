@@ -9,15 +9,15 @@ One batch is one session. It ends with the build clean, the tests passing, its n
 | Batch | Content | Needs hardware | Depends on | Status |
 |---|---|---|---|---|
 | 0 | Project documents | No | Nothing | Done 2026-11-17 |
-| 1 | Foundation: host library, test harness, firmware skeleton | Nucleo, for the target run | 0 | Built 2026-11-17; target run open |
+| 1 | Foundation: host library, test harness, firmware skeleton | Nucleo, for the target run | 0 | Done 2026-11-17, on the board |
 | 2 | Audio pass-through on breakouts | Nucleo, two breakouts, scope | 1 | Waiting for the modules |
-| 3 | Filters, float and Q31, and the tone control | Host part: none. Target part: Nucleo | 1 | Host part done 2026-11-17; target part open |
+| 3 | Filters, float and Q31, and the tone control | Host part: none. Target part: Nucleo | 1 | Done 2026-11-17: host part, and on the board (bit-identical, cycles measured) |
 | 4 | USB audio, USB MIDI, Ableton. **Portfolio checkpoint P1** | Nucleo, breakouts | 2, 3 | Not started |
 | 5 | Rev A boards: main board and control panel, five stages | No | 0 | Outline drafted |
-| 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Host part done 2026-11-17; target part open |
+| 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Done 2026-11-17: host part, and on the board (cycles measured) |
 | 7 | Bring-up of both boards, lab session | Both boards, lab analyser | 4, 5 | Not started |
-| 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console for the target part) | 1 | Host part and firmware build done 2026-11-17; board run open |
-| 8b | Effect slot, reverb and tempo | Host part: none. Target part: Nucleo | 3, 6 | Host part done 2026-11-17, owner decisions applied; target part open |
+| 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console for the target part) | 1 | Done 2026-11-17 except the supply-cut test of the flash store (SPEC V18) |
+| 8b | Effect slot, reverb and tempo | Host part: none. Target part: Nucleo | 3, 6 | Host part and cycles on the board done 2026-11-17; the listening check waits for batch 2 |
 | 8c | The full signal path on the boards | Both boards | 6, 7, 8a, 8b | Not started |
 | 8d | Control panel firmware | Panel board, or a breadboard | 8a (7 for the real panel) | Not started |
 | 9 | Room correction | Both boards, lab microphone | 8c | Not started |

@@ -118,7 +118,10 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Metering | 100 | estimate | 8c |
 | **Total** (two strips) | **3940** | estimate | |
 
-The estimated total is over the ceiling, by more since the effect slot and tone were added.
+**Measured 2026-11-17 on the board** (`docs/results/budget_target.md`): about 14 300 cycles per
+frame with two strips and the dearest effect, 4.9 times the 96 kHz ceiling and 2.4 times the
+48 kHz one. The table above is the plan's estimate; the measured table replaces it at the batch 8c
+gate. The estimated total is over the ceiling, by more since the effect slot and tone were added.
 Nothing is cut on the strength of estimates. If the measurements agree, the fallbacks in order
 are: saturation at 2x oversampling; the room FIR at 48 kHz; the reverb at 48 kHz. Batch 8c has a
 gate on this table.
@@ -301,9 +304,9 @@ sides until batch 3 measures both and decides.
 | V14 | The stack height (Nucleo, headers, main board, tallest rear connector) fits a 55 mm high case | Batch 5, stage 2 |
 | V15 | The MCU's built-in USB bootloader can update the firmware through the rear USB port | Batch 4 |
 | V16 | The OTG_FS peripheral has the endpoints and FIFO space for UAC2, MIDI and CDC at once | Batch 4, first step |
-| V17 | Flash bank 2's sectors 6 and 7 are 128 KB each, and writing them does not stall the M7 running from bank 1 | Batch 8a, on the board |
+| V17 | Flash bank 2's sectors 6 and 7 are 128 KB each (confirmed by the store working), and writing them does not stall the M7 running from bank 1 (not yet: needs audio running, batch 2) | Batch 8a, on the board |
 | V18 | A double ECC error on a flash load is masked by FAULTMASK with CCR.BFHFNMIGN and shows in FLASH_SR2 (the preset store's read path relies on it) | Batch 8a, on the board, by cutting the supply during a write |
-| V19 | A bank 2 sector erase takes up to about 2 s, and the flash endures 10 000 cycles | Batch 8a, on the board |
+| V19 | A bank 2 sector erase takes up to about 2 s (measured: 0.96 s with a record write), and the flash endures 10 000 cycles (datasheet, not testable here) | Batch 8a, on the board |
 | V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running | Batch 1, on the board |
 
 Settled, with the source:
@@ -390,4 +393,6 @@ Settled, with the source:
 | 2026-11-17 | Reverb pre-delay up to 50 ms, stereo; T_hi anchored at 8 kHz | Owner ("as you recommend"); memory 140 KB at 96 kHz; Schroeder T60 within 3.5 % at 500 Hz, 4 and 8 kHz |
 | 2026-11-17 | Reverb matrix: Hadamard kept; the density claim withdrawn; input diffusers not built | Measured with the 8 kHz anchor: Hadamard and Householder close and mixed. Both left to the owner's ears |
 | 2026-11-17 | Accepted as built: the FX AMOUNT macro table, glide on echo time changes, the 60 ms dry gap on an effect change, two preset flash sectors, mute never restored, a four-beat tempo window | Owner: "as you recommend" |
+| 2026-11-17 | First board run: all 24 self-test cases match the PC (22 bit-identical, 2 within -132 dBFS); 400 MHz confirmed against the HSE; the M4 parks; console, protocol and preset store work | Measured on the Nucleo-H755ZI-Q (`docs/results/bench_target.md`) |
+| 2026-11-17 | The bench times processing only (cases mark the end of their set-up) and reports cycles per frame | The first run's whole-run figures were up to 10 times too high where set-up cleared delay memory |
 
