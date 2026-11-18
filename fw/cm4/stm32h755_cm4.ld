@@ -26,8 +26,8 @@ SECTIONS
     .text :
     {
         . = ALIGN(4);
-        /* The DSP library runs from SRAM instead (see .data). */
-        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj) *(.text .text*)
+        /* The DSP library, the split's block code and libgcc run from SRAM instead (see .data). */
+        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj *common/split_dsp.c.obj *libgcc.a:*) *(.text .text*)
         *(.glue_7)
         *(.glue_7t)
         *(.eh_frame)
@@ -40,7 +40,7 @@ SECTIONS
     .rodata :
     {
         . = ALIGN(4);
-        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj) *(.rodata .rodata*)
+        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj *common/split_dsp.c.obj *libgcc.a:*) *(.rodata .rodata*)
         . = ALIGN(4);
     } >FLASH
 
@@ -81,8 +81,11 @@ SECTIONS
         /* The DSP library's code and constants, copied to SRAM with .data by the start-up code:
          * this core has no cache, and from flash its loops ran about 4.5 times the M7's cycles
          * (measured with m4bench, 2026-11-18). The SRAM alias at 0x10000000 is the one meant for
-         * this core's code. */
+         * this core's code. libgcc too: this core has no double-precision FPU, so the meters'
+         * double sums call its soft-float routines (8c split, 2026-11-18). */
         *dsp/src/dsp_*.c.obj(.text .text* .rodata .rodata*)
+        *common/split_dsp.c.obj(.text .text* .rodata .rodata*)
+        *libgcc.a:*(.text .text* .rodata .rodata*)
         *(.data)
         *(.data*)
         . = ALIGN(4);

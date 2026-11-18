@@ -12,11 +12,14 @@
  *   m4bench       wake the M4, have it run every self-test case, print its cycles
  *   fftbench      the real FFT's cycles at 64 to 2048 points (batch 9 spike)
  *   convbench     the partitioned convolver's cycles at partitions of 64 to 512 (batch 9 spike)
+ *   splitbench [s] the 8c split: the M4 runs the reverb and meters on blocks posted at 48 kHz
+ *                 for s seconds (default 1), checked against this core (bench_split.h)
  * Every other line goes to the control protocol: hello, list, get, set, mode, meters, preset,
  * src, tempo, stat.
  */
 #include "bench.h"
 #include "bench_fft.h"
+#include "bench_split.h"
 #include "board.h"
 #include "console.h"
 #include "fault.h"
@@ -30,6 +33,7 @@
 #include "dsp/dsp_selftest.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define FW_VERSION "0.2.0"
@@ -146,6 +150,10 @@ static void handle_line(const char *line) {
         bench_fft();
     } else if (strcmp(line, "convbench") == 0) {
         bench_conv();
+    } else if (strcmp(line, "splitbench") == 0 || strncmp(line, "splitbench ", 11) == 0) {
+        long seconds = line[10] == ' ' ? strtol(line + 11, NULL, 10) : 1;
+        seconds = seconds < 1 ? 1 : (seconds > 600 ? 600 : seconds);
+        bench_split((uint32_t)seconds * 3000u);
     } else {
         ctl_proto_line(&s_proto, line, strlen(line));
     }

@@ -21,6 +21,7 @@ enum { kMailboxMaxCases = 64 };
 typedef enum {
     kMailboxCmdNone = 0,
     kMailboxCmdBench = 1,
+    kMailboxCmdSplit = 2, /* Serve the 8c split's blocks (split.h) until told to stop. */
 } MailboxCommand;
 
 typedef enum {

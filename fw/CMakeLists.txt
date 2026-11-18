@@ -58,8 +58,9 @@ endfunction()
 
 # ---- Cortex-M7: the application -------------------------------------------------------------
 set(CM7_SOURCES
-    cm7/src/main.c cm7/src/board.c cm7/src/bench.c cm7/src/bench_fft.c cm7/src/console.c cm7/src/fault.c
-    cm7/src/flash_store.c cm7/src/interrupts.c cm7/src/syscalls.c)
+    cm7/src/main.c cm7/src/board.c cm7/src/bench.c cm7/src/bench_fft.c cm7/src/bench_split.c
+    cm7/src/console.c cm7/src/fault.c cm7/src/flash_store.c cm7/src/interrupts.c cm7/src/syscalls.c
+    common/split_dsp.c)
 add_executable(dsp_cm7 ${CM7_SOURCES} ${DSP_SOURCES} ${CTL_SOURCES} ${ST_BOOT_SOURCES}
     ${HAL_SOURCES})
 target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR} ${CTL_INCLUDE_DIR})
@@ -76,11 +77,11 @@ dsp_firmware(dsp_cm7 CORE_CM7
 
 # ---- Cortex-M4: parked ----------------------------------------------------------------------
 # It carries the DSP library too, to measure the self-test cases on this core (m4bench).
-add_executable(dsp_cm4 cm4/src/main.c ${DSP_SOURCES} ${ST_BOOT_SOURCES} ${HAL_SOURCES})
+add_executable(dsp_cm4 cm4/src/main.c common/split_dsp.c ${DSP_SOURCES} ${ST_BOOT_SOURCES} ${HAL_SOURCES})
 target_include_directories(dsp_cm4 PRIVATE ${DSP_INCLUDE_DIR})
 # The last self-test case (pconv_f32, 138 KB) leaves the M4's image; every other index is kept.
 target_compile_definitions(dsp_cm4 PRIVATE DSP_SELFTEST_NO_PCONV)
-set_source_files_properties(cm4/src/main.c PROPERTIES COMPILE_OPTIONS "${OWN_WARNINGS}")
+set_source_files_properties(cm4/src/main.c common/split_dsp.c PROPERTIES COMPILE_OPTIONS "${OWN_WARNINGS}")
 dsp_firmware(dsp_cm4 CORE_CM4
     "-mcpu=cortex-m4;-mthumb;-mfpu=fpv4-sp-d16;-mfloat-abi=hard"
     ${CMAKE_CURRENT_SOURCE_DIR}/cm4/stm32h755_cm4.ld)
