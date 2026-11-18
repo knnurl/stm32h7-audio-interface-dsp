@@ -26,7 +26,7 @@ control).
 - Merge: the M4's image overflowed by 4.6 KB, so it leaves out the last self-test case
   (`pconv_f32`, measured there once). `fw/third_party` had been moved out of this checkout into
   the agent's worktree while it built; copied back.
-- Unit tests: 914 pass. All 37 cases match the PC on the M7.
+- Unit tests: 914 pass. All 35 cases match the PC on the M7.
 
 **For the owner:** the crossfeed delay (none, recommended, or the plan's explicit delay); meter
 ballistics (1 s hold, 11.8 dB/s fall, 300 ms RMS); send pre- or post-level; which meters get true
