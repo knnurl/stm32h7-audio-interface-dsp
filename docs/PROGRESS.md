@@ -4,6 +4,61 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: the 8c core split on the board, and the 8c answers (owner: "do 1, 2, 4")
+
+**Transcripts read:** #55 (double buffering) and the double-buffering passage of "Digital Audio
+Processing with STM32 #1" for the split; none of the 29 covers two cores. "From the transcripts"
+in `docs/notes/core_split.md`. Read after the exchange was first written, not before: it changed
+nothing in it.
+
+- **4, the 8c answers.**
+  - Reverb send post-level (`dsp_mixer`, new test `test_send_follows_the_level`).
+  - Crossfeed with no explicit delay, confirmed.
+  - Meter timing kept: 1 s hold, 11.8 dB/s fall, 300 ms RMS.
+  - True peak and loudness on the monitor mix only.
+  - Clip latched by the reader.
+  - SPEC rows; `mixer.md`, `metering.md`, `crossfeed.md`.
+- **1, the split: reverb and meters on the M4.**
+  - `fw/common/split.h`: two slots per direction in SRAM4, sequence numbers, each core writing
+    only its own cache lines.
+  - `split_dsp`: the same block code on both cores.
+  - `splitbench [s]` on the M7: posts -20 dBFS noise blocks at 48 kHz and checks the M4 against
+    itself.
+  - First run: 1 block in 30 late, meters differing. Two fixes, each measured first:
+    - the meter read split into `dsp_meter_f32_snapshot` (on the M4) and
+      `dsp_meter_raw_to_reading` (the reader);
+    - `libgcc` copied to the M4's SRAM (its soft-double routines ran from uncached flash).
+  - **`splitbench 60`:**
+    - 0 late blocks in 180 000;
+    - M4 mean 67 %, dearest block 83 %;
+    - return and meters bit-identical;
+    - the M7 saves about 1680 cycles per frame and pays 151 for the exchange.
+  - **M7 worst case at 48 kHz: about 6890 cycles per frame (83 %), still about 1050 over the
+    ceiling.**
+- **2, power cut.** The script now:
+  - runs 10 rounds by default;
+  - stops if no cut comes within 120 s, to spare the flash;
+  - counts the rounds that cut a write in half.
+
+  Dry run passes. The real run needs the owner at the cable.
+- Host tests: 918 pass. All 35 cases match the PC on the M7; M4 bench taken again (`bench_m4.md`:
+  meter 1312 to 1020, reverb 1451 to 1387 with libgcc in SRAM).
+
+Commands:
+```
+python -m pytest
+cmake --build --preset fw && powershell -File tools/flash.ps1
+python tools/target_test.py --port COM22
+python tools/m4_bench.py --port COM22 --results docs/results/bench_m4.md
+python tools/console.py --port COM22      then: splitbench 60
+python tools/power_cut_test.py --port COM22
+```
+
+**For the owner:**
+- How to close the last ~1050 cycles: CMSIS-DSP's FFT (go or no-go), B = 512, or a budget rule.
+- Run the power-cut test.
+- Answer the board questions (`part_selection.md` §7) and the panel questions (8d entry).
+
 ## 2026-11-18: batch 8c.1, the mixer, crossfeed and meters (forked agent, merged; timed on the board)
 
 **Transcripts read:** Recursive RMS (#103) in full; #124, #140, #162 and Tremolo already read for
