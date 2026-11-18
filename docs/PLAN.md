@@ -13,7 +13,7 @@ One batch is one session. It ends with the build clean, the tests passing, its n
 | 2 | Audio pass-through on breakouts | Nucleo, two breakouts, scope | 1 | Waiting for the modules |
 | 3 | Filters, float and Q31, and the tone control | Host part: none. Target part: Nucleo | 1 | Done 2026-11-17: host part, and on the board (bit-identical, cycles measured) |
 | 4 | USB audio, USB MIDI, Ableton. **Portfolio checkpoint P1** | Nucleo, breakouts | 2, 3 | Not started |
-| 5 | Rev A boards: main board and control panel, five stages | No | 0 | Stage 1 (part selection) done 2026-11-18; waiting for the owner's seven decisions |
+| 5 | Rev A boards: main board and control panel, five stages | No | 0 | Stage 1 (part selection) signed off 2026-11-18. Stage 2 (architecture, pin plan, mechanical interface, input budget) drafted 2026-11-18; waiting for the owner's EX5 and sign-off |
 | 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Done 2026-11-17: host part, and on the board (cycles measured) |
 | 7 | Bring-up of both boards, lab session | Both boards, lab analyser | 4, 5 | Not started |
 | 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console for the target part) | 1 | Done 2026-11-17 except the supply-cut test of the flash store (SPEC V18) |

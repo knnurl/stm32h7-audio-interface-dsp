@@ -44,5 +44,6 @@ folders are gitignored: the text is the author's, and this repository is meant t
 | 2026-11-18 | None listed for 8d. All 29 searched for pot, button, footswitch, debounce and hysteresis; the passages in #1, #49, the compressor video, #162, #3 and #34 read | Batch 8d | `panel_input.md` |
 | 2026-11-18 | #78, #142 | Batch 5, stage 1 | `part_selection.md` |
 | 2026-11-18 | #126, #111, #141 | Batch 9, costing spike | `partitioned_convolution.md` |
+| 2026-11-18 | #78, #142 again in full; all 29 searched for regulators, LDOs, grounding, decoupling, op-amps, headphones, line level and anti-aliasing: one passage in Digital Audio Processing #1 (switcher for digital, LDO for analogue) | Batch 5, stage 2 | `rev_a_architecture.md`, `pin_plan.md`, `mechanical_interface.md`, `rev_a_input_budget.md` |
 
 The rest of the table above is by title only.

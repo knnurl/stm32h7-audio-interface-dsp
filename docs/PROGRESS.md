@@ -4,6 +4,58 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: batch 5 stage 2, rev A architecture (forked agent; drafted, not signed off)
+
+**Transcripts read:** #78 (mixed-signal walkthrough) and #142 (codec driver) again in full; all 29
+searched for power, grounding and analogue stages: one more passage, in Digital Audio Processing
+#1. "From the transcripts" in each new note.
+
+- **New notes:** `docs/notes/rev_a_architecture.md` (every item of the stage 2 list),
+  `pin_plan.md`, `mechanical_interface.md`, `rev_a_input_budget.md`; exercise
+  `docs/exercises/EX5_input_budget.md`. **Do EX5 before opening the input budget.**
+- **Levels (proposed):** 0 dBFS = +20 dBu in (16 dB over +4 dBu), +18 dBu out (14 dB; the stage
+  clips 8.3 dB above 0 dBFS on +/-12 V), headphones 0.69 V rms into 38 ohm, about 110 dB SPL.
+- **Noise, on paper:** monitor out 111.6 dB(A) DR (the DAC alone 112), headphones 110.3 dB(A),
+  about 0 dB SPL of hiss on the ATH-M50x. Input: in the budget file.
+- **Power:** PCM3168A draws 162 mA typical, 210 mA maximum at 5 V (SBAS452A 8.5): V23 settled; its
+  5 V from a TPS7A2050 after a 5.5 V buck. Analogue rails 48.7 mA typical, 90.5 mA worst per rail:
+  the 2 W module fails, the 3 W wide-input WRA1215S-3WR2 (9 to 18 V) passes at 91 %. Bucks
+  TPS563208, not TPS563201 (pulse skipping). 12 V input: 8.3 W worst, 5.9 W typical; adapter at
+  least 12 V 1.5 A.
+- **Nucleo (V7 settled):** 5V_EXT on CN11 pin 6, JP2 on 5-6, 500 mA; our estimate about 400 mA
+  with the panel's 3.3 V. Morpho mounting is therefore forced: male headers into CN11 and CN12.
+  Power up before plugging the ST-LINK cable (UM2408 7.4.6).
+- **Pin plan:** no conflicts with Ethernet, the VCP, LEDs, SWD, buttons or the SMPS pins; seven
+  ADC1 pins, no multiplexer (V12). USB: SB26, SB27, SB21 identified (V13); proposed to leave them.
+- **Found on the way:** the PCM3168A's 96 kHz TDM needs two data lines each way (V20 corrected;
+  rev A at 48 kHz unaffected). The 160 mm board cannot hold the rear connectors: 200 x 100 mm
+  proposed. The NJ6FD-V phones jack takes only a 1.2 to 1.5 mm panel: a spot face in the 2 mm
+  front panel.
+- **Not reachable:** DS12919 and RM0399 (st.com timed out; AF numbers from CubeMX and the HAL
+  stay [Verify]); live LCSC/JLC prices (script-rendered, V21 open); the Nucleo drawing's heights.
+- SPEC: V7, V12, V13, V14, V20, V23, V24, V26 updated, V28 to V31 new, decision rows marked
+  "Proposed (stage 2), awaiting sign-off".
+
+Commits: `9052220` (draft save), `802f9f8` (source checks), `fbbfdef` (SPEC), and this one.
+
+**For the owner, before stage 3:**
+1. Do EX5, then read `rev_a_input_budget.md`.
+2. 0 dBFS levels; your monitors' maximum input level.
+3. TPS563208 instead of TPS563201.
+4. TPS7A2050 for the converter's 5 V (X2SON at LCSC, or the TPS7A4701 runner-up).
+5. The 3 W WRA1215S-3WR2 instead of the 2 W module.
+6. Morpho mounting: your go to solder headers into CN11, CN12; JP2 to 5-6.
+7. USB option A (no rework) first; a continuity check of CN12 pins 12 and 14 to PA12, PA11 (V30).
+8. Headphone amplifier on the main board; NJ6FD-V for the phones with a 1.5 mm spot face.
+9. Line outputs 3 and 4 from DAC 5 and 6.
+10. Main board 200 x 100 mm, case about 210 mm wide; panel board 160 x 46 mm, 2 layers.
+11. LED colours (blue needs a transistor and 5 V).
+12. The ribbon pin-out.
+13. Insulating standoffs for the Nucleo; one chassis bond.
+14. Measure the Nucleo's 5 V current (V29) and its heights with calipers (V14); a meter on one
+    NMJ6HCD2 for the ferrule (V28).
+15. JLC instant quotes: 4 layers 100 x 100, 160 x 100, 200 x 100; the panel on 2 layers (V21).
+
 ## 2026-11-18: budget A + C + D, on the board (owner: "A + C + D sounds good")
 
 **Transcripts read:** #172, #89, #32 for D (forked agent; "From the transcripts" in
