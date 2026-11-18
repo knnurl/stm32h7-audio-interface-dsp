@@ -99,6 +99,7 @@ size_t ctl_sizeof_queue(void) { return sizeof(CtlQueue); }
 
 size_t ctl_sizeof_pot(void) { return sizeof(CtlPot); }
 size_t ctl_sizeof_button(void) { return sizeof(CtlButton); }
+size_t ctl_sizeof_double(void) { return sizeof(CtlDoublePress); }
 size_t ctl_sizeof_panel(void) { return sizeof(CtlPanel); }
 
 uint32_t ctl_panel_refused(const CtlPanel *panel) { return panel->refused; }

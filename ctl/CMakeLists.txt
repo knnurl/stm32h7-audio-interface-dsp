@@ -3,7 +3,7 @@
 # image; on the PC it builds as a DLL the Python tests load (ctl_host), plus a fuzz driver built
 # with the address sanitiser on MSVC (ctl_fuzz).
 set(_sources
-    src/ctl_button.c src/ctl_core.c src/ctl_midi.c src/ctl_midi_cc14.c src/ctl_panel.c src/ctl_param_table.c src/ctl_params.c
+    src/ctl_button.c src/ctl_button_double.c src/ctl_core.c src/ctl_midi.c src/ctl_midi_cc14.c src/ctl_panel.c src/ctl_param_table.c src/ctl_params.c
     src/ctl_pot.c src/ctl_preset.c src/ctl_proto.c src/ctl_queue.c src/ctl_tempo.c src/ctl_text.c)
 
 set(_absolute)

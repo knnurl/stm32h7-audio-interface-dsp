@@ -40,4 +40,20 @@ void ctl_button_init(CtlButton *b);
 /* One sample (1 ms). Returns the events it caused, a mask of kCtlButton*. */
 uint32_t ctl_button_update(CtlButton *b, int closed);
 
+/* Exercise EX8d (ctl/src/ctl_button_double.c, the owner's; docs/exercises/EX8d_doublepress.md):
+ * a double-press detector fed with one button's events, once per millisecond like the
+ * debouncer. Returns 1 at the moment a double press is recognised. The stub never does.
+ * Proposed contract, the owner's to change with the tests: two presses whose press events are
+ * at most CTL_DOUBLE_WINDOW_MS apart, reported at the second press; the press after a double
+ * starts a new pair. */
+#define CTL_DOUBLE_WINDOW_MS 300u
+
+typedef struct {
+    uint32_t since_ms; /* Free for the owner's design; add fields as needed. */
+    uint8_t state;
+} CtlDoublePress;
+
+void ctl_double_init(CtlDoublePress *d);
+int ctl_double_update(CtlDoublePress *d, uint32_t events);
+
 #endif

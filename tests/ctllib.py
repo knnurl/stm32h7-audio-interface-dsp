@@ -128,7 +128,7 @@ def load():
     sig("ctl_flash_sim_mem", P(c_uint8), c_void_p, c_uint32)
 
     # The panel input (batch 8d).
-    for name in ("ctl_sizeof_pot", "ctl_sizeof_button", "ctl_sizeof_panel"):
+    for name in ("ctl_sizeof_pot", "ctl_sizeof_button", "ctl_sizeof_double", "ctl_sizeof_panel"):
         sig(name, c_size)
     sig("ctl_pot_coef", c_float, c_float)
     sig("ctl_pot_init", None, c_void_p, c_uint32, c_float)
@@ -138,6 +138,8 @@ def load():
     sig("ctl_button_init", None, c_void_p)
     sig("ctl_button_update", c_uint32, c_void_p, c_int)
     sig("ctl_button_run", None, c_void_p, P(c_uint8), c_size, P(c_uint8))
+    sig("ctl_double_init", None, c_void_p)
+    sig("ctl_double_update", c_int, c_void_p, c_uint32)
     sig("ctl_led_hold", c_int, c_void_p, c_float, c_float, c_uint32, c_uint32)
     sig("ctl_panel_init", None, c_void_p, c_uint32)
     sig("ctl_panel_tick", None, c_void_p, c_void_p, P(c_uint32), c_uint32)

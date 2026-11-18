@@ -37,6 +37,7 @@ size_t ctl_sizeof_queue(void);
  * changed. */
 size_t ctl_sizeof_pot(void);
 size_t ctl_sizeof_button(void);
+size_t ctl_sizeof_double(void);
 size_t ctl_sizeof_panel(void);
 size_t ctl_pot_run(CtlPot *pot, const uint32_t *sums, size_t n, float *travel, uint8_t *reported);
 uint32_t ctl_panel_refused(const CtlPanel *panel);
