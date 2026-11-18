@@ -4,6 +4,51 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: owner's answers; V18 verified; CMSIS-DSP measured (owner: "3 and 5 fine, no footswitch, 6 and 7 go ahead")
+
+**Transcripts read:** none new. #111 (CMSIS FFT) was read for batch 9 and covers the CMSIS
+layout used here.
+
+- **Board (3):** every recommendation accepted. Headphones: ATH-M50x (38 ohm, 99 dB), so the
+  OPA1622. Recorded in the SPEC and `part_selection.md` section 7. Stage 2 can start.
+- **Panel (5):** accepted, and no footswitch. Removed:
+  - the button input;
+  - setting 905;
+  - two tests (the debounce test now runs on FX on);
+  - the rear jack.
+
+  916 host tests pass.
+- **Torn writes (7), V18 verified:**
+  - `ptear n` starts the independent watchdog and saves preset 2, so the chip resets n x 125 us
+    into the save;
+  - `flashinfo` reports the store's scan state and the ECC errors its reads met;
+  - `tools/torn_write_test.py`, 96 rounds: 32 start-ups met a torn record (up to 2 double and 2
+    single ECC errors), all masked, no fault, slot 2 always the old or the new record. Before
+    about 2.5 ms the old one survives, after it the new one.
+  - **Correction:** the store's `flash_errors` counts failed programs and erases, not ECC errors.
+    The cable-pull run's "no torn write" did not follow from it; the power-cut script now reads
+    `flashinfo`.
+  - Found on the way: the first `ptear` saved to slot 3. The store numbers slots from 0, the
+    protocol from 1. Fixed; the script now requires a save that finished to have kept its record.
+- **CMSIS-DSP (6a):** v1.16.2 fetched (Apache-2.0), M7 build only, `cmsisfft`.
+  - 1.6 to 1.8 times faster than `dsp_fft`, agreeing to 1.4e-7.
+  - In the room filter about 200 cycles per frame, not 340.
+  - Not adopted (input overwritten, 1/n inverse, PC build would need CMSIS).
+- **Budget (6c):** not done; the rule is the owner's choice. The worst case is about 6890 against
+  5833. A sensible budget rule saves at most about 480, because the overdrive case already sets a
+  floor of 2454 for strips plus effect. CMSIS saves about 200. Together that leaves about 380 over.
+
+Commands:
+```
+python tools/torn_write_test.py --port COM22 --repeat 2
+python tools/console.py --port COM22      then: cmsisfft, fftbench, flashinfo
+```
+
+**For the owner:**
+- Which budget rule.
+- Adopt CMSIS or not.
+- What else closes the last ~380 cycles (see the reply of 2026-11-18).
+
 ## 2026-11-18: power-cut test, run by the owner
 
 **Transcripts read:** none listed (a test run, no new design).
