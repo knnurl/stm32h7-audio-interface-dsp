@@ -4,6 +4,7 @@
 
 #include "ctl/ctl_flash.h"
 #include "ctl/ctl_midi.h"
+#include "ctl/ctl_panel.h"
 #include "ctl/ctl_preset.h"
 #include "ctl/ctl_proto.h"
 #include "ctl/ctl_tempo.h"
@@ -29,5 +30,16 @@ uint32_t ctl_host_dropped(const CtlHost *h);
 void ctl_host_counters(const CtlHost *h, uint32_t out[8]);
 size_t ctl_sizeof_update(void);
 size_t ctl_sizeof_queue(void);
+
+/* The panel input (batch 8d) for the tests: object sizes, and a pot or a button run over a whole
+ * stream in one call (one reading or sample per millisecond). ctl_pot_run returns the number of
+ * reports; travel[i] holds the travel last reported after reading i, reported[i] 1 where it
+ * changed. */
+size_t ctl_sizeof_pot(void);
+size_t ctl_sizeof_button(void);
+size_t ctl_sizeof_panel(void);
+size_t ctl_pot_run(CtlPot *pot, const uint32_t *sums, size_t n, float *travel, uint8_t *reported);
+uint32_t ctl_panel_refused(const CtlPanel *panel);
+void ctl_button_run(CtlButton *b, const uint8_t *closed, size_t n, uint8_t *events);
 
 #endif

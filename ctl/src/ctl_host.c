@@ -96,3 +96,31 @@ void ctl_host_counters(const CtlHost *h, uint32_t out[8]) {
 /* Sizes, for the few structures Python does mirror (tests/unit/test_ctl_params.py). */
 size_t ctl_sizeof_update(void) { return sizeof(CtlUpdate); }
 size_t ctl_sizeof_queue(void) { return sizeof(CtlQueue); }
+
+size_t ctl_sizeof_pot(void) { return sizeof(CtlPot); }
+size_t ctl_sizeof_button(void) { return sizeof(CtlButton); }
+size_t ctl_sizeof_panel(void) { return sizeof(CtlPanel); }
+
+uint32_t ctl_panel_refused(const CtlPanel *panel) { return panel->refused; }
+
+size_t ctl_pot_run(CtlPot *pot, const uint32_t *sums, size_t n, float *travel, uint8_t *reported) {
+    size_t reports = 0;
+    float last = pot->out;
+    for (size_t i = 0; i < n; ++i) {
+        float t;
+        const int r = ctl_pot_update(pot, sums[i], &t);
+        if (r != 0) {
+            last = t;
+            ++reports;
+        }
+        travel[i] = last;
+        reported[i] = (uint8_t)r;
+    }
+    return reports;
+}
+
+void ctl_button_run(CtlButton *b, const uint8_t *closed, size_t n, uint8_t *events) {
+    for (size_t i = 0; i < n; ++i) {
+        events[i] = (uint8_t)ctl_button_update(b, closed[i]);
+    }
+}

@@ -29,6 +29,18 @@ class CtlUpdate(ctypes.Structure):
     _fields_ = [("index", c_uint16), ("value", c_float)]
 
 
+class CtlPotCal(ctypes.Structure):
+    _fields_ = [("lo", c_float), ("centre", c_float), ("hi", c_float)]
+
+
+POT_LINEAR, POT_CENTRE, POT_VOLUME = 0, 1, 2
+PRESS, RELEASE, LONG, SHORT = 1, 2, 4, 8
+POTS = ("tone_bass_db", "tone_mid_db", "tone_treble_db", "monitor_volume_db", "phones_volume_db",
+        "fx_amount", "blend")
+BTN_FX_SELECT, BTN_FX_ON, BTN_TAP, BTN_MUTE, BTN_DIM, BTN_FOOTSWITCH = range(6)
+LED_SIGNAL1, LED_CLIP1, LED_SIGNAL2, LED_CLIP2, LED_MUTE, LED_DIM, LED_FX_ON = (1 << k for k in range(7))
+
+
 class CtlMidiMapEntry(ctypes.Structure):
     _fields_ = [("cc", c_uint8), ("param_id", c_uint16)]
 
@@ -114,6 +126,23 @@ def load():
     sig("ctl_flash_sim_cut_next_erase", None, c_void_p)
     sig("ctl_flash_sim_power_on", None, c_void_p)
     sig("ctl_flash_sim_mem", P(c_uint8), c_void_p, c_uint32)
+
+    # The panel input (batch 8d).
+    for name in ("ctl_sizeof_pot", "ctl_sizeof_button", "ctl_sizeof_panel"):
+        sig(name, c_size)
+    sig("ctl_pot_coef", c_float, c_float)
+    sig("ctl_pot_init", None, c_void_p, c_uint32, c_float)
+    sig("ctl_pot_update", c_int, c_void_p, c_uint32, P(c_float))
+    sig("ctl_pot_run", c_size, c_void_p, P(c_uint32), c_size, P(c_float), P(c_uint8))
+    sig("ctl_pot_shape", c_float, P(CtlPotCal), c_int, c_float)
+    sig("ctl_button_init", None, c_void_p)
+    sig("ctl_button_update", c_uint32, c_void_p, c_int)
+    sig("ctl_button_run", None, c_void_p, P(c_uint8), c_size, P(c_uint8))
+    sig("ctl_led_hold", c_int, c_void_p, c_float, c_float, c_uint32, c_uint32)
+    sig("ctl_panel_init", None, c_void_p, c_uint32)
+    sig("ctl_panel_tick", None, c_void_p, c_void_p, P(c_uint32), c_uint32)
+    sig("ctl_panel_leds", c_uint32, c_void_p, c_void_p, c_uint32)
+    sig("ctl_panel_refused", c_uint32, c_void_p)
     return lib
 
 
@@ -217,3 +246,78 @@ class Device:
 
     def load(self, slot):
         return self.lib.ctl_preset_load(self.store, slot, self.core)
+
+
+def _obj(size):
+    buf = ctypes.create_string_buffer(size)
+    return buf, ctypes.cast(buf, c_void_p)
+
+
+class Pot:
+    """One panel pot (ctl_pot.h)."""
+
+    def __init__(self, lib, adc_bits=16, tau_ms=4.0):
+        self.lib = lib
+        self.buf, self.p = _obj(lib.ctl_sizeof_pot())
+        lib.ctl_pot_init(self.p, adc_bits, tau_ms)
+
+    def run(self, sums):
+        """(travel after each reading, reported flags) for a stream of reading sums."""
+        import numpy as np
+        sums = np.ascontiguousarray(sums, dtype=np.uint32)
+        travel = np.zeros(len(sums), dtype=np.float32)
+        rep = np.zeros(len(sums), dtype=np.uint8)
+        self.lib.ctl_pot_run(self.p, sums.ctypes.data_as(ctypes.POINTER(c_uint32)), len(sums),
+                             travel.ctypes.data_as(ctypes.POINTER(c_float)),
+                             rep.ctypes.data_as(ctypes.POINTER(c_uint8)))
+        return travel, rep
+
+
+class Button:
+    """One debounced button (ctl_button.h)."""
+
+    def __init__(self, lib):
+        self.lib = lib
+        self.buf, self.p = _obj(lib.ctl_sizeof_button())
+        lib.ctl_button_init(self.p)
+
+    def run(self, closed):
+        import numpy as np
+        closed = np.ascontiguousarray(closed, dtype=np.uint8)
+        ev = np.zeros(len(closed), dtype=np.uint8)
+        self.lib.ctl_button_run(self.p, closed.ctypes.data_as(ctypes.POINTER(c_uint8)),
+                                len(closed), ev.ctypes.data_as(ctypes.POINTER(c_uint8)))
+        return ev
+
+
+class Panel:
+    """The control panel (ctl_panel.h) on a Device's control core."""
+
+    def __init__(self, dev, adc_bits=16):
+        self.dev, self.lib = dev, dev.lib
+        self.buf, self.p = _obj(self.lib.ctl_sizeof_panel())
+        self.lib.ctl_panel_init(self.p, adc_bits)
+        self.full = 16 * ((1 << adc_bits) - 1)
+        self.travel = [0.5, 0.5, 0.5, 0.0, 0.0, 0.5, 0.5]
+        self.closed = 0
+        self.now_ms = 0
+
+    def sums(self):
+        return (c_uint32 * 7)(*[int(round(t * self.full)) for t in self.travel])
+
+    def tick(self, ms=1, update_tempo=False):
+        for _ in range(ms):
+            self.lib.ctl_panel_tick(self.p, self.dev.core, self.sums(), self.closed)
+            self.now_ms += 1
+            if update_tempo:
+                self.dev.update(self.now_ms * 1000)
+
+    def press(self, button, hold_ms=50, gap_ms=50, update_tempo=False):
+        self.closed |= 1 << button
+        self.tick(hold_ms, update_tempo)
+        self.closed &= ~(1 << button)
+        self.tick(gap_ms, update_tempo)
+
+    def leds(self, now_ms):
+        return self.lib.ctl_panel_leds(self.p, self.dev.core, now_ms)
+
