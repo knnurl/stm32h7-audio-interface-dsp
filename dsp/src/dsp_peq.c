@@ -45,12 +45,16 @@ void dsp_peq_f32_init(DspPeqF32 *peq, float sample_rate_hz, int32_t ramp_blocks)
     memset(peq->step, 0, sizeof(peq->step));
     peq->remaining = 0;
     memset(peq->state, 0, sizeof(peq->state));
+    memset(peq->state_f32, 0, sizeof(peq->state_f32));
+    peq->first_f32 =
+        sample_rate_hz <= DSP_PEQ_F32_MAX_FS_HZ ? kDspPeqF32FirstBand + 1 : kDspPeqSections;
 }
 
 void dsp_peq_f32_reset(DspPeqF32 *peq) {
     memcpy(peq->current, peq->target, sizeof(peq->current));
     peq->remaining = 0;
     memset(peq->state, 0, sizeof(peq->state));
+    memset(peq->state_f32, 0, sizeof(peq->state_f32));
 }
 
 void dsp_peq_f32_set_highpass(DspPeqF32 *peq, float cutoff_hz) {
@@ -68,16 +72,20 @@ void dsp_peq_f32_set_band(DspPeqF32 *peq, int32_t index, const DspPeqBand *band)
     if (index < 0 || index >= kDspPeqBands) {
         return;
     }
+    float freq_hz = band->freq_hz;
+    if (index + 1 >= peq->first_f32 && freq_hz < DSP_PEQ_F32_MIN_HZ) {
+        freq_hz = DSP_PEQ_F32_MIN_HZ; /* A float32 band never goes where float32 is too noisy. */
+    }
     DspBiquadCoefsD d;
     switch (band->type) {
     case kDspPeqPeak:
-        dsp_coef_peak(&d, peq->sample_rate_hz, band->freq_hz, band->q, band->gain_db);
+        dsp_coef_peak(&d, peq->sample_rate_hz, freq_hz, band->q, band->gain_db);
         break;
     case kDspPeqLowShelf:
-        dsp_coef_low_shelf(&d, peq->sample_rate_hz, band->freq_hz, band->q, band->gain_db);
+        dsp_coef_low_shelf(&d, peq->sample_rate_hz, freq_hz, band->q, band->gain_db);
         break;
     case kDspPeqHighShelf:
-        dsp_coef_high_shelf(&d, peq->sample_rate_hz, band->freq_hz, band->q, band->gain_db);
+        dsp_coef_high_shelf(&d, peq->sample_rate_hz, freq_hz, band->q, band->gain_db);
         break;
     default:
         dsp_coef_identity(&d);
@@ -105,7 +113,14 @@ void dsp_peq_f32_process(DspPeqF32 *peq, const float *in, float *out, size_t n_f
     }
     const float *src = in;
     for (int s = 0; s < kDspPeqSections; ++s) {
-        dsp_biquad_f64_section(&peq->current[s], &peq->state[s], src, out, n_frames);
+        if (s < peq->first_f32) {
+            dsp_biquad_f64_section(&peq->current[s], &peq->state[s], src, out, n_frames);
+        } else {
+            const DspBiquadCoefsF64 *c = &peq->current[s];
+            const DspBiquadCoefsF32 f = {(float)c->b0, (float)c->b1, (float)c->b2, (float)c->a1,
+                                         (float)c->a2};
+            dsp_biquad_f32_section(&f, &peq->state_f32[s], src, out, n_frames);
+        }
         src = out;
     }
 }

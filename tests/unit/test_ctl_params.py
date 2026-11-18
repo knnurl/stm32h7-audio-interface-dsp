@@ -20,6 +20,20 @@ def descs(ctl):
             for i, d in ctllib.params(ctl)]
 
 
+def test_float32_peq_bands_start_at_their_corner(ctl):
+    """Bands 3 and 4 of every PEQ run in float32 (dsp_peq.h): the registry keeps them at or above
+    DSP_PEQ_F32_MIN_HZ, 2.5 kHz; bands 1 and 2 keep the full range."""
+    found = {}
+    for _, d, name, _, _ in descs(ctl):
+        m = re.match(r"^(in1_|in2_|spk_|hp_)peq([1-4])_hz$", name)
+        if m:
+            found[name] = (int(m.group(2)), d.min, d.max)
+    assert len(found) == 16
+    for name, (band, lo, hi) in found.items():
+        assert hi == 20000.0, name
+        assert lo == (2500.0 if band >= 3 else 20.0), name
+
+
 def test_table_rules(ctl):
     rows = descs(ctl)
     assert 0 < len(rows) <= ctllib.MAX_PARAMS
