@@ -1,0 +1,31 @@
+| Case | Channels | M4 cycles per frame | In M7 cycles (x2) | Output vs PC |
+|---|---|---|---|---|
+| gain_f32 | 1 | 16.8 | 33.5 | bit-identical |
+| noise_q31 | 1 | 12.0 | 24.1 | bit-identical |
+| biquad_f32 | 1 | 79.3 | 158.6 | bit-identical |
+| biquad_f64 | 1 | 7836.9 | 15673.7 | bit-identical |
+| biquad_q31_round | 1 | 233.2 | 466.3 | bit-identical |
+| biquad_q31_ef | 1 | 245.2 | 490.3 | bit-identical |
+| tone_f32 | 2 | 18327.6 | 36655.2 | bit-identical |
+| comp_f32 | 1 | 251.8 | 503.5 | bit-identical |
+| gate_f32 | 1 | 48.5 | 97.1 | bit-identical |
+| limiter_f32 | 2 | 2215.1 | 4430.2 | bit-identical |
+| limiter_sp_f32 | 2 | 1505.1 | 3010.2 | bit-identical |
+| sat_os4_f32 | 1 | 2042.1 | 4084.2 | bit-identical |
+| sat_adaa_f32 | 1 | 25495.9 | 50991.9 | bit-identical |
+| sat_os2_f32 | 1 | 1019.0 | 2038.0 | bit-identical |
+| tanh_libm_f32 | 1 | 690.0 | 1380.0 | differs |
+| tanh_fast_f32 | 1 | 120.5 | 241.0 | bit-identical |
+| os4_pass_f32 | 1 | 1542.1 | 3084.2 | bit-identical |
+| delay_lagrange_f32 | 1 | 139.5 | 279.1 | bit-identical |
+| svf_f32 | 1 | 67.4 | 134.7 | bit-identical |
+| fx_echo_f32 | 2 | 505.2 | 1010.5 | bit-identical |
+| fx_echo96_f32 | 2 | 1083.5 | 2167.0 | bit-identical |
+| fx_chorus_f32 | 2 | 727.3 | 1454.6 | bit-identical |
+| fx_flanger_f32 | 2 | 379.9 | 759.9 | bit-identical |
+| fx_phaser_f32 | 2 | 364.2 | 728.5 | bit-identical |
+| fx_sweep_f32 | 2 | 165.8 | 331.7 | bit-identical |
+| fx_overdrive_f32 | 2 | 2941.5 | 5883.1 | differs |
+| fx_crusher_f32 | 2 | 149.5 | 299.0 | bit-identical |
+| fxslot_f32 | 2 | 371.8 | 743.7 | bit-identical |
+| reverb_f32 | 2 | 1450.6 | 2901.3 | bit-identical |

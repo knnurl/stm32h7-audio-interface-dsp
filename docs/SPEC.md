@@ -307,7 +307,7 @@ sides until batch 3 measures both and decides.
 | V17 | Flash bank 2's sectors 6 and 7 are 128 KB each (confirmed by the store working), and writing them does not stall the M7 running from bank 1 (not yet: needs audio running, batch 2) | Batch 8a, on the board |
 | V18 | A double ECC error on a flash load is masked by FAULTMASK with CCR.BFHFNMIGN and shows in FLASH_SR2 (the preset store's read path relies on it) | Batch 8a, on the board, by cutting the supply during a write |
 | V19 | A bank 2 sector erase takes up to about 2 s (measured: 0.96 s with a record write), and the flash endures 10 000 cycles (datasheet, not testable here) | Batch 8a, on the board |
-| V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running | Batch 1, on the board |
+| V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running (settled: the M7's console on USART3, in D2, works with the M4 parked) | Batch 1, on the board |
 
 Settled, with the source:
 
@@ -402,4 +402,5 @@ Settled, with the source:
 | 2026-11-17 | Headphone limiter detects sample peaks; the speaker limiter keeps true-peak detection | Owner; measured 214 against 665 cycles; headphone true peak can exceed the ceiling by up to 3 dB |
 | 2026-11-17 | The overdrive and the strips' saturation never run together (control core refuses, error 10) | Owner; the worst case pays for one |
 | 2026-11-17 | True-peak detector: a 63-tap Nyquist interpolator (three 16-tap phases) instead of the 4x oversampler; limiter latency L + 9 | Measured: 998 to 665 cycles; true peak still 0.24 dB under the set ceiling on the hostile set |
+| 2026-11-18 | The M4 runs its DSP code from its SRAM; it can be woken through the SRAM4 mailbox to run the self-test cases (`m4bench`) | Measured: from flash about 4.5 times the M7's cycles, from SRAM 1.5 to 3 times; the reverb 1451 cycles, 35 % of the M4's frame, bit-identical with the PC |
 

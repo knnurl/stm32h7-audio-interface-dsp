@@ -112,3 +112,29 @@ padding rings, up to 0.77 dB); it now leaves them out. The batch 6 worst case di
 The other worst case, the overdrive with the strips not saturating: 1170 + 1284 = 2454 in place of
 2935, so about 6900.
 
+## The M4 (2026-11-18)
+
+Measured with `python tools/m4_bench.py --port COMx --results docs/results/bench_m4.md`: the M7
+wakes the M4 through the SRAM4 mailbox (`fw/common/mailbox.h`), the M4 runs every self-test case
+with its own cycle counter and reports cycles and an output CRC. The M4 runs at 200 MHz: its frame
+at 48 kHz is 4166 cycles (2916 at 70 %).
+
+| Case | M4 from flash | M4 from SRAM | M7 | Output vs PC on the M4 |
+|---|---|---|---|---|
+| gain_f32 | 46 | 17 | 11 | bit-identical |
+| biquad_f32 (3 sections) | 229 | 79 | 51 | bit-identical |
+| biquad_f64 (3 sections) | 8295 | 7837 | 169 | bit-identical (double in software: no double FPU) |
+| reverb_f32 | 4136 | 1451 | 898 | bit-identical |
+| fx_overdrive_f32 | 6942 | 2942 | 1284 | differs (its set-up uses the C library's float functions, a different build for the M4's FPU) |
+| limiter_sp_f32 | 1949 | 1505 | 214 | bit-identical |
+
+- The M4 has no cache: from flash its loops ran about 4.5 times the M7's cycles. Its DSP code and
+  constants now live in its SRAM (copied with `.data` at start-up; `fw/cm4/stm32h755_cm4.ld`),
+  about 1.5 to 3 times the M7's cycles.
+- Double precision is out on the M4 (2600 cycles per biquad section): the PEQs, the tone control
+  and ADAA stay on the M7, or would need float32 or Q31 there.
+- **The reverb fits the M4**: 1451 cycles, 35 % of its frame, bit-identical with the PC.
+  Moved there, the M7's worst case at 48 kHz falls from about 7400 to about 6500 cycles per frame:
+  78 % of its frame, against the 70 % ceiling. The effect slot cannot join it (the overdrive alone
+  is 2942 on the M4).
+

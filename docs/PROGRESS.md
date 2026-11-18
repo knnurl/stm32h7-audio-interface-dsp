@@ -4,6 +4,31 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: what the M4 can carry, measured
+
+**Transcripts read:** none (no new block).
+
+- New: the M7's `m4bench` command wakes the M4 through a mailbox at the start of SRAM4
+  (`fw/common/mailbox.h`, hardware semaphore 0); the M4 runs every self-test case with its own
+  cycle counter and reports cycles and output CRCs, then parks again. `tools/m4_bench.py` compares
+  the CRCs with the PC and writes `docs/results/bench_m4.md`. The M4 image now carries the DSP
+  library; it still parks at start-up (checked: `cm4_parked=1`).
+- From flash, the M4 (no cache) took about 4.5 times the M7's cycles on everything. Its DSP code
+  and constants now run from its SRAM: 1.5 to 3 times. The reverb: 4136 to 1451 cycles, 35 % of
+  the M4's frame at 48 kHz.
+- 27 of 29 cases are bit-identical with the PC on the M4 too; the two that differ use the C
+  library's float functions (`tanhf` itself, and the overdrive's set-up), which the M4 links in a
+  different build for its FPU.
+- Double precision is out on the M4: 2600 cycles per biquad section in software.
+
+**For the owner:** with the reverb on the M4, the M7's worst case at 48 kHz is about 6500 cycles
+per frame, 78 % against the 70 % ceiling (the room FIR's 900 is still an estimate). Building the
+two-core audio path needs the audio interrupt of batch 2 first; the decision can be made now:
+1. reverb on the M4 (measured to fit) plus a ceiling of 80 % for the everything-on case, or
+2. reverb on the M4 and float32 for the PEQ sections that can take it, then measure again, or
+3. wait for the room FIR's measurement (batch 9) before choosing.
+Unit tests: 522 pass.
+
 ## 2026-11-17: budget round 2 on the board (owner: "keep on")
 
 **Transcripts read:** none (no new block).
