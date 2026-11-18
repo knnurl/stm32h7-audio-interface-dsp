@@ -104,6 +104,18 @@ def test_mute_silences_main_and_send(lib8c):
     assert all(np.all(o == 0.0) for o in out)
 
 
+def test_send_follows_the_level(lib8c):
+    """Post-level send (owner, 2026-11-18): halving the level halves the send, bit for bit
+    against the main bus's own halving; level 0 sends nothing."""
+    x = noise(6, 256)
+    full = make(lib8c, [(1.0, -1.0, 0.5, 0)]).process([x])
+    half = make(lib8c, [(0.5, -1.0, 0.5, 0)]).process([x])
+    off = make(lib8c, [(0.0, -1.0, 0.5, 0)]).process([x])
+    assert half[0].tobytes() == (0.5 * full[0]).astype(np.float32).tobytes()
+    assert half[2].tobytes() == (0.5 * full[2]).astype(np.float32).tobytes()
+    assert np.all(off[2] == 0.0) and np.all(off[3] == 0.0)
+
+
 def test_unconnected_channel_and_no_send_bus(lib8c):
     xs = [noise(4, 512), None, noise(5, 512)]
     settings = [(1.0, 0.2, 0.5, 0), (1.0, 0.0, 1.0, 0), (0.5, -0.4, 0.3, 0)]

@@ -12,9 +12,16 @@ channels per instance, with the expensive parts switched on only where they mean
 |---|---|---|---|
 | Inputs 1 and 2 (one stereo instance), and the LEDs | yes | no | no |
 | Monitor mix | yes | yes | yes |
-| Speaker and headphone outputs | yes | yes | no |
+| Speaker and headphone outputs | yes | no | no |
 
-That split is a proposal for the 8c assembly; the cost of each part is in the two self-test cases.
+Owner, 2026-11-18. True peak only on the mix: an input cannot read over full scale between
+samples in a way that matters (the converter clips at the sample), and the speaker limiter already
+detects true peak itself. The meters run on the M4 (SPEC decision log), so their 601 + 3 x 57
+cycles leave the M7.
+
+**Clip indication.** The meter keeps the largest sample since the last read, so no clip between
+two reads is lost. The PC meter latches a clip until it is clicked or cleared; the panel LED
+keeps its 300 ms hold (8d.3). Both are applied by the reader, not by this block.
 
 ## The maths
 
@@ -114,9 +121,8 @@ Read in full on 2026-11-18: Recursive RMS (#103). Searched all 29 for "loudness"
   accumulates; for the 3 s short-term window at 96 kHz that is 288 000 samples of history. The
   meter uses block sums in double instead (above).
 
-## Decisions for the owner
+## Decisions (owner, 2026-11-18)
 
-1. The crossfeed's explicit delay: 0 by default (`crossfeed.md`), not the plan's "delayed".
-2. Meter ballistics: hold 1 s, fall 11.8 dB/s, RMS 300 ms. Easy to change; say if the PC meters
-   should look different.
-3. Which meters get true peak and loudness (the table at the top), once their cycles are measured.
+1. The crossfeed's explicit delay: 0 (`crossfeed.md`), not the plan's "delayed".
+2. Meter ballistics kept: hold 1 s, fall 11.8 dB/s, RMS 300 ms.
+3. True peak and loudness on the monitor mix only (the table at the top).

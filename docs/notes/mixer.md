@@ -18,8 +18,8 @@ Per channel, with t = (p + 1) π / 4 for the pan position p in [-1, 1]:
 |---|---|
 | main L | level cos t |
 | main R | level sin t |
-| send L | send cos t |
-| send R | send sin t |
+| send L | level send cos t |
+| send R | level send sin t |
 
 cos² t + sin² t = 1, so the power a channel puts into the pair is the same at every pan position:
 a constant-power pan law, -3.01 dB to each side at the centre and unity on the hard side.
@@ -36,10 +36,11 @@ constants so they do not depend on the C library's last bit.
 - **Constant power, -3 dB centre.** Rejected: the linear law (gains 1 - u and u), which is what a
   wet and dry mix control does (#140, below): -6 dB at the centre, so a source sounds quieter
   panned centre than panned hard. Also rejected: -4.5 dB compromise laws; the plan asked for -3.
-- **The send is post-pan and independent of the level.** Turning a channel down does not change
-  how much reverb it gets, which is what a monitor mix wants (the singer's reverb stays as set
-  while the level is ridden). Its pan follows the channel's, so a source panned left has its
-  reverb start from the left. If the owner wants the send post-fader, it is one multiply.
+- **The send is post-pan and post-level** (owner, 2026-11-18; first written pre-level). Turning a
+  channel down turns its reverb down with it, so the wet and dry balance of a ridden channel
+  stays as set; that is the usual convention for an effect send. Rejected: pre-level, where a
+  channel pulled down leaves its reverb behind at full level. Its pan follows the channel's, so a
+  source panned left has its reverb start from the left. Tested in `test_send_follows_the_level`.
 - **Mono channels only.** A stereo source is a pair of mono channels at ±1. Rejected: a stereo
   channel type with a balance control; it would double the code for one less parameter.
 - **Silent channels cost nothing.** A channel whose four gains are 0 and still is skipped, and an

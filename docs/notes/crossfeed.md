@@ -45,7 +45,7 @@ the source passes unchanged. Measured with D > 0 at 48 kHz and full amount:
 
 A 3.5 dB dip near 900 Hz colours every centred vocal and bass line, so the default is 0. The
 setter (`dsp_crossfeed_f32_set_delay_us`, up to 255 samples) stays, so the owner can listen to
-both. **This is a proposed change to the plan for the owner to confirm.**
+both. **Confirmed by the owner on 2026-11-18: no explicit delay.**
 
 ## Structure, and what was rejected
 

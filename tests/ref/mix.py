@@ -15,7 +15,8 @@ def pan_gains(pan):
 
 def channel_gains(level, pan, send, mute):
     left, right = pan_gains(pan)
-    level, send = (0.0, 0.0) if mute else (level, send)
+    level = 0.0 if mute else level
+    send = level * send  # Post-level (owner, 2026-11-18).
     return np.array([level * left, level * right, send * left, send * right])
 
 

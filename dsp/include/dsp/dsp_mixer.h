@@ -2,11 +2,11 @@
  *
  * Per channel: level (linear), pan p in [-1, 1], send (linear) and mute. Its four gains:
  *   main L = level cos(t),  main R = level sin(t),  t = (p + 1) pi / 4
- *   send L = send cos(t),   send R = send sin(t)
+ *   send L = level send cos(t),   send R = level send sin(t)
  * A constant-power pan: -3.01 dB to each side at the centre, unity on the hard side, and the
- * power (L^2 + R^2) the same at every position. The send is post-pan and independent of the
- * level: the level knob does not change how much reverb a channel gets. A stereo source is two
- * channels panned -1 and +1, so it passes at unity. Muted, all four gains are 0.
+ * power (L^2 + R^2) the same at every position. The send is post-pan and post-level: turning a
+ * channel down turns its reverb down with it, so the wet and dry balance stays. A stereo source
+ * is two channels panned -1 and +1, so it passes at unity. Muted, all four gains are 0.
  * Every gain moves linearly to a new value over the ramp time, from wherever it is, so no change
  * clicks; the gains are computed at the control level (cosf, sinf), never per sample.
  *

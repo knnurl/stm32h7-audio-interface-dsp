@@ -25,7 +25,7 @@ static void targets(const DspMixerChannelF32 *c, float g[4]) {
     float l, r;
     dsp_mixer_pan_gains(c->pan, &l, &r);
     const float level = c->mute ? 0.0f : c->level;
-    const float send = c->mute ? 0.0f : c->send;
+    const float send = level * c->send; /* Post-level: the reverb follows the fader. */
     g[0] = level * l;
     g[1] = level * r;
     g[2] = send * l;
