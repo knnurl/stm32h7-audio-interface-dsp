@@ -599,7 +599,7 @@ static void rfft512_f32_run(const void *in, void *out) {
  * the audio interrupt will make them. Each channel steps twice in the 512 frames. The filters
  * are noise under an exponential decay (time constant 683 taps), different per side. On the M7
  * the 138 KB pool sits in AXI SRAM, where the real filters will. */
-enum { kPconvTaps = 4096, kPconvBlock = 256, kPconvMem = 17664 /* mem_needed(256, 4096) */ };
+enum { kPconvTaps = 4096, kPconvBlock = 256, kPconvMem = 18176 /* mem_needed(256, 4096) */ };
 static float s_pool9[2 * kPconvMem] SELFTEST_AXI;
 /* The filter is built in the 8b pool (7680 floats, idle while this case runs), which keeps the
  * M4's image inside its 256 KB of SRAM. */

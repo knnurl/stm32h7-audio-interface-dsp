@@ -17,6 +17,25 @@ endforeach()
 set(DSP_SOURCES ${_absolute} PARENT_SCOPE)
 set(DSP_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/include PARENT_SCOPE)
 
+# CMSIS-DSP's real FFT, used by dsp_pconv (owner's choice C, 2026-11-18), built on the PC as on
+# the target so the two stay bit-identical. Fetched with fw/fetch_deps.ps1 (Apache-2.0).
+set(_cmsis ${CMAKE_CURRENT_SOURCE_DIR}/../fw/third_party/cmsis_dsp)
+if(NOT EXISTS ${_cmsis}/Include/arm_math.h)
+    message(FATAL_ERROR "CMSIS-DSP is missing: run powershell -File fw/fetch_deps.ps1")
+endif()
+set(_cmsis_sources
+    ${_cmsis}/Source/TransformFunctions/arm_rfft_fast_f32.c
+    ${_cmsis}/Source/TransformFunctions/arm_rfft_fast_init_f32.c
+    ${_cmsis}/Source/TransformFunctions/arm_cfft_f32.c
+    ${_cmsis}/Source/TransformFunctions/arm_cfft_init_f32.c
+    ${_cmsis}/Source/TransformFunctions/arm_cfft_radix8_f32.c
+    ${_cmsis}/Source/TransformFunctions/arm_bitreversal2.c
+    ${_cmsis}/Source/CommonTables/arm_common_tables.c
+    ${_cmsis}/Source/CommonTables/arm_const_structs.c)
+set(_cmsis_includes ${_cmsis}/Include ${_cmsis}/PrivateInclude)
+set(DSP_CMSIS_SOURCES ${_cmsis_sources} PARENT_SCOPE)
+set(DSP_CMSIS_INCLUDES ${_cmsis_includes} PARENT_SCOPE)
+
 if(CMAKE_CROSSCOMPILING)
     return()
 endif()
@@ -29,13 +48,26 @@ else()
     set(_flags -Wall -Wextra -Werror -ffp-contract=off)
 endif()
 
+# Third-party code: its own warnings level, the same float policy.
+if(MSVC)
+    set(_cmsis_flags /W0 /fp:precise)
+else()
+    set(_cmsis_flags -w -ffp-contract=off)
+endif()
+add_library(dsp_cmsis STATIC ${_cmsis_sources})
+target_include_directories(dsp_cmsis SYSTEM PUBLIC ${_cmsis_includes})
+target_compile_options(dsp_cmsis PRIVATE ${_cmsis_flags})
+set_target_properties(dsp_cmsis PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 add_library(dsp STATIC ${_sources})
 target_include_directories(dsp PUBLIC include)
 target_compile_options(dsp PRIVATE ${_flags})
+target_link_libraries(dsp PUBLIC dsp_cmsis)
 
 add_library(dsp_host SHARED ${_sources})
 target_include_directories(dsp_host PUBLIC include)
 target_compile_options(dsp_host PRIVATE ${_flags})
+target_link_libraries(dsp_host PRIVATE dsp_cmsis)
 set_target_properties(dsp_host PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 if(NOT MSVC)
     target_link_libraries(dsp PUBLIC m)

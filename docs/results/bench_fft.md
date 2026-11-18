@@ -39,9 +39,20 @@ Same board, same flags (`-O2 -ffp-contract=off`), its code in ITCM like `dsp_fft
 The two forward spectra agree to 1.3e-7 to 1.4e-7 of the largest bin. In the convolver at
 B = 256 (one forward and one inverse 512-point FFT per channel per step), CMSIS would save about
 (33639 + 32576 - 19070 - 21269) x 2 / 256 = about 200 cycles per frame, not the 340 estimated.
-Not adopted: it overwrites its input (the convolver would need a copy), its inverse scales by 1/n
-(the filter's 1/N would come out), and the PC build would have to compile CMSIS too to stay
-bit-identical. That is for the owner to weigh against 200 cycles.
+Adopted (owner's choice C, 2026-11-18): the convolver copies its input before each transform,
+stores its filter spectra unscaled, and the PC build compiles CMSIS too. Measured after the
+change, still bit-identical with the PC (`target_test`, `pconv_f32`: 910 cycles per frame against
+1112), `convbench`:
+
+| Partition B | dsp_fft (before) | CMSIS-DSP (now) | Saved |
+|---|---|---|---|
+| 64 | 2460 | 2250 | 210 |
+| 128 | 1534 | 1334 | 200 |
+| **256** | **1120** | **917** | **203** |
+| 512 | 940 | 705 | 235 |
+
+Memory per channel rises by N floats (the copy): 18176 floats at B = 256 and 4096 taps. The
+smallest partition is now 16 (CMSIS's real FFT starts at 32 points).
 
 ## Partitioned convolver (`dsp_pconv`), stereo, 4096 taps per channel
 

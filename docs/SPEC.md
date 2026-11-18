@@ -111,7 +111,7 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Reverb, 8-line FDN | 350 | estimate (self-test case reverb_f32; docs/results/b8b_cycles.md); on the M4 since the 8c split (2026-11-18), 151 per frame for the exchange stays on the M7 | 8b |
 | Speaker stage: PEQ and delay, stereo | 210 | estimate | 3 |
 | Speaker stage: true-peak limiter, stereo | 300 | estimate | 6 |
-| Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 1120 at 48 kHz | measured 2026-11-18 (`docs/results/bench_fft.md`; 940 at 512-sample partitions) | 9 |
+| Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 917 at 48 kHz | measured 2026-11-18 with CMSIS-DSP's FFT (`docs/results/bench_fft.md`; 1120 with dsp_fft; 705 at 512-sample partitions) | 9 |
 | Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8c |
 | Tone: three bands, stereo | 60 | estimate | 3 |
 | Effect slot: the dearest single effect, stereo | 250 | estimate (self-test cases fx_overdrive_f32, and fx_echo96_f32 for the 96 kHz echo; docs/results/b8b_cycles.md) | 8b |
@@ -433,3 +433,4 @@ Settled, with the source:
 | 2026-11-18 | Headphone amplifier OPA1622, sized for the owner's Audio-Technica ATH-M50x (38 ohm, 99 dB sensitivity) | Owner's headphones; about 1 V peak and 26 mA peak give 110 dB SPL, well inside the part [Verify the sensitivity reference, dB/mW assumed] |
 | 2026-11-18 | CMSIS-DSP v1.16.2 fetched (Apache-2.0, M7 build only) as the FFT yardstick | Owner's go; measured 1.6 to 1.8 times faster than `dsp_fft`, about 200 cycles per frame in the room filter; not adopted into the library yet (`bench_fft.md`) |
 | 2026-11-18 | Budget rule widened: the effect slot (any effect) and strip saturation never run together; it replaces the overdrive-only rule of 2026-11-17 | Owner chose A + C + D. Saves about 480 cycles per frame in the 48 kHz worst case: strips plus effect fall from 2935 (two strips saturating, the chorus) to 2454 (the overdrive, strips clean) |
+| 2026-11-18 | The room convolver uses CMSIS-DSP's real FFT, on the PC and the target | Owner chose C. Measured: 1120 to 917 cycles per frame at B = 256, bit-identical with the PC; one more N-float buffer per channel; smallest partition 16 |

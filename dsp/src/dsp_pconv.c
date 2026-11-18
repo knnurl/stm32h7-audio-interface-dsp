@@ -1,5 +1,7 @@
 #include "dsp/dsp_pconv.h"
 
+#include "arm_math.h"
+
 /* A cache preload hint for the multiply-add loop, whose spectra (64 KB per channel at 4096 taps)
  * stream from AXI SRAM through a 16 KB data cache. It changes no result. */
 #if defined(__GNUC__)
@@ -8,8 +10,37 @@
 #define PRELOAD(p) ((void)(p))
 #endif
 
+_Static_assert(sizeof(arm_rfft_fast_instance_f32) <= sizeof(((DspPconvF32 *)0)->fft_state),
+               "fft_state is too small for CMSIS's instance");
+
+static arm_rfft_fast_instance_f32 *fft_of(DspPconvF32 *conv) {
+    return (arm_rfft_fast_instance_f32 *)(void *)conv->fft_state;
+}
+
+/* The size-specific initialisers, so the linker keeps only the tables of the sizes in use. */
+static int init_fft(arm_rfft_fast_instance_f32 *s, int32_t n) {
+    switch (n) {
+    case 32:
+        return arm_rfft_fast_init_32_f32(s) == ARM_MATH_SUCCESS ? 0 : -1;
+    case 64:
+        return arm_rfft_fast_init_64_f32(s) == ARM_MATH_SUCCESS ? 0 : -1;
+    case 128:
+        return arm_rfft_fast_init_128_f32(s) == ARM_MATH_SUCCESS ? 0 : -1;
+    case 256:
+        return arm_rfft_fast_init_256_f32(s) == ARM_MATH_SUCCESS ? 0 : -1;
+    case 512:
+        return arm_rfft_fast_init_512_f32(s) == ARM_MATH_SUCCESS ? 0 : -1;
+    case 1024:
+        return arm_rfft_fast_init_1024_f32(s) == ARM_MATH_SUCCESS ? 0 : -1;
+    case 2048:
+        return arm_rfft_fast_init_2048_f32(s) == ARM_MATH_SUCCESS ? 0 : -1;
+    default:
+        return -1;
+    }
+}
+
 static int valid_block(int32_t block) {
-    return block >= 8 && block <= kDspFftMaxN / 2 && (block & (block - 1)) == 0;
+    return block >= 16 && block <= kDspFftMaxN / 2 && (block & (block - 1)) == 0;
 }
 
 int32_t dsp_pconv_f32_mem_needed(int32_t block, int32_t taps) {
@@ -18,7 +49,7 @@ int32_t dsp_pconv_f32_mem_needed(int32_t block, int32_t taps) {
     }
     const int32_t parts = (taps + block - 1) / block;
     const int32_t n = 2 * block;
-    return 2 * parts * n + 2 * n + block;
+    return 2 * parts * n + 3 * n + block;
 }
 
 static void clear(float *p, int32_t n) {
@@ -34,14 +65,17 @@ int32_t dsp_pconv_f32_init(DspPconvF32 *conv, int32_t block, int32_t taps, float
         return -1;
     }
     const int32_t n = 2 * block;
-    (void)dsp_rfft_f32_init(&conv->fft, n);
+    if (init_fft(fft_of(conv), n) != 0) {
+        return -1;
+    }
     conv->block = block;
     conv->parts = (taps + block - 1) / block;
     conv->h = mem;
     conv->fdl = conv->h + conv->parts * n;
     conv->in = conv->fdl + conv->parts * n;
     conv->work = conv->in + n;
-    conv->out = conv->work + n;
+    conv->tmp = conv->work + n;
+    conv->out = conv->tmp + n;
     clear(conv->h, conv->parts * n);
     dsp_pconv_f32_reset(conv);
     return 0;
@@ -53,17 +87,12 @@ int32_t dsp_pconv_f32_set_filter(DspPconvF32 *conv, const float *h, int32_t taps
     if (taps < 0 || taps > conv->parts * b) {
         return -1;
     }
-    const float scale = 1.0f / (float)n; /* The inverse FFT returns n times the signal. */
     for (int32_t k = 0; k < conv->parts; ++k) {
-        float *spec = conv->h + k * n;
         for (int32_t i = 0; i < n; ++i) {
             const int32_t tap = k * b + i;
-            spec[i] = (i < b && tap < taps) ? h[tap] : 0.0f;
+            conv->tmp[i] = (i < b && tap < taps) ? h[tap] : 0.0f;
         }
-        dsp_rfft_f32_forward(&conv->fft, spec, spec);
-        for (int32_t i = 0; i < n; ++i) {
-            spec[i] *= scale;
-        }
+        arm_rfft_fast_f32(fft_of(conv), conv->tmp, conv->h + k * n, 0u);
     }
     return 0;
 }
@@ -73,6 +102,7 @@ void dsp_pconv_f32_reset(DspPconvF32 *conv) {
     clear(conv->fdl, conv->parts * n);
     clear(conv->in, n);
     clear(conv->work, n);
+    clear(conv->tmp, n);
     clear(conv->out, conv->block);
     conv->head = 0;
     conv->fill = 0;
@@ -110,7 +140,10 @@ static void step(DspPconvF32 *conv) {
     const int32_t n = 2 * b;
     const int32_t parts = conv->parts;
     conv->head = conv->head + 1 == parts ? 0 : conv->head + 1;
-    dsp_rfft_f32_forward(&conv->fft, conv->in, conv->fdl + conv->head * n);
+    for (int32_t i = 0; i < n; ++i) {
+        conv->tmp[i] = conv->in[i]; /* CMSIS overwrites its input. */
+    }
+    arm_rfft_fast_f32(fft_of(conv), conv->tmp, conv->fdl + conv->head * n, 0u);
 
     float *acc = conv->work;
     clear(acc, n);
@@ -119,9 +152,9 @@ static void step(DspPconvF32 *conv) {
         mac(acc, conv->fdl + slot * n, conv->h + k * n, n);
         slot = slot == 0 ? parts - 1 : slot - 1;
     }
-    dsp_rfft_f32_inverse(&conv->fft, acc, acc);
+    arm_rfft_fast_f32(fft_of(conv), acc, conv->tmp, 1u); /* Scales by 1 / N. */
     for (int32_t i = 0; i < b; ++i) {
-        conv->out[i] = acc[b + i];
+        conv->out[i] = conv->tmp[b + i];
         conv->in[i] = conv->in[b + i];
     }
 }

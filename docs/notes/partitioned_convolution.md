@@ -51,9 +51,9 @@ multiply-adds 54 %. The multiply-adds read 128 KB of spectra per step through a 
 are limited by AXI SRAM; a preload hint and `restrict` took 16 % off.
 
 What would lower it, in order of expected gain per effort:
-1. A faster FFT. This one is plain radix-2 at 66 cycles per point for 512 points. A radix-4 or
-   split-radix kernel, or CMSIS-DSP's, is reported at about a third of that [Verify]. At B = 256
-   that would take about 340 cycles per frame off (estimate).
+1. A faster FFT. Done (2026-11-18): CMSIS-DSP's `arm_rfft_fast_f32` replaced `dsp_fft` in the
+   convolver, 1120 to 917 cycles per frame at B = 256, measured and bit-identical with the PC.
+   It was reported at a third of `dsp_fft`'s cycles; measured, 0.55 to 0.6.
 2. A shorter filter. The transcripts' cabinet IRs carry most of their information in the first
    20 to 40 ms; a room correction above the Schroeder frequency needs less length than one that
    chases the modes. The filter design in batch 9 sets the length, and the cost scales with it.

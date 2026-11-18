@@ -12,7 +12,7 @@
 
 enum {
     kTaps = 4096,
-    kMaxConvMem = 18944, /* dsp_pconv_f32_mem_needed at B = 512, the largest of the sweep. */
+    kMaxConvMem = 19968, /* dsp_pconv_f32_mem_needed at B = 512, the largest of the sweep. */
     kCall = 16,
     kStepsPerRep = 8,
     kReps = 5,

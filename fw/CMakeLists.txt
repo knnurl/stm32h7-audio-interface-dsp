@@ -36,18 +36,9 @@ set(ST_INCLUDES
 
 set(OWN_WARNINGS "-Wall;-Wextra;-Werror;-Wno-unused-parameter")
 
-# CMSIS-DSP's real FFT, M7 only: the yardstick for dsp_fft (`cmsisfft`; owner's go 2026-11-18).
-# Only the size-specific init functions are called, so --gc-sections keeps only their tables.
-set(CMSIS_DSP ${TP}/cmsis_dsp)
-set(CMSIS_DSP_SOURCES
-    ${CMSIS_DSP}/Source/TransformFunctions/arm_rfft_fast_f32.c
-    ${CMSIS_DSP}/Source/TransformFunctions/arm_rfft_fast_init_f32.c
-    ${CMSIS_DSP}/Source/TransformFunctions/arm_cfft_f32.c
-    ${CMSIS_DSP}/Source/TransformFunctions/arm_cfft_init_f32.c
-    ${CMSIS_DSP}/Source/TransformFunctions/arm_cfft_radix8_f32.c
-    ${CMSIS_DSP}/Source/TransformFunctions/arm_bitreversal2.c
-    ${CMSIS_DSP}/Source/CommonTables/arm_common_tables.c
-    ${CMSIS_DSP}/Source/CommonTables/arm_const_structs.c)
+# CMSIS-DSP's real FFT (dsp/CMakeLists.txt): dsp_pconv uses it, and `cmsisfft` times it. Only
+# size-specific init functions are called, so --gc-sections keeps only their tables.
+set(CMSIS_DSP_SOURCES ${DSP_CMSIS_SOURCES})
 
 function(dsp_firmware target core_define cpu_flags linker_script)
     target_compile_definitions(${target} PRIVATE
@@ -77,8 +68,8 @@ set(CM7_SOURCES
 set_source_files_properties(${CMSIS_DSP_SOURCES} PROPERTIES COMPILE_OPTIONS "-O2;-ffp-contract=off")
 add_executable(dsp_cm7 ${CM7_SOURCES} ${DSP_SOURCES} ${CTL_SOURCES} ${ST_BOOT_SOURCES}
     ${HAL_SOURCES} ${CMSIS_DSP_SOURCES})
-target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR} ${CTL_INCLUDE_DIR}
-    ${CMSIS_DSP}/Include ${CMSIS_DSP}/PrivateInclude)
+target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR} ${CTL_INCLUDE_DIR})
+target_include_directories(dsp_cm7 SYSTEM PRIVATE ${DSP_CMSIS_INCLUDES})
 # The self-test's large pool goes to AXI SRAM on this core only (dsp_selftest.c).
 target_compile_definitions(dsp_cm7 PRIVATE DSP_HAS_AXI_BSS)
 # Float policy (SPEC section 7): no fused multiply-add contraction until batch 3 decides, so the
@@ -92,8 +83,9 @@ dsp_firmware(dsp_cm7 CORE_CM7
 
 # ---- Cortex-M4: parked ----------------------------------------------------------------------
 # It carries the DSP library too, to measure the self-test cases on this core (m4bench).
-add_executable(dsp_cm4 cm4/src/main.c common/split_dsp.c ${DSP_SOURCES} ${ST_BOOT_SOURCES} ${HAL_SOURCES})
+add_executable(dsp_cm4 cm4/src/main.c common/split_dsp.c ${DSP_SOURCES} ${CMSIS_DSP_SOURCES} ${ST_BOOT_SOURCES} ${HAL_SOURCES})
 target_include_directories(dsp_cm4 PRIVATE ${DSP_INCLUDE_DIR})
+target_include_directories(dsp_cm4 SYSTEM PRIVATE ${DSP_CMSIS_INCLUDES})
 # The last self-test case (pconv_f32, 138 KB) leaves the M4's image; every other index is kept.
 target_compile_definitions(dsp_cm4 PRIVATE DSP_SELFTEST_NO_PCONV)
 set_source_files_properties(cm4/src/main.c common/split_dsp.c PROPERTIES COMPILE_OPTIONS "${OWN_WARNINGS}")

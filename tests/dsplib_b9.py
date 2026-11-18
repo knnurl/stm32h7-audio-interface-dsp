@@ -15,9 +15,9 @@ class DspRfftF32(ctypes.Structure):
 
 
 class DspPconvF32(ctypes.Structure):
-    _fields_ = [("fft", DspRfftF32), ("block", c_int32), ("parts", c_int32), ("head", c_int32),
-                ("fill", c_int32), ("h", _f32_p), ("fdl", _f32_p), ("in_", _f32_p),
-                ("work", _f32_p), ("out", _f32_p)]
+    _fields_ = [("fft_state", ctypes.c_uint64 * 8), ("block", c_int32), ("parts", c_int32),
+                ("head", c_int32), ("fill", c_int32), ("h", _f32_p), ("fdl", _f32_p),
+                ("in_", _f32_p), ("work", _f32_p), ("tmp", _f32_p), ("out", _f32_p)]
 
 
 MIRRORS = [DspRfftF32, DspPconvF32]

@@ -15,11 +15,15 @@
  * On the target the step runs at the deferred level, where it can finish up to a partition
  * later than the audio level asks for it; that costs a further B unless the first partition is
  * computed in the time domain (batch 9 decides; docs/notes/partitioned_convolution.md).
+ * The FFTs are CMSIS-DSP's arm_rfft_fast_f32 (owner's choice C, 2026-11-18: about 1.7 times
+ * dsp_fft's speed, docs/results/bench_fft.md), on the PC as on the target, so the two stay
+ * bit-identical. It overwrites its input, so each transform reads a copy in `tmp`; its inverse
+ * scales by 1 / N, so the filter spectra are stored unscaled.
  * Memory: caller-provided, dsp_pconv_f32_mem_needed floats: 2 P N for the filter and input
- * spectra, 2 N for the input and work buffers, B for the output. 35 KB per channel for 4096 taps
- * at B = 256.
- * Assumptions: B a power of two in [8, 1024]; the filter is loaded outside the audio level
- * (P forward FFTs). Cycles: docs/results/bench_fft.md.
+ * spectra, 3 N for the input, work and copy buffers, B for the output. 71 KB per channel for
+ * 4096 taps at B = 256.
+ * Assumptions: B a power of two in [16, 1024] (CMSIS's real FFT starts at 32 points); the
+ * filter is loaded outside the audio level (P forward FFTs). Cycles: docs/results/bench_fft.md.
  */
 #ifndef DSP_PCONV_H
 #define DSP_PCONV_H
@@ -30,15 +34,16 @@
 #include <stdint.h>
 
 typedef struct {
-    DspRfftF32 fft;
+    uint64_t fft_state[8]; /* CMSIS-DSP's arm_rfft_fast_instance_f32, kept opaque here. */
     int32_t block; /* B */
     int32_t parts; /* P */
     int32_t head;  /* Ring slot of the newest input spectrum. */
     int32_t fill;  /* Samples gathered towards the next step. */
-    float *h;      /* P spectra of N floats, packed (dsp_fft.h), scaled by 1 / N. */
+    float *h;      /* P spectra of N floats, packed (dsp_fft.h's layout, also CMSIS's). */
     float *fdl;    /* P input spectra of N floats. */
     float *in;     /* N: the previous and the current input partitions. */
-    float *work;   /* N: the accumulated spectrum, then its inverse. */
+    float *work;   /* N: the accumulated spectrum. */
+    float *tmp;    /* N: the copy each transform destroys, then the inverse's output. */
     float *out;    /* B: the last step's output. */
 } DspPconvF32;
 

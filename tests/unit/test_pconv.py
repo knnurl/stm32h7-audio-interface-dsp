@@ -75,11 +75,11 @@ def test_starts_silent_until_a_filter_is_loaded(lib9):
 
 def test_argument_checks(lib9):
     assert lib9.dsp_pconv_f32_mem_needed(48, 100) == 0      # not a power of two
-    assert lib9.dsp_pconv_f32_mem_needed(4, 100) == 0       # too small
+    assert lib9.dsp_pconv_f32_mem_needed(8, 100) == 0       # too small (CMSIS starts at 32 points)
     assert lib9.dsp_pconv_f32_mem_needed(2048, 100) == 0    # FFT would exceed 2048
     assert lib9.dsp_pconv_f32_mem_needed(256, 0) == 0
     # 4096 taps at B = 256: 16 partitions, N = 512: 2 * 16 * 512 + 2 * 512 + 256.
-    assert lib9.dsp_pconv_f32_mem_needed(256, 4096) == 17664
+    assert lib9.dsp_pconv_f32_mem_needed(256, 4096) == 18176
     state = b9.DspPconvF32()
     mem = np.zeros(17663, dtype=np.float32)
     assert lib9.dsp_pconv_f32_init(state, 256, 4096, b9.dsplib.f32(mem), len(mem)) == -1
