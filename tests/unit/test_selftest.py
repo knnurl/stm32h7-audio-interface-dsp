@@ -103,6 +103,26 @@ def test_tone_case_is_the_tone_block(lib):
     assert out.tobytes() == y.tobytes()
 
 
+def test_peq_case_is_the_block(lib):
+    """peq_f32 (budget option D) equals dsp_peq run through Python with the same settings."""
+    x, y = dsplib.selftest_run(lib, case_index(lib, "peq_f32"))
+    peq = dsplib.DspPeqF32()
+    lib.dsp_peq_f32_init(ctypes.byref(peq), 48000.0, 1)
+    lib.dsp_peq_f32_set_highpass(ctypes.byref(peq), 40.0)
+    for b, band in enumerate(((2, 100.0, 3.0, 1.0), (1, 400.0, -4.0, 1.0), (1, 3000.0, 2.0, 0.7),
+                              (3, 8000.0, -2.0, 1.0))):
+        lib.dsp_peq_f32_set_band(ctypes.byref(peq), b, ctypes.byref(dsplib.DspPeqBand(*band)))
+    lib.dsp_peq_f32_reset(ctypes.byref(peq))
+    assert peq.first_f32 == 3
+    out = np.zeros_like(x)
+    for i in range(0, len(x), 16):
+        xs = x[i:i + 16].copy()
+        ys = np.zeros_like(xs)
+        lib.dsp_peq_f32_process(ctypes.byref(peq), dsplib.f32(xs), dsplib.f32(ys), 16)
+        out[i:i + 16] = ys
+    assert out.tobytes() == y.tobytes()
+
+
 def test_biquad_f64_case_matches_reference(lib):
     x, y = dsplib.selftest_run(lib, case_index(lib, "biquad_f64"))
     dsplib.assert_within_db(y, biquad_ref.f64_cascade(x, CASCADE), -135.0)
