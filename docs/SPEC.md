@@ -307,6 +307,14 @@ sides until batch 3 measures both and decides.
 | V17 | Flash bank 2's sectors 6 and 7 are 128 KB each (confirmed by the store working), and writing them does not stall the M7 running from bank 1 (not yet: needs audio running, batch 2) | Batch 8a, on the board |
 | V18 | A double ECC error on a flash load is masked by FAULTMASK with CCR.BFHFNMIGN and shows in FLASH_SR2 (the preset store's read path relies on it) | Batch 8a, on the board, by cutting the supply during a write |
 | V19 | A bank 2 sector erase takes up to about 2 s (measured: 0.96 s with a record write), and the flash endures 10 000 cycles (datasheet, not testable here) | Batch 8a, on the board |
+| V20 | The PCM3168A runs TDM at 96 kHz with 8 DAC slots and 6 ADC slots on one line each (BCLK 24.576 MHz), with MCLK at 22.5792 or 24.576 MHz for all four rates, and the H755's SAI keeps up | Batch 5, stage 3 (datasheet), batch 7 (board) |
+| V21 | Live LCSC and JLC stock, price and part class for every chosen part | Batch 5, stage 1 sign-off, and again at stage 5 |
+| V22 | The chosen oscillators have an output enable and phase jitter under about 45 ps rms | Batch 5, stage 3 |
+| V23 | The PCM3168A's analogue supply current, to size its 5 V analogue LDO | Batch 5, stage 2 |
+| V24 | The Alps RK09L series offers a threaded bushing, a centre detent and a plain version, and a shaft length for the owner's panel | Batch 5, stage 2 |
+| V25 | A current (not obsolete) 16 Mb/s optical receiver exists in the PLR135 footprint | Batch 5, stage 3, if S/PDIF footprints stay |
+| V26 | A USB-C receptacle with through-hole shell stakes is stocked at LCSC or JLC | Batch 5, stage 2 |
+| V27 | CMSIS-DSP's `arm_rfft_fast_f32` takes about a third of `dsp_fft`'s cycles on the M7 (sets how much a faster FFT saves the room FIR) | Batch 9, on the board, with CMSIS-DSP fetched (owner's go) |
 | V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running (settled: the M7's console on USART3, in D2, works with the M4 parked) | Batch 1, on the board |
 
 Settled, with the source:
@@ -406,3 +414,5 @@ Settled, with the source:
 | 2026-11-18 | The 8c split (reverb on the M4, the ceiling, float32 PEQ) waits for the room FIR's measured cost in batch 9 | Owner: the FIR's 900 cycles is still an estimate, and it decides whether 78 % is the real worst case |
 | 2026-11-18 | Room FIR spike: own radix-2 real FFT (CMSIS packed layout, generated twiddles) and uniformly partitioned overlap-save convolver | Measured on the M7: 1120 cycles per frame, stereo, 4096 taps, B = 256 (estimate was 900); bit-identical with the PC on both cores; 132 dB below the output against double precision |
 | 2026-11-18 | The M7 waits up to 524288 polls for the M4 to park | Measured 48075 and 49141 polls with the DSP library in the M4 image; the old 65535 failed once |
+| 2026-11-18 | Pots: rest detection (0.4 % of travel to leave rest, 12-bit steps while moving) instead of plain hysteresis | Plain 0.4 % hysteresis gives either about 8 bits or a still knob that keeps sending; tested on synthetic ADC streams (`panel_input.md`) |
+| 2026-11-18 | Panel button mapping, footswitch types, end and centre zones as in `panel_input.md` | Proposed; owner to confirm |

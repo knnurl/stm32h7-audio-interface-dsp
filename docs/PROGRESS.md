@@ -4,6 +4,47 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: batch 5 stage 1, part selection (forked agent, merged)
+
+**Transcripts read:** #78 (mixed-signal hardware walkthrough), #142 (codec driver).
+
+- `docs/notes/part_selection.md`: converter trade study (PCM3168A, AK4619VN, CS42448, AD1939,
+  PCM1863 with PCM5122). Recommendation PCM3168A: DAC 112 dB against 108 dB for the AK4619VN, ADC
+  full scale 2.0 Vrms differential, 6 in and 8 out on one TDM line each way. Runner-up AK4619VN
+  (single 3.3 V supply, QFN-32). Supporting and panel parts each with a runner-up.
+- Prices and stock are search-index snapshots, not live: the agent's direct LCSC and JLC queries
+  were refused. V21 has you check them.
+- New assumptions V20 to V26 in the SPEC.
+
+**For the owner:** the seven decisions in section 7 of the note (converter; outputs 3 and 4
+balanced; TRS or XLR; your headphones; S/PDIF footprints; panel thickness; who checks live
+stock). Stage 2 starts after them.
+
+## 2026-11-18: batch 8d, PC side, panel input (forked agent, merged)
+
+**Transcripts read:** none listed for 8d. All 29 searched for pots, buttons, footswitch, debounce
+and hysteresis; the passages in #1, #49, the compressor video, #162, #3 and #34 read.
+
+- New in `ctl/`: `ctl_pot` (16-sample average, 4 ms one-pole, rest detection, 12-bit steps while
+  moving, per-unit calibration, tone centre zone, volume off zone, end zones), `ctl_button`
+  (integrating debouncer over 5 ms: press, release, long at 600 ms, short), `ctl_panel` (pots
+  through `ctl_core_knob`, the proposed button and footswitch mapping, LED holds). The C matches
+  a float32 Python model bit for bit.
+- Design change: plain 0.4 % hysteresis cannot give both "a still knob sends nothing" and 10
+  bits; rest detection does (SPEC decision row). Still knob with 100 LSB noise plus 20 LSB of
+  50 Hz hum: 0 reports in 30 simulated minutes at 5 positions. A full sweep gives at least 1024
+  values; a flick settles within 25 ms. Bounce up to 4 ms: one press and one release over 200
+  seeds.
+- Size on the M7: pot 740 B, button 120 B, panel 1885 B of code, `CtlPanel` 464 B of RAM (not yet
+  linked: nothing calls it until the firmware wiring).
+- EX8d (double press) is yours: `docs/exercises/EX8d_doublepress.md`.
+
+**For the owner:** confirm the tap mapping (first tap leaves auto; a long press returns to auto
+and the earlier tempo), the zones (1 % ends, +/-3 % tone centre, 3 % volume off), the footswitch
+at power-up (edges only, or sync to the pedal's level), where per-unit pot calibration lives,
+and whether the 20 ms knob-to-audio target means the first audible change or the end of the
+ramp. For 8c: the input peak meters must hold between reads, or the clip LED misses short clips.
+
 ## 2026-11-18: batch 9 costing spike, the room FIR measured (owner: "do all")
 
 **Transcripts read:** #126 (impulse response simulation), #111 (CMSIS FFT), #141 (CMSIS FIR);
@@ -23,7 +64,7 @@ entry with no transcripts line is unfinished.
   (78 %). Ceiling 70 %.
 - Found on the way: the M7 gave up waiting for the M4 to park (the M4 now copies its DSP code and
   zeroes 250 KB first). Wait lengthened; the banner prints the polls: 48075 and 49141.
-- Unit tests: 562 pass. Commands: `python -m pytest`; on the board `fftbench`, `convbench`,
+- Unit tests: 562 pass at this commit; 859 with the 8d merge. Commands: `python -m pytest`; on the board `fftbench`, `convbench`,
   `python tools/target_test.py --port COMx`, `python tools/m4_bench.py --port COMx`.
 
 **For the owner (the split decision, now with the measured FIR):** the numbers above. A faster FFT
