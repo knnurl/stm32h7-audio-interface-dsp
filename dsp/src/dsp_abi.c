@@ -9,6 +9,7 @@
 #include "dsp/dsp_lfo.h"
 #include "dsp/dsp_limiter.h"
 #include "dsp/dsp_oversample.h"
+#include "dsp/dsp_pconv.h"
 #include "dsp/dsp_peq.h"
 #include "dsp/dsp_reverb.h"
 #include "dsp/dsp_saturate.h"
@@ -28,6 +29,8 @@ size_t dsp_abi_sizeof(const char *name) {
         {"DspBiquadQ31", sizeof(DspBiquadQ31)},
         {"DspPeqF32", sizeof(DspPeqF32)},
         {"DspToneF32", sizeof(DspToneF32)},
+        {"DspRfftF32", sizeof(DspRfftF32)},
+        {"DspPconvF32", sizeof(DspPconvF32)},
         {"DspEnvF32", sizeof(DspEnvF32)},
         {"DspCompF32", sizeof(DspCompF32)},
         {"DspGateF32", sizeof(DspGateF32)},
