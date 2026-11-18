@@ -58,7 +58,7 @@ endfunction()
 
 # ---- Cortex-M7: the application -------------------------------------------------------------
 set(CM7_SOURCES
-    cm7/src/main.c cm7/src/board.c cm7/src/bench.c cm7/src/console.c cm7/src/fault.c
+    cm7/src/main.c cm7/src/board.c cm7/src/bench.c cm7/src/bench_fft.c cm7/src/console.c cm7/src/fault.c
     cm7/src/flash_store.c cm7/src/interrupts.c cm7/src/syscalls.c)
 add_executable(dsp_cm7 ${CM7_SOURCES} ${DSP_SOURCES} ${CTL_SOURCES} ${ST_BOOT_SOURCES}
     ${HAL_SOURCES})

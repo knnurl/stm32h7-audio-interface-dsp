@@ -10,10 +10,13 @@
  *   fault         the last recorded fault, if any
  *   ptime         time one write of the power-on record to flash
  *   m4bench       wake the M4, have it run every self-test case, print its cycles
+ *   fftbench      the real FFT's cycles at 64 to 2048 points (batch 9 spike)
+ *   convbench     the partitioned convolver's cycles at partitions of 64 to 512 (batch 9 spike)
  * Every other line goes to the control protocol: hello, list, get, set, mode, meters, preset,
  * src, tempo, stat.
  */
 #include "bench.h"
+#include "bench_fft.h"
 #include "board.h"
 #include "console.h"
 #include "fault.h"
@@ -138,6 +141,10 @@ static void handle_line(const char *line) {
         time_preset_write();
     } else if (strcmp(line, "m4bench") == 0) {
         m4_bench();
+    } else if (strcmp(line, "fftbench") == 0) {
+        bench_fft();
+    } else if (strcmp(line, "convbench") == 0) {
+        bench_conv();
     } else {
         ctl_proto_line(&s_proto, line, strlen(line));
     }
