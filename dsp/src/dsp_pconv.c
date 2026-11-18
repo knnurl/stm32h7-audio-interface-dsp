@@ -1,5 +1,13 @@
 #include "dsp/dsp_pconv.h"
 
+/* A cache preload hint for the multiply-add loop, whose spectra (64 KB per channel at 4096 taps)
+ * stream from AXI SRAM through a 16 KB data cache. It changes no result. */
+#if defined(__GNUC__)
+#define PRELOAD(p) __builtin_prefetch(p)
+#else
+#define PRELOAD(p) ((void)(p))
+#endif
+
 static int valid_block(int32_t block) {
     return block >= 8 && block <= kDspFftMaxN / 2 && (block & (block - 1)) == 0;
 }
@@ -70,6 +78,32 @@ void dsp_pconv_f32_reset(DspPconvF32 *conv) {
     conv->fill = 0;
 }
 
+static void cmac(float *restrict acc, const float *restrict x, const float *restrict h) {
+    acc[0] += x[0] * h[0] - x[1] * h[1];
+    acc[1] += x[0] * h[1] + x[1] * h[0];
+}
+
+/* acc += x h over two packed spectra of n floats. The three never overlap; saying so (restrict)
+ * lets the compiler overlap one bin's loads with the previous bin's arithmetic instead of waiting
+ * for each store. Two bins per pass; the order of operations per bin is unchanged, so the result
+ * is too. */
+static void mac(float *restrict acc, const float *restrict x, const float *restrict h,
+                int32_t n) {
+    acc[0] += x[0] * h[0]; /* DC and Nyquist are real. */
+    acc[1] += x[1] * h[1];
+    cmac(acc + 2, x + 2, h + 2); /* Bin 1; then pairs of bins 2 to n/2 - 1. */
+    for (int32_t i = 4; i < n; i += 4) {
+        PRELOAD(x + i + 64);
+        PRELOAD(h + i + 64);
+        const float xr0 = x[i], xi0 = x[i + 1], xr1 = x[i + 2], xi1 = x[i + 3];
+        const float hr0 = h[i], hi0 = h[i + 1], hr1 = h[i + 2], hi1 = h[i + 3];
+        acc[i] += xr0 * hr0 - xi0 * hi0;
+        acc[i + 1] += xr0 * hi0 + xi0 * hr0;
+        acc[i + 2] += xr1 * hr1 - xi1 * hi1;
+        acc[i + 3] += xr1 * hi1 + xi1 * hr1;
+    }
+}
+
 /* One partition step: B new samples sit in in[B .. 2B). */
 static void step(DspPconvF32 *conv) {
     const int32_t b = conv->block;
@@ -82,16 +116,7 @@ static void step(DspPconvF32 *conv) {
     clear(acc, n);
     int32_t slot = conv->head;
     for (int32_t k = 0; k < parts; ++k) {
-        const float *x = conv->fdl + slot * n;
-        const float *hk = conv->h + k * n;
-        acc[0] += x[0] * hk[0]; /* DC and Nyquist are real. */
-        acc[1] += x[1] * hk[1];
-        for (int32_t i = 2; i < n; i += 2) {
-            const float xr = x[i], xi = x[i + 1];
-            const float hr = hk[i], hi = hk[i + 1];
-            acc[i] += xr * hr - xi * hi;
-            acc[i + 1] += xr * hi + xi * hr;
-        }
+        mac(acc, conv->fdl + slot * n, conv->h + k * n, n);
         slot = slot == 0 ? parts - 1 : slot - 1;
     }
     dsp_rfft_f32_inverse(&conv->fft, acc, acc);
