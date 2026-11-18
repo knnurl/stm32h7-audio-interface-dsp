@@ -42,9 +42,11 @@ Needs CMake 3.25 or later, Visual Studio 2022 build tools (host), Python 3.10 or
 the firmware Ninja and arm-none-eabi-gcc 13.3 (the one inside STM32CubeIDE 1.19 is found by
 itself).
 
-Host library and tests, from the repository root:
+Host library and tests, from the repository root (the library builds CMSIS-DSP's real FFT, so
+fetch the dependencies first):
 
 ```
+powershell -ExecutionPolicy Bypass -File fw/fetch_deps.ps1
 cmake --preset host
 cmake --build --preset host-release
 python -m pip install -r tests/requirements.txt

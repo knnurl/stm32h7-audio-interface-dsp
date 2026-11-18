@@ -130,11 +130,12 @@ commit as the code they describe: the SPEC section, a decision-log row for every
 
 From the repository root. Keep this section accurate.
 
+- Fetch dependencies first, on a clean checkout (the host library needs CMSIS-DSP too):
+  `powershell -ExecutionPolicy Bypass -File fw/fetch_deps.ps1`
 - Host configure: `cmake --preset host`
 - Host build: `cmake --build --preset host-release`
 - Host tests: `python -m pytest`
 - Exercise tests (fail until the owner has done the exercise): `python -m pytest tests/exercises`
-- Fetch firmware dependencies: `powershell -ExecutionPolicy Bypass -File fw/fetch_deps.ps1`
 - Firmware configure and build: `cmake --preset fw` then `cmake --build --preset fw`
 - Flash both cores: `powershell -ExecutionPolicy Bypass -File tools/flash.ps1`
 - Serial console: `python tools/console.py --port COMx`
