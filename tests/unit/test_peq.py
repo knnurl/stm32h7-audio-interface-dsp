@@ -3,6 +3,7 @@ arrive exactly."""
 import ctypes
 
 import numpy as np
+import pytest
 
 import dsplib
 from ref import biquad as ref_biquad
@@ -13,9 +14,9 @@ BLOCK = 16
 PEAK, LOW_SHELF, HIGH_SHELF = 1, 2, 3
 
 
-def make(lib, ramp_blocks=1):
+def make(lib, ramp_blocks=1, fs=FS):
     peq = dsplib.DspPeqF32()
-    lib.dsp_peq_f32_init(ctypes.byref(peq), FS, ramp_blocks)
+    lib.dsp_peq_f32_init(ctypes.byref(peq), fs, ramp_blocks)
     return peq
 
 
@@ -43,21 +44,67 @@ def test_flat_is_bit_exact(lib):
     assert run(lib, make(lib), x).tobytes() == x.tobytes()
 
 
-def test_settings_match_the_float64_cascade(lib):
+@pytest.mark.parametrize("fs, limit_db", [(48000.0, -110.0), (96000.0, -130.0)])
+def test_settings_match_the_float64_cascade(lib, fs, limit_db):
+    """At 96 kHz every section is double: only the float32 rounding of each output remains. At
+    48 kHz bands 3 and 4 run in float32 (budget option D): their arithmetic noise and rounded
+    coefficients stay 110 dB under the signal."""
     x = noise(16384)
-    peq = make(lib)
+    peq = make(lib, fs=fs)
     lib.dsp_peq_f32_set_highpass(ctypes.byref(peq), 25.0)
     set_band(lib, peq, 0, LOW_SHELF, 120.0, 4.0, 1.0)
     set_band(lib, peq, 1, PEAK, 400.0, -6.0, 2.0)
     set_band(lib, peq, 2, PEAK, 3000.0, 3.0, 0.7)
     set_band(lib, peq, 3, HIGH_SHELF, 9000.0, -2.0, 1.0)
     y = run(lib, peq, x)
-    sections = [coef.highpass(FS, 25.0, 0.70710678118654752),
-                coef.low_shelf(FS, 120.0, 1.0, 4.0), coef.peak(FS, 400.0, 2.0, -6.0),
-                coef.peak(FS, 3000.0, 0.7, 3.0), coef.high_shelf(FS, 9000.0, 1.0, -2.0)]
+    sections = [coef.highpass(fs, 25.0, 0.70710678118654752),
+                coef.low_shelf(fs, 120.0, 1.0, 4.0), coef.peak(fs, 400.0, 2.0, -6.0),
+                coef.peak(fs, 3000.0, 0.7, 3.0), coef.high_shelf(fs, 9000.0, 1.0, -2.0)]
     expected = ref_biquad.f64_cascade(x, sections)
-    # Double state: only the float32 rounding of each section's output remains.
-    dsplib.assert_within_db(y, expected, -130.0)
+    dsplib.assert_within_db(y, expected, limit_db)
+
+
+def test_upper_bands_run_in_float32_up_to_48k_only(lib):
+    assert make(lib, fs=44100.0).first_f32 == 3
+    assert make(lib, fs=48000.0).first_f32 == 3
+    assert make(lib, fs=96000.0).first_f32 == 5
+
+
+def test_float32_band_is_raised_to_its_minimum(lib):
+    """A float32 band below 2.5 kHz would be too noisy (peq_f32_noise.md): it is raised to
+    2.5 kHz. At 96 kHz the same band is double and keeps its corner."""
+    for fs, want_hz in ((48000.0, 2500.0), (96000.0, 500.0)):
+        peq = make(lib, fs=fs)
+        set_band(lib, peq, 2, PEAK, 500.0, 6.0, 2.0)
+        t = peq.target[3]
+        want = coef.peak(fs, want_hz, 2.0, 6.0)
+        np.testing.assert_allclose([t.b0, t.b1, t.b2, t.a1, t.a2], want, rtol=1e-6, atol=1e-9)
+    peq = make(lib)
+    set_band(lib, peq, 1, PEAK, 500.0, 6.0, 2.0)  # Band 2 is double: not raised.
+    np.testing.assert_allclose(peq.target[2].a1, coef.peak(FS, 500.0, 2.0, 6.0)[3], rtol=1e-9)
+
+
+@pytest.mark.parametrize("level_db", [-1.0, -60.0])
+@pytest.mark.parametrize("shelf", [(0.1, 15.0), (0.1, -15.0), (1.0, 15.0), (1.0, -15.0)])
+def test_float32_bands_keep_110_db_at_the_worst_setting(lib, level_db, shelf):
+    """The worst case for band 3 (a peak at the 2.5 kHz corner, Q 10, +15 dB) with band 4 as the
+    registry has it, a high shelf, at the corner and its worst slopes and gains, at 48 kHz: the
+    arithmetic noise against float64 running the same float32 coefficients stays 110 dB under the
+    signal (113.9 dB measured). At 2 kHz this pair gave 109.6 dB, which is why the corner is
+    2.5 kHz."""
+    n = 48000
+    x = (10 ** (level_db / 20) * np.random.default_rng(7).uniform(-1, 1, n)).astype(np.float32)
+    slope, gain = shelf
+    peq = make(lib)
+    set_band(lib, peq, 2, PEAK, 2500.0, 15.0, 10.0)
+    set_band(lib, peq, 3, HIGH_SHELF, 2500.0, gain, slope)
+    y = run(lib, peq, x)
+    rounded = [np.float32(coef.peak(FS, 2500.0, 10.0, 15.0)).astype(np.float64),
+               np.float32(coef.high_shelf(FS, 2500.0, slope, gain)).astype(np.float64)]
+    ref = ref_biquad.f64_cascade(x.astype(np.float64), rounded)
+    err = y[n // 4:].astype(np.float64) - ref[n // 4:]
+    snr = 10 * np.log10(np.mean(ref[n // 4:] ** 2) / np.mean(err ** 2))
+    assert snr >= 110.0, snr
 
 
 def stable(c):

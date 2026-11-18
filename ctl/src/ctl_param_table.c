@@ -27,9 +27,10 @@
     {(id), (curve), (flags), (name), (label), (unit), (mn), (mx), (df), (smooth)}
 
 /* One parametric band: frequency, gain, Q. Band 1 is a low shelf, 2 and 3 are peaks, 4 is a
- * high shelf (types fixed in this table version). */
-#define PEQ_BAND(base, pfx, lpfx, k, f_def, flags)                                                 \
-    P((base) + 3 * ((k)-1), pfx "peq" #k "_hz", lpfx "band " #k " frequency", "Hz", 20.0f,         \
+ * high shelf (types fixed in this table version). Bands 3 and 4 start at 2.5 kHz: they run in
+ * float32 (dsp_peq.h, budget option D, 2026-11-18). */
+#define PEQ_BAND(base, pfx, lpfx, k, f_min, f_def, flags)                                          \
+    P((base) + 3 * ((k)-1), pfx "peq" #k "_hz", lpfx "band " #k " frequency", "Hz", (f_min),       \
       20000.0f, (f_def), LOG, (flags), 20.0f),                                                     \
         P((base) + 3 * ((k)-1) + 1, pfx "peq" #k "_gain_db", lpfx "band " #k " gain", "dB",        \
           -15.0f, 15.0f, 0.0f, LIN, (flags), 20.0f),                                               \
@@ -37,9 +38,10 @@
           0.7f, LOG, (flags), 20.0f)
 
 #define PEQ4(base, pfx, lpfx, flags)                                                               \
-    PEQ_BAND(base, pfx, lpfx, 1, 100.0f, flags), PEQ_BAND(base, pfx, lpfx, 2, 400.0f, flags),      \
-        PEQ_BAND(base, pfx, lpfx, 3, 2500.0f, flags),                                              \
-        PEQ_BAND(base, pfx, lpfx, 4, 8000.0f, flags)
+    PEQ_BAND(base, pfx, lpfx, 1, 20.0f, 100.0f, flags),                                            \
+        PEQ_BAND(base, pfx, lpfx, 2, 20.0f, 400.0f, flags),                                        \
+        PEQ_BAND(base, pfx, lpfx, 3, 2500.0f, 2500.0f, flags),                                     \
+        PEQ_BAND(base, pfx, lpfx, 4, 2500.0f, 8000.0f, flags)
 
 /* An input strip: trim, high-pass, four PEQ bands, gate, compressor, saturation. */
 #define STRIP(b, pfx, lpfx)                                                                        \

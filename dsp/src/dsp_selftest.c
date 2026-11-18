@@ -18,6 +18,7 @@
 #include "dsp/dsp_saturate.h"
 #include "dsp/dsp_svf.h"
 #include "dsp/dsp_testsig.h"
+#include "dsp/dsp_peq.h"
 #include "dsp/dsp_tone.h"
 
 #include <math.h>
@@ -635,6 +636,27 @@ static void pconv_f32_run(const void *in, void *out) {
 }
 #endif
 
+/* peq_f32: one PEQ at 48 kHz with all five sections on, as a strip or one side of the speaker
+ * or headphone stage runs it: the high-pass and bands 1 and 2 in double, bands 3 and 4 in
+ * float32 (budget option D). */
+static void peq_f32_run(const void *in, void *out) {
+    static DspPeqF32 peq;
+    static const DspPeqBand kBands[4] = {{kDspPeqLowShelf, 100.0f, 3.0f, 1.0f},
+                                         {kDspPeqPeak, 400.0f, -4.0f, 1.0f},
+                                         {kDspPeqPeak, 3000.0f, 2.0f, 0.7f},
+                                         {kDspPeqHighShelf, 8000.0f, -2.0f, 1.0f}};
+    dsp_peq_f32_init(&peq, 48000.0f, 1);
+    dsp_peq_f32_set_highpass(&peq, 40.0f);
+    for (int32_t b = 0; b < 4; ++b) {
+        dsp_peq_f32_set_band(&peq, b, &kBands[b]);
+    }
+    dsp_peq_f32_reset(&peq);
+    mark();
+    for (size_t i = 0; i < kDspSelftestFrames; i += 16) {
+        dsp_peq_f32_process(&peq, (const float *)in + i, (float *)out + i, 16);
+    }
+}
+
 static const SelftestCase kCases[] = {
     {"gain_f32", kDspFmtF32, 1, gain_f32_input, gain_f32_run},
     {"noise_q31", kDspFmtQ31, 1, noise_q31_input, noise_q31_run},
@@ -670,6 +692,7 @@ static const SelftestCase kCases[] = {
     {"meter_f32", kDspFmtF32, 2, bursts_f32_input, meter_f32_run},
     {"meter_peak_f32", kDspFmtF32, 2, bursts_f32_input, meter_peak_f32_run},
     {"rfft512_f32", kDspFmtF32, 1, gain_f32_input, rfft512_f32_run},
+    {"peq_f32", kDspFmtF32, 1, noise_half_f32_input, peq_f32_run},
 #if !defined(DSP_SELFTEST_NO_PCONV) /* The M4's image: its 256 KB cannot hold the 138 KB pool too
                                        * (measured there once, 2026-11-18: 2545 cycles per frame). */
     {"pconv_f32", kDspFmtF32, 2, gain_f32_input, pconv_f32_run},

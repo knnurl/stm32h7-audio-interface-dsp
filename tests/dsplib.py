@@ -91,7 +91,8 @@ class DspPeqF32(ctypes.Structure):
                 ("current", DspBiquadCoefsF64 * PEQ_SECTIONS),
                 ("target", DspBiquadCoefsF64 * PEQ_SECTIONS),
                 ("step", DspBiquadCoefsF64 * PEQ_SECTIONS),
-                ("state", DspBiquadStateF64 * PEQ_SECTIONS)]
+                ("state", DspBiquadStateF64 * PEQ_SECTIONS),
+                ("state_f32", DspBiquadStateF32 * PEQ_SECTIONS), ("first_f32", ctypes.c_int32)]
 
 
 class DspToneF32(ctypes.Structure):

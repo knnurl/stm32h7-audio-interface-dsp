@@ -74,6 +74,10 @@ add on the Cortex-M7 take more cycles than single precision [Verify on the board
 is too high, the fallbacks are: double only for sections with a corner below about fs/200, or
 Q31 with error feedback for those.
 
+**Update 2026-11-18 (budget option D):** PEQ bands 3 and 4 now run in float32 at 48 kHz and
+below, with their range starting at 2.5 kHz (about fs/19); measured there, 113.9 dB at the worst
+setting. `peq_float32_bands.md`.
+
 ## Test evidence
 
 | Test | Result |
