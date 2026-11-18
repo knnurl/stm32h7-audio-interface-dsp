@@ -218,3 +218,12 @@ mixer writing the send straight into the exchange slot (part of the 151, not mea
 
 After the linker change the M4's self-test cycles were taken again (`bench_m4.md`): the full meter
 1312 to 1020, the reverb 1451 to 1387, every bit-identical case still bit-identical.
+
+## Option D: float32 for PEQ bands 3 and 4 (2026-11-18, estimate)
+
+Owner's decision ("A + C + D"); `docs/notes/peq_float32_bands.md`. Bands 3 and 4 of every PEQ run
+the float32 section (about 17 cycles per sample) instead of the double one (56.4) at 48 kHz, with
+their range starting at 2.5 kHz. Six PEQ channels in the worst case (two strips, speaker and
+headphones in stereo), two sections each: about 6 x 2 x 39 = **470 cycles per frame** saved,
+estimated from the section costs. Not yet measured on the board: `target_test` reports the new
+self-test case `peq_f32` (one PEQ, five sections on), against about 282 cycles before (5 x 56.4).
