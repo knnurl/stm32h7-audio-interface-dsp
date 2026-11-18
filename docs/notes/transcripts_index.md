@@ -40,5 +40,7 @@ folders are gitignored: the text is the author's, and this repository is meant t
 | 2026-11-17 | #124, #140, Tremolo (#3); #162, #117, #153 re-read | Batch 8b | `delay_lines.md`, `modulated_filters.md`, `effects.md`, `reverb.md` |
 | 2026-11-17 | None listed for 8a. All 29 searched for potentiometer handling; the passages in #117, #153 and #58 read | Batch 8a | `ctl_registry.md`, `knob_pickup.md` |
 | 2026-11-18 | None listed for 8d. All 29 searched for pot, button, footswitch, debounce and hysteresis; the passages in #1, #49, the compressor video, #162, #3 and #34 read | Batch 8d | `panel_input.md` |
+| 2026-11-18 | #78, #142 | Batch 5, stage 1 | `part_selection.md` |
+| 2026-11-18 | #126, #111, #141 | Batch 9, costing spike | `partitioned_convolution.md` |
 
 The rest of the table above is by title only.
