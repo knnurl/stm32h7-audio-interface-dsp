@@ -82,7 +82,7 @@ short with the release of a press that never became long.
 
 | Button | Action |
 |---|---|
-| FX select | Short press: next effect. Long press: previous. An effect the budget rule refuses (the overdrive while a strip saturates and the slot is on) is skipped, so the button never seems dead |
+| FX select | Short press: next effect. Long press: previous. Never refused: the budget rule (2026-11-18) refuses FX on while a strip saturates, not the choice |
 | FX on | Each press toggles |
 | Tap | Each press is a tap, timed at the press. In auto tempo source, the first tap switches the source to "tap or stored", so the tap is heard even while MIDI clock runs, and remembers the tempo it replaced. A long press undoes that: auto again (MIDI clock if present) and the remembered tempo back. A "MIDI clock only" source is left alone |
 | Mute, dim | Each press toggles |

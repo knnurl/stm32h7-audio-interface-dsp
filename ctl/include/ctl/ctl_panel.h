@@ -6,8 +6,7 @@
  * (docs/notes/knob_pickup.md); buttons write with kCtlSrcButton, so the budget rule applies.
  *
  * Button mapping (owner, 2026-11-18; no footswitch):
- * - FX select: a short press selects the next effect, a long press the previous one. An effect
- *   the budget rule refuses is skipped, so the button never seems dead.
+ * - FX select: a short press selects the next effect, a long press the previous one.
  * - FX on: each press toggles.
  * - Tap: each press is a tap (timed at the press, so the debounce delay cancels out). In auto
  *   tempo source, the first tap switches the source to tap or stored, so the tap is heard even

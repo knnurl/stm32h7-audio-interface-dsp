@@ -81,12 +81,12 @@ def test_fx_select_short_next_long_previous_and_wraps(panel, dev):
     assert dev.get("fx_select") == 0
 
 
-def test_fx_select_skips_what_the_budget_refuses(panel, dev):
+def test_fx_select_steps_through_every_effect_while_a_strip_saturates(panel, dev):
+    """The budget rule refuses the slot, never the choice (owner, 2026-11-18)."""
     dev.set("in1_sat_on", 1.0)
-    dev.set("fx_on", 1.0)
     dev.set("fx_select", 5.0)
     panel.press(BTN_FX_SELECT)
-    assert dev.get("fx_select") == 7
+    assert dev.get("fx_select") == 6
     panel.press(BTN_FX_SELECT, hold_ms=700)
     assert dev.get("fx_select") == 5
 
@@ -96,7 +96,7 @@ def test_fx_on_toggles_and_a_budget_refusal_is_counted(panel, dev):
     assert dev.get("fx_on") == 1.0
     panel.press(BTN_FX_ON)
     assert dev.get("fx_on") == 0.0
-    dev.set("fx_select", 6.0)
+    dev.set("fx_select", 2.0)
     dev.set("in2_sat_on", 1.0)
     panel.press(BTN_FX_ON)
     assert dev.get("fx_on") == 0.0

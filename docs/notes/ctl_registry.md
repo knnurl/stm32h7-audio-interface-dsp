@@ -72,11 +72,12 @@ threshold is the same figure as the pick-up hysteresis here (`knob_pickup.md`).
 
 ## The budget rule
 
-Measured on the board (`docs/results/budget_target.md`), the overdrive and the strips'
-saturation cannot both run within the CPU budget. `ctl_core_set` refuses turning either on while
-the other runs (`kCtlErrBudget`, protocol error 10), from any source; a preset holding both loads
-everything else and counts the refusal. The panel (batch 8d) should step past the overdrive
-while a strip saturates rather than show a refusal.
+Measured on the board (`docs/results/budget_target.md`), the effect slot and the strips'
+saturation cannot both run within the CPU budget (owner, 2026-11-18; the rule of 2026-11-17 covered
+the overdrive only). `ctl_core_set` refuses turning either on while the other runs
+(`kCtlErrBudget`, protocol error 10), from any source; a preset holding both loads everything else
+and counts the refusal. Choosing the effect is never refused, so FX select always steps; FX on is
+the button that can be refused, and the panel counts it.
 
 ## Open questions
 

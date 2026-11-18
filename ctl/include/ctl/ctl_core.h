@@ -13,9 +13,10 @@
  *   pick-up point, so reading noise near the value changes nothing; after that it follows.
  * - Switching a detached knob to knob wins sets the value from the knob at once.
  *
- * Budget rule (2026-11-17, docs/results/budget_target.md): the overdrive in the effect slot and
- * the strips' saturation do not run at the same time, so the worst case pays for one of them.
- * Turning either on while the other runs is refused with kCtlErrBudget, from any source.
+ * Budget rule (owner, 2026-11-18, docs/results/budget_target.md; it replaced the overdrive-only
+ * rule of 2026-11-17): the effect slot and the strips' saturation do not run at the same time,
+ * so the worst case pays for one of them. Turning either on while the other runs is refused
+ * with kCtlErrBudget, from any source. Choosing the effect is never refused.
  */
 #ifndef CTL_CORE_H
 #define CTL_CORE_H

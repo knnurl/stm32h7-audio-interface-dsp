@@ -82,7 +82,7 @@ static const char *result_reason(CtlResult r) {
     case kCtlErrNotKnob:
         return "parameter has no knob";
     case kCtlErrBudget:
-        return "budget: the overdrive and strip saturation cannot run together";
+        return "budget: the effect slot and strip saturation cannot run together";
     default:
         return "failed";
     }
