@@ -4,6 +4,35 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: batch 8c.1, the mixer, crossfeed and meters (forked agent, merged; timed on the board)
+
+**Transcripts read:** Recursive RMS (#103) in full; #124, #140, #162 and Tremolo already read for
+8b; all 29 searched for mixing, panning, headphones and loudness (one passage, #140's linear mix
+control).
+
+- `dsp_mixer`: eight mono inputs into a stereo main bus and a reverb send; constant-power pan,
+  -3.01 dB at centre; send independent of the level; 20 ms ramps; muted inputs skipped.
+- `dsp_crossfeed`: bs2b-style, 700 Hz one-pole, -4.5 dB between the ears at low frequencies, no
+  explicit delay by default (a centred source passes unchanged; SPEC row, for you to confirm).
+- `dsp_meter`: held peak (1 s, 11.8 dB/s), largest peak since the last read, RMS (300 ms), true
+  peak, BS.1770 momentary and short-term. EBU Tech 3341 cases 1 and 2 read -22.993 and -32.993
+  LUFS with the published coefficients injected.
+- The limiter's true-peak detector moved to `dsp_truepeak.h`, shared; limiter output unchanged.
+- EX8c (K-weighting at 48 and 96 kHz) is yours; until then the meter reports `kweighted=0`.
+- **On the M7, bit-identical:** mixer 239, crossfeed 50, full meter 601, peak meter 57 cycles per
+  frame. The worst case at 48 kHz is now about 8350 cycles (100 %) with everything on the M7,
+  7450 (89 %) with the reverb on the M4 (`docs/results/budget_target.md`). The meters run
+  bit-identical on the M4 (1312 M4 cycles, 31 %); the mixer does not (its pan law calls `cosf`).
+- Merge: the M4's image overflowed by 4.6 KB, so it leaves out the last self-test case
+  (`pconv_f32`, measured there once). `fw/third_party` had been moved out of this checkout into
+  the agent's worktree while it built; copied back.
+- Unit tests: 914 pass. All 37 cases match the PC on the M7.
+
+**For the owner:** the crossfeed delay (none, recommended, or the plan's explicit delay); meter
+ballistics (1 s hold, 11.8 dB/s fall, 300 ms RMS); send pre- or post-level; which meters get true
+peak and loudness. And, with the split decision: metering is now a large line, and a natural one
+to move to the M4.
+
 ## 2026-11-18: batch 5 stage 1, part selection (forked agent, merged)
 
 **Transcripts read:** #78 (mixed-signal hardware walkthrough), #142 (codec driver).

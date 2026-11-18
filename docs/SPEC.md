@@ -107,7 +107,7 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Input strip, each: trim, HPF, 4-band PEQ | 110 | estimate | 3 |
 | Input strip, each: gate and compressor | 120 | estimate | 6 |
 | Input strip, each: saturation at 4x oversampling | 400 | estimate | 6 |
-| Monitor mixer | 60 | estimate | 8c |
+| Monitor mixer (8 inputs) | 239 at 48 kHz | measured 2026-11-18 (`mixer_f32`) | 8c |
 | Reverb, 8-line FDN | 350 | estimate (self-test case reverb_f32; docs/results/b8b_cycles.md) | 8b |
 | Speaker stage: PEQ and delay, stereo | 210 | estimate | 3 |
 | Speaker stage: true-peak limiter, stereo | 300 | estimate | 6 |
@@ -115,7 +115,7 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8c |
 | Tone: three bands, stereo | 60 | estimate | 3 |
 | Effect slot: the dearest single effect, stereo | 250 | estimate (self-test cases fx_overdrive_f32, and fx_echo96_f32 for the 96 kHz echo; docs/results/b8b_cycles.md) | 8b |
-| Metering | 100 | estimate | 8c |
+| Metering | 601 per stereo meter with true peak and loudness, 57 with peak and RMS only | measured 2026-11-18 (`meter_f32`, `meter_peak_f32`) | 8c |
 | **Total** (two strips) | **3940** | estimate | |
 
 **Measured 2026-11-17 on the board** (`docs/results/budget_target.md`): about 14 300 cycles per
@@ -416,3 +416,7 @@ Settled, with the source:
 | 2026-11-18 | The M7 waits up to 524288 polls for the M4 to park | Measured 48075 and 49141 polls with the DSP library in the M4 image; the old 65535 failed once |
 | 2026-11-18 | Pots: rest detection (0.4 % of travel to leave rest, 12-bit steps while moving) instead of plain hysteresis | Plain 0.4 % hysteresis gives either about 8 bits or a still knob that keeps sending; tested on synthetic ADC streams (`panel_input.md`) |
 | 2026-11-18 | Panel button mapping, footswitch types, end and centre zones as in `panel_input.md` | Proposed; owner to confirm |
+| 2026-11-18 | Crossfeed with no explicit delay by default; the low-pass's group delay (0.22 ms at 700 Hz) stands in for the time between the ears | Measured on the PC: 300 us of delay dips a centred source 3.5 dB at 886 Hz, 100 us 1.4 dB at 1.69 kHz; with none it passes unchanged. Proposed; owner to confirm (the plan said "delayed") |
+| 2026-11-18 | BS.1770 loudness from 100 ms block sums in double, not a running sum | Free of float drift; gated integrated loudness is computed from the block values |
+| 2026-11-18 | One true-peak detector for the limiter and the meters (`dsp_truepeak.h`) | Same code; the limiter's output byte-identical before and after |
+| 2026-11-18 | The M4 image leaves out the last self-test case (`pconv_f32`) | Its 138 KB pool and the 8c blocks overflowed the M4's 256 KB by 4.6 KB; measured there once (2545 cycles); every other index kept |

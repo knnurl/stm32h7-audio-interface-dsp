@@ -157,3 +157,28 @@ reverb (33 %); the M4 cannot take both (94 %). The M4's RAM is 99 % used with th
 memory in it, and batch 11 plans to move the control core there, so that row has a cost the
 others do not.
 
+## Mixer, crossfeed and meters, measured (2026-11-18)
+
+`python tools/target_test.py --port COMx`, M7, bit-identical with the PC:
+
+| Block | Cycles per frame | Plan's estimate |
+|---|---|---|
+| Monitor mixer, 8 inputs to main and reverb send | 239 | 60 |
+| Headphone crossfeed | 50 | 50 |
+| Meter, stereo, true peak and BS.1770 loudness | 601 | 100 for all metering |
+| Meter, stereo, peak and RMS only | 57 | |
+
+The worst case's "conversion, mixer, metering" line was 220 (estimates). With the mixer, one full
+meter on the mix and peak meters on the two inputs it is at least 239 + 601 + 2 x 57 = 954, before
+conversion and any output meters:
+
+| Worst case at 48 kHz, room FIR at B = 256 | Cycles per frame |
+|---|---|
+| Everything on the M7 | about 8350 (100 %) |
+| Reverb on the M4 | about 7450 (89 %) |
+
+Metering only feeds the display, the LEDs and the PC, so it can run late and elsewhere: on the M4
+`meter_f32` takes 1312 M4 cycles (31 % of its frame) and is bit-identical with the PC. The
+mixer's output differs on the M4 (its pan law calls `cosf` and `sinf`, which the M4's C library
+rounds differently), like the overdrive's set-up.
+
