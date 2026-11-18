@@ -403,4 +403,4 @@ Settled, with the source:
 | 2026-11-17 | The overdrive and the strips' saturation never run together (control core refuses, error 10) | Owner; the worst case pays for one |
 | 2026-11-17 | True-peak detector: a 63-tap Nyquist interpolator (three 16-tap phases) instead of the 4x oversampler; limiter latency L + 9 | Measured: 998 to 665 cycles; true peak still 0.24 dB under the set ceiling on the hostile set |
 | 2026-11-18 | The M4 runs its DSP code from its SRAM; it can be woken through the SRAM4 mailbox to run the self-test cases (`m4bench`) | Measured: from flash about 4.5 times the M7's cycles, from SRAM 1.5 to 3 times; the reverb 1451 cycles, 35 % of the M4's frame, bit-identical with the PC |
-
+| 2026-11-18 | The 8c split (reverb on the M4, the ceiling, float32 PEQ) waits for the room FIR's measured cost in batch 9 | Owner: the FIR's 900 cycles is still an estimate, and it decides whether 78 % is the real worst case |

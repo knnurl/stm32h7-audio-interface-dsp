@@ -29,6 +29,9 @@ two-core audio path needs the audio interrupt of batch 2 first; the decision can
 3. wait for the room FIR's measurement (batch 9) before choosing.
 Unit tests: 522 pass.
 
+**Owner's choice (2026-11-18):** option 3. The split waits for the room FIR's measured cost in
+batch 9; the reverb stays on the M7 until then.
+
 ## 2026-11-17: budget round 2 on the board (owner: "keep on")
 
 **Transcripts read:** none (no new block).
