@@ -288,7 +288,7 @@ static void sat_adaa_f32_run(const void *in, void *out) { saturate_run(in, out, 
  * On the M7 the 30 KB pool sits where the real delay lines will (AXI SRAM, `.axi_bss`, SPEC 6.2),
  * so the cycle counts are the real ones and DTCM is not spent on a test; the section is not
  * zeroed at start, and every init clears the memory it is given. Elsewhere, ordinary .bss. */
-#if defined(__arm__) && defined(__GNUC__)
+#if defined(DSP_HAS_AXI_BSS) /* The M7 firmware; not the M4, whose RAM has no such section. */
 #define SELFTEST_AXI __attribute__((section(".axi_bss")))
 #else
 #define SELFTEST_AXI

@@ -9,6 +9,7 @@
  *   vec <name>    dump one case's output
  *   fault         the last recorded fault, if any
  *   ptime         time one write of the power-on record to flash
+ *   m4bench       wake the M4, have it run every self-test case, print its cycles
  * Every other line goes to the control protocol: hello, list, get, set, mode, meters, preset,
  * src, tempo, stat.
  */
@@ -17,11 +18,13 @@
 #include "console.h"
 #include "fault.h"
 #include "flash_store.h"
+#include "mailbox.h"
 
 #include "ctl/ctl_core.h"
 #include "ctl/ctl_preset.h"
 #include "ctl/ctl_proto.h"
 #include "ctl/ctl_tempo.h"
+#include "dsp/dsp_selftest.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -81,6 +84,41 @@ static void time_preset_write(void) {
            (unsigned long)ctl_preset_free_bytes(&s_presets));
 }
 
+/* Wakes the M4 to run the self-test cases (fw/common/mailbox.h) and prints what it reports. */
+static void m4_bench(void) {
+    volatile Mailbox *mb = MAILBOX;
+    mb->magic = MAILBOX_MAGIC;
+    mb->state = kMailboxIdle;
+    mb->count = 0u;
+    mb->command = kMailboxCmdBench;
+    SCB_CleanDCache_by_Addr((void *)MAILBOX_ADDR, (int32_t)sizeof(Mailbox));
+    __HAL_RCC_HSEM_CLK_ENABLE();
+    (void)HAL_HSEM_FastTake(MAILBOX_HSEM_WAKE_CM4);
+    HAL_HSEM_Release(MAILBOX_HSEM_WAKE_CM4, 0u);
+    const uint32_t start = HAL_GetTick();
+    uint32_t state = kMailboxIdle;
+    while (HAL_GetTick() - start < 120000u) {
+        SCB_InvalidateDCache_by_Addr((void *)MAILBOX_ADDR, (int32_t)sizeof(Mailbox));
+        state = mb->state;
+        if (state == kMailboxDone) {
+            break;
+        }
+    }
+    if (state != kMailboxDone) {
+        printf("m4bench error state=%lu (the M4 did not finish)\r\nm4bench done\r\n",
+               (unsigned long)state);
+        return;
+    }
+    for (uint32_t i = 0; i < mb->count; ++i) {
+        printf("m4bench %s ch=%lu proc_min=%lu crc=%08lx\r\n", dsp_selftest_name(i),
+               (unsigned long)mb->entry[i].channels, (unsigned long)mb->entry[i].proc_min,
+               (unsigned long)mb->entry[i].crc);
+        console_flush();
+    }
+    printf("m4bench runs=%lu ms=%lu\r\nm4bench done\r\n", (unsigned long)mb->runs,
+           (unsigned long)(HAL_GetTick() - start));
+}
+
 static void handle_line(const char *line) {
     if (strcmp(line, "info") == 0) {
         print_info();
@@ -98,6 +136,8 @@ static void handle_line(const char *line) {
         printf("%s\r\n", text);
     } else if (strcmp(line, "ptime") == 0) {
         time_preset_write();
+    } else if (strcmp(line, "m4bench") == 0) {
+        m4_bench();
     } else {
         ctl_proto_line(&s_proto, line, strlen(line));
     }

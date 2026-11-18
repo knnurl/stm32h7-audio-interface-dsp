@@ -26,8 +26,8 @@ SECTIONS
     .text :
     {
         . = ALIGN(4);
-        *(.text)
-        *(.text*)
+        /* The DSP library runs from SRAM instead (see .data). */
+        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj) *(.text .text*)
         *(.glue_7)
         *(.glue_7t)
         *(.eh_frame)
@@ -40,8 +40,7 @@ SECTIONS
     .rodata :
     {
         . = ALIGN(4);
-        *(.rodata)
-        *(.rodata*)
+        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj) *(.rodata .rodata*)
         . = ALIGN(4);
     } >FLASH
 
@@ -79,6 +78,11 @@ SECTIONS
     {
         . = ALIGN(4);
         _sdata = .;
+        /* The DSP library's code and constants, copied to SRAM with .data by the start-up code:
+         * this core has no cache, and from flash its loops ran about 4.5 times the M7's cycles
+         * (measured with m4bench, 2026-11-18). The SRAM alias at 0x10000000 is the one meant for
+         * this core's code. */
+        *dsp/src/dsp_*.c.obj(.text .text* .rodata .rodata*)
         *(.data)
         *(.data*)
         . = ALIGN(4);

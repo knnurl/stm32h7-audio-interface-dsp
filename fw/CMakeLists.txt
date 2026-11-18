@@ -1,6 +1,6 @@
 # Firmware for both cores of the STM32H755 on the Nucleo-H755ZI-Q.
 #   dsp_cm7.elf  the application: audio DSP, console, benchmarks (flash bank 1)
-#   dsp_cm4.elf  parks the Cortex-M4 in stop mode (flash bank 2, less its last two sectors,
+#   dsp_cm4.elf  parks the Cortex-M4 in stop mode, wakes for m4bench (flash bank 2, less its last two sectors,
 #                which hold the presets)
 # Configure from the repository root after fw/fetch_deps.ps1:  cmake --preset fw
 enable_language(ASM)
@@ -63,6 +63,8 @@ set(CM7_SOURCES
 add_executable(dsp_cm7 ${CM7_SOURCES} ${DSP_SOURCES} ${CTL_SOURCES} ${ST_BOOT_SOURCES}
     ${HAL_SOURCES})
 target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR} ${CTL_INCLUDE_DIR})
+# The self-test's large pool goes to AXI SRAM on this core only (dsp_selftest.c).
+target_compile_definitions(dsp_cm7 PRIVATE DSP_HAS_AXI_BSS)
 # Float policy (SPEC section 7): no fused multiply-add contraction until batch 3 decides, so the
 # target computes what the PC library computes.
 set_source_files_properties(${DSP_SOURCES} ${CTL_SOURCES}
@@ -73,7 +75,9 @@ dsp_firmware(dsp_cm7 CORE_CM7
     ${CMAKE_CURRENT_SOURCE_DIR}/cm7/stm32h755_cm7.ld)
 
 # ---- Cortex-M4: parked ----------------------------------------------------------------------
-add_executable(dsp_cm4 cm4/src/main.c ${ST_BOOT_SOURCES} ${HAL_SOURCES})
+# It carries the DSP library too, to measure the self-test cases on this core (m4bench).
+add_executable(dsp_cm4 cm4/src/main.c ${DSP_SOURCES} ${ST_BOOT_SOURCES} ${HAL_SOURCES})
+target_include_directories(dsp_cm4 PRIVATE ${DSP_INCLUDE_DIR})
 set_source_files_properties(cm4/src/main.c PROPERTIES COMPILE_OPTIONS "${OWN_WARNINGS}")
 dsp_firmware(dsp_cm4 CORE_CM4
     "-mcpu=cortex-m4;-mthumb;-mfpu=fpv4-sp-d16;-mfloat-abi=hard"
