@@ -138,3 +138,22 @@ at 48 kHz is 4166 cycles (2916 at 70 %).
   78 % of its frame, against the 70 % ceiling. The effect slot cannot join it (the overdrive alone
   is 2942 on the M4).
 
+## The room FIR, measured (2026-11-18)
+
+`docs/results/bench_fft.md`: stereo, 4096 taps per channel, on the M7, 1120 cycles per frame at
+256-sample partitions (5.3 ms latency at 48 kHz), 940 at 512 (10.7 ms). The estimate was 900.
+The FFTs are 46 % of it, and this FFT is plain radix-2; a faster one is the main lever left
+(about 340 cycles at B = 256, estimate, [Verify] against CMSIS-DSP). On the M4 it takes 2545 M4
+cycles per frame, 61 % of the M4's frame.
+
+| Worst case at 48 kHz (two strips saturating, the chorus) | Room FIR B = 256 | B = 512 |
+|---|---|---|
+| Everything on the M7 | about 7620 (91 %) | about 7440 (89 %) |
+| Reverb on the M4 | about 6720 (81 %) | about 6540 (78 %) |
+| Room FIR on the M4 instead, reverb on the M7 | about 6500 (78 %) | about 6500 (78 %) |
+
+The M7's ceiling is 70 % (5833). The last row moves the FIR (61 % of the M4) rather than the
+reverb (33 %); the M4 cannot take both (94 %). The M4's RAM is 99 % used with the FIR's test
+memory in it, and batch 11 plans to move the control core there, so that row has a cost the
+others do not.
+

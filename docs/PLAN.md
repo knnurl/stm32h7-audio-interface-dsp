@@ -20,7 +20,7 @@ One batch is one session. It ends with the build clean, the tests passing, its n
 | 8b | Effect slot, reverb and tempo | Host part: none. Target part: Nucleo | 3, 6 | Host part and cycles on the board done 2026-11-17; the listening check waits for batch 2 |
 | 8c | The full signal path on the boards | Both boards | 6, 7, 8a, 8b | Not started |
 | 8d | Control panel firmware | Panel board, or a breadboard | 8a (7 for the real panel) | Not started |
-| 9 | Room correction | Both boards, lab microphone | 8c | Not started |
+| 9 | Room correction | Both boards, lab microphone | 8c | Costing spike done 2026-11-18 (FFT and convolver, measured on both cores); the rest needs the boards and the microphone |
 | 10 | S/PDIF and ASRC (stretch) | Both boards | 8c | Not started |
 | 11 | Dual-core split, display and encoders (stretch) | Both boards | 8c, 8d | Not started |
 | 12 | Rev B main board (stretch) | New board | 7, 8c | Not started |

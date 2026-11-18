@@ -77,7 +77,7 @@ block size alone.
 | Item | Value | Kind |
 |---|---|---|
 | Analogue in to monitor out latency, 96 kHz, no room FIR | under 1.5 ms | target, proposed |
-| Added latency of the room FIR on monitor outputs | one partition: 2.7 ms at 256 samples, 96 kHz | estimate |
+| Added latency of the room FIR on monitor outputs | one partition: 5.3 ms at 256 samples, 48 kHz; two (10.7 ms) if the step runs at the deferred level without a time-domain first partition | measured cost, latency by design (`docs/notes/partitioned_convolution.md`) |
 | Headphone path latency | as the monitor path without the room FIR | target |
 | USB round trip (play to record through a loopback cable), 48 kHz | under 10 ms | target, proposed |
 | M7 load, worst case, 96 kHz | under 70 % of the block period | target, proposed |
@@ -111,7 +111,7 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Reverb, 8-line FDN | 350 | estimate (self-test case reverb_f32; docs/results/b8b_cycles.md) | 8b |
 | Speaker stage: PEQ and delay, stereo | 210 | estimate | 3 |
 | Speaker stage: true-peak limiter, stereo | 300 | estimate | 6 |
-| Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 900 | estimate | 9 |
+| Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 1120 at 48 kHz | measured 2026-11-18 (`docs/results/bench_fft.md`; 940 at 512-sample partitions) | 9 |
 | Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8c |
 | Tone: three bands, stereo | 60 | estimate | 3 |
 | Effect slot: the dearest single effect, stereo | 250 | estimate (self-test cases fx_overdrive_f32, and fx_echo96_f32 for the 96 kHz echo; docs/results/b8b_cycles.md) | 8b |
@@ -404,3 +404,5 @@ Settled, with the source:
 | 2026-11-17 | True-peak detector: a 63-tap Nyquist interpolator (three 16-tap phases) instead of the 4x oversampler; limiter latency L + 9 | Measured: 998 to 665 cycles; true peak still 0.24 dB under the set ceiling on the hostile set |
 | 2026-11-18 | The M4 runs its DSP code from its SRAM; it can be woken through the SRAM4 mailbox to run the self-test cases (`m4bench`) | Measured: from flash about 4.5 times the M7's cycles, from SRAM 1.5 to 3 times; the reverb 1451 cycles, 35 % of the M4's frame, bit-identical with the PC |
 | 2026-11-18 | The 8c split (reverb on the M4, the ceiling, float32 PEQ) waits for the room FIR's measured cost in batch 9 | Owner: the FIR's 900 cycles is still an estimate, and it decides whether 78 % is the real worst case |
+| 2026-11-18 | Room FIR spike: own radix-2 real FFT (CMSIS packed layout, generated twiddles) and uniformly partitioned overlap-save convolver | Measured on the M7: 1120 cycles per frame, stereo, 4096 taps, B = 256 (estimate was 900); bit-identical with the PC on both cores; 132 dB below the output against double precision |
+| 2026-11-18 | The M7 waits up to 524288 polls for the M4 to park | Measured 48075 and 49141 polls with the DSP library in the M4 image; the old 65535 failed once |
