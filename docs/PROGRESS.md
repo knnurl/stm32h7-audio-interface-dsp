@@ -24,9 +24,11 @@ entry with no transcripts line is unfinished.
   about 75.**
 - 929 host tests pass; all 36 cases match the PC on the M7.
 
-**Owner, later the same day:** keep the 110 dB criterion and the 2.5 kHz start for bands 3 and 4
-(lowering it saves no cycles; at 100 dB the arithmetic noise would sit above the converter's
-floor at extreme settings). The tone's treble shelf in float32, a further 78 cycles, is not done.
+**Open:** the owner thinks 100 dB is enough, which would move bands 3 and 4 down to about 1 kHz
+(a misread of his first answer was recorded as "keep 110 dB" and is withdrawn). Claude agrees: at
+the worst setting (Q 10, +15 dB) the EQ also lifts the converter's own noise by 15 dB. The only
+exposure is a digital source through an extreme boost. Waiting for the owner's go; the pair of
+bands at 1 kHz is not yet measured. The tone's treble shelf in float32 (78 cycles) is not done.
 
 ## 2026-11-18: owner's answers; V18 verified; CMSIS-DSP measured (owner: "3 and 5 fine, no footswitch, 6 and 7 go ahead")
 
