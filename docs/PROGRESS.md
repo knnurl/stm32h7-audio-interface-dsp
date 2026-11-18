@@ -4,6 +4,31 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: budget A + C + D, on the board (owner: "A + C + D sounds good")
+
+**Transcripts read:** #172, #89, #32 for D (forked agent; "From the transcripts" in
+`docs/notes/peq_float32_bands.md`). None new for A and C.
+
+- **A, the budget rule:** the effect slot and strip saturation never run together. FX on is
+  refused while a strip saturates; choosing the effect never is. About 481 cycles per frame.
+- **C, CMSIS-DSP's FFT in the room filter:**
+  - the PC library builds CMSIS too, its headers as system includes;
+  - CI, README and CLAUDE.md fetch the dependencies first;
+  - measured 1120 to 917 cycles per frame, bit-identical with the PC.
+- **D, float32 PEQ bands 3 and 4 at 48 kHz and below:**
+  - those two bands now start at 2.5 kHz, not lower;
+  - the criterion is at least 110 dB arithmetic SNR at the worst setting (Q 10, +15 dB): 113.9
+    dB at 2.5 kHz, while 2 kHz failed at 109.6 dB;
+  - measured `peq_f32` 207 against 282 per PEQ channel, about 450 per frame, bit-identical.
+- **M7 worst case at 48 kHz: about 5760 cycles per frame (69 %), under the 5833 ceiling by
+  about 75.**
+- 929 host tests pass; all 36 cases match the PC on the M7.
+
+**For the owner:**
+- D restricts bands 3 and 4 of every PEQ to 2.5 to 20 kHz. Accept it, or lower the SNR
+  criterion to 100 dB, which allows about 1 kHz.
+- The tone's treble shelf in float32 is a further 78 cycles, not done.
+
 ## 2026-11-18: owner's answers; V18 verified; CMSIS-DSP measured (owner: "3 and 5 fine, no footswitch, 6 and 7 go ahead")
 
 **Transcripts read:** none new. #111 (CMSIS FFT) was read for batch 9 and covers the CMSIS

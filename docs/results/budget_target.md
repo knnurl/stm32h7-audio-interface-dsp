@@ -219,7 +219,7 @@ mixer writing the send straight into the exchange slot (part of the 151, not mea
 After the linker change the M4's self-test cycles were taken again (`bench_m4.md`): the full meter
 1312 to 1020, the reverb 1451 to 1387, every bit-identical case still bit-identical.
 
-## Option D: float32 for PEQ bands 3 and 4 (2026-11-18, estimate)
+## Option D: float32 for PEQ bands 3 and 4 (2026-11-18)
 
 Owner's decision ("A + C + D"); `docs/notes/peq_float32_bands.md`. Bands 3 and 4 of every PEQ run
 the float32 section (about 17 cycles per sample) instead of the double one (56.4) at 48 kHz, with
@@ -227,3 +227,23 @@ their range starting at 2.5 kHz. Six PEQ channels in the worst case (two strips,
 headphones in stereo), two sections each: about 6 x 2 x 39 = **470 cycles per frame** saved,
 estimated from the section costs. Not yet measured on the board: `target_test` reports the new
 self-test case `peq_f32` (one PEQ, five sections on), against about 282 cycles before (5 x 56.4).
+
+**Measured on the M7** (`target_test`, after the merge): `peq_f32` 207 cycles per frame,
+bit-identical with the PC, against 282 for five double sections (5 x 56.4 from `biquad_f64`). So
+75 per PEQ channel, about **450 cycles per frame** over the six in the worst case.
+
+## A + C + D together, worst case at 48 kHz (2026-11-18)
+
+| Step | Cycles per frame | Basis |
+|---|---|---|
+| Before, with the reverb and meters on the M4 | about 6890 (83 %) | `splitbench`, the measured blocks |
+| A: the effect slot and strip saturation never together | -481 | the worst strips plus effect is now the overdrive with clean strips (2454 against 2935), measured blocks |
+| C: CMSIS-DSP's FFT in the room filter | -203 | measured, 1120 to 917 |
+| D: float32 PEQ bands 3 and 4 | -450 | measured, 282 to 207 per PEQ channel |
+| **After** | **about 5760 (69 %)**, ceiling 5833 | |
+
+Under the ceiling, by about 75 cycles per frame. That margin is thin: the conversion line is still an
+estimate (batch 2 measures it), and so is the headphone crossfeed's place in the chain. If batch
+2 or the assembly in 8c finds more, the next steps in order are the tone's treble shelf in float32
+(about 78, `peq_float32_bands.md`), the mixer writing the send straight into the exchange slot,
+and the room filter's length (batch 9).
