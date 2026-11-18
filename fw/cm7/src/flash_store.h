@@ -9,8 +9,8 @@
  * Reads go through the AXI bus and the D-cache: the cache lines of a sector are invalidated after
  * every erase and program. A word torn by a power cut can fail its ECC check; the read path
  * masks the bus fault and reports the double-error flag as a failed read, so a torn record is
- * skipped instead of faulting at every start-up (docs/notes/preset_store.md) [Verify on the board
- * by cutting the supply during a write].
+ * skipped instead of faulting at every start-up (docs/notes/preset_store.md). Shown on the board
+ * 2026-11-18 with resets in the middle of writes (tools/torn_write_test.py, SPEC V18).
  */
 #ifndef FLASH_STORE_H
 #define FLASH_STORE_H
@@ -18,5 +18,8 @@
 #include "ctl/ctl_flash.h"
 
 void flash_store_ops(CtlFlashOps *ops);
+/* Reads since start-up that met a corrected single-bit ECC error, and an uncorrectable one. The
+ * preset store's own `errors` counts failed programs and erases only, not these. */
+void flash_store_ecc_counts(uint32_t *single, uint32_t *dbl);
 
 #endif

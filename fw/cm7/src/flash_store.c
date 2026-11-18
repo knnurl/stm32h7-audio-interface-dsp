@@ -8,6 +8,14 @@
 #define STORE_SECTOR_BYTES 0x20000u
 #define STORE_FIRST_SECTOR FLASH_SECTOR_6
 
+static uint32_t s_ecc_single; /* Reads that met a corrected single-bit ECC error. */
+static uint32_t s_ecc_double; /* Reads that met an uncorrectable one (reported as -2). */
+
+void flash_store_ecc_counts(uint32_t *single, uint32_t *dbl) {
+    *single = s_ecc_single;
+    *dbl = s_ecc_double;
+}
+
 static uint32_t sector_address(uint32_t sector) { return STORE_BASE + sector * STORE_SECTOR_BYTES; }
 
 static void invalidate(uint32_t address, uint32_t n) {
@@ -36,8 +44,13 @@ static int store_read(void *ctx, uint32_t sector, uint32_t offset, void *dst, ui
         SCB->CFSR = SCB_CFSR_BUSFAULTSR_Msk; /* Clear any bus fault status the load left. */
         __set_FAULTMASK(0u);
     }
-    if ((FLASH->SR2 & FLASH_SR_DBECCERR) != 0u) {
-        FLASH->CCR2 = FLASH_CCR_CLR_DBECCERR | FLASH_CCR_CLR_SNECCERR;
+    const uint32_t sr = FLASH->SR2;
+    FLASH->CCR2 = FLASH_CCR_CLR_DBECCERR | FLASH_CCR_CLR_SNECCERR;
+    if ((sr & FLASH_SR_SNECCERR) != 0u) {
+        ++s_ecc_single;
+    }
+    if ((sr & FLASH_SR_DBECCERR) != 0u) {
+        ++s_ecc_double;
         return -2;
     }
     return 0;

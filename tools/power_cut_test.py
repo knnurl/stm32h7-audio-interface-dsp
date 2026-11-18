@@ -4,10 +4,12 @@ Each round: the script saves preset 2 over and over (a record write takes about 
 owner unplugs the Nucleo's ST-LINK USB cable (its only supply) while it does, then plugs it back
 in. The script waits for the port, then checks that the board came up without a fault, that the
 store mounted, and that slot 2 holds one of the names it wrote: the last one confirmed or the one
-in flight, never anything else. `flash_errors` in `stat` counts the ECC errors the read path met
-and masked; a round that cut a write in half shows one there. A cut only lands inside the 4.5 ms
-write some of the time, so the summary says how many rounds did; with none, the torn-write path
-was not exercised and the pass proves less.
+in flight, never anything else. `flashinfo` gives the evidence of a torn record at that start-up:
+reads that met an ECC error, or a record the scan could not walk past (needs_compact). The
+store's `flash_errors` in `stat` counts failed programs and erases only, not these (the first
+run, 2026-11-18, read it wrongly). Pulling the cable tore nothing in 10 rounds: the board seems to
+keep its supply for longer than a write [not measured]; tools/torn_write_test.py tears writes on
+purpose instead.
 
 A round that sees no cut within --cut-timeout seconds stops the test: the saves would otherwise
 go on wearing the flash (each compaction erases a sector).
@@ -36,7 +38,7 @@ def wait_for_port(port, present, timeout_s):
 
 
 def board_state(port):
-    """Opens the port after a boot and returns (fault line, stat line, slot-2 name or None)."""
+    """Opens the port after a boot and returns (fault, flashinfo line, list reply, slot-2 name)."""
     # Windows can list the port a moment before it opens, or drop and re-list it if the plug
     # bounces (round 10 of the first run, 2026-11-18): retry for a while.
     end = time.monotonic() + 15.0
@@ -56,7 +58,13 @@ def board_state(port):
         line = link.read_line(0.2)
         if line and line.startswith("fault"):
             fault = line
-    stat, _, _ = command(link, "stat")
+    link.send("flashinfo")
+    stat = None
+    end = time.monotonic() + 3.0
+    while time.monotonic() < end and stat is None:
+        line = link.read_line(0.2)
+        if line and line.startswith("flashinfo"):
+            stat = line
     final, rows, _ = command(link, "preset list")
     name = None
     for row in rows:
@@ -128,19 +136,22 @@ def main(argv=None):
         allowed = {f"r{r}w{i:06d}" for i in (confirmed, confirmed + 1, sent) if i >= 0}
         ok = (fault == "fault none" and final is not None and final.startswith("ok preset list")
               and name in allowed)
-        errors = re.search(r"flash_errors=(\d+)", stat or "")
+        info = {k: int(v) for k, v in re.findall(r"(\w+)=(-?\d+)", stat or "")}
+        is_torn = (info.get("ecc_single", 0) + info.get("ecc_double", 0) > 0
+                   or info.get("needs_compact", 0) == 1)
         print(f"  {'PASS' if ok else 'FAIL'}: confirmed write {confirmed}, slot {SLOT} holds "
-              f"{name}; {fault}; flash_errors={errors.group(1) if errors else '?'}")
+              f"{name}; {fault}; ecc single={info.get('ecc_single')} "
+              f"double={info.get('ecc_double')} needs_compact={info.get('needs_compact')}"
+              f"{'  TORN' if is_torn else ''}")
         done += 1
-        if errors and int(errors.group(1)) > 0:
-            torn += 1
+        torn += int(is_torn)
         if not ok:
-            print(f"  stat: {stat}\n  preset list: {final}")
+            print(f"  flashinfo: {stat}\n  preset list: {final}")
             failures += 1
     print(f"{done - failures} of {done} rounds passed ({args.rounds} asked); "
-          f"{torn} cut a write in half (flash_errors > 0)")
+          f"{torn} start-ups found a torn record")
     if done and not torn and not args.dry_run:
-        print("no round cut a write in half: the torn-write path was not exercised")
+        print("no start-up found a torn record: the torn-write path was not exercised")
     return 1 if failures or done < args.rounds else 0
 
 

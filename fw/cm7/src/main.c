@@ -12,6 +12,9 @@
  *   m4bench       wake the M4, have it run every self-test case, print its cycles
  *   fftbench      the real FFT's cycles at 64 to 2048 points (batch 9 spike)
  *   convbench     the partitioned convolver's cycles at partitions of 64 to 512 (batch 9 spike)
+ *   flashinfo     the preset store's scan state and the ECC errors its reads met since start-up
+ *   ptear <n>     torn-write test (SPEC V18): the watchdog resets the chip n x 125 us into a save
+ *                 of preset 2, n from 1 to 4095; tools/torn_write_test.py drives it
  *   splitbench [s] the 8c split: the M4 runs the reverb and meters on blocks posted at 48 kHz
  *                 for s seconds (default 1), checked against this core (bench_split.h)
  * Every other line goes to the control protocol: hello, list, get, set, mode, meters, preset,
@@ -43,6 +46,7 @@ static CtlCore s_core;
 static CtlPresetStore s_presets;
 static CtlProto s_proto;
 static CtlTempo s_tempo;
+static uint32_t s_reset_flags; /* RCC->RSR at start-up, before it is cleared. */
 
 /* Microseconds from the cycle counter, wrap-safe at 32 bits (the counter itself wraps every
  * 10.7 s at 400 MHz, so this must run more often than that: it does, every loop). */
@@ -90,6 +94,51 @@ static void time_preset_write(void) {
            (unsigned long)cycles, (unsigned long)(cycles / 400u),
            (unsigned long)s_presets.compactions,
            (unsigned long)ctl_preset_free_bytes(&s_presets));
+}
+
+static void flash_info(void) {
+    uint32_t single, dbl;
+    flash_store_ecc_counts(&single, &dbl);
+    printf("flashinfo ecc_single=%lu ecc_double=%lu active=%ld generation=%lu free_offset=%lu "
+           "needs_compact=%d compactions=%lu errors=%lu reset_iwdg=%d\r\n",
+           (unsigned long)single, (unsigned long)dbl, (long)s_presets.active,
+           (unsigned long)s_presets.generation, (unsigned long)s_presets.free_offset,
+           (int)s_presets.needs_compact, (unsigned long)s_presets.compactions,
+           (unsigned long)s_presets.errors, (s_reset_flags & RCC_RSR_IWDG1RSTF) != 0u ? 1 : 0);
+}
+
+/* SPEC V18: a save of preset 2 cut short by a reset. The independent watchdog (started by
+ * software: its option bit is read, never written) resets the chip n x 125 us after the save
+ * starts, wherever the flash write has got to. A record write takes about 4.5 ms (36 counts), so
+ * sweeping n lands the reset at different points in it. If the save finishes first, the
+ * watchdog resets the chip anyway a moment later. */
+static void torn_write(const char *arg) {
+    const long n = strtol(arg, NULL, 10);
+    if (n < 1 || n > 4095) {
+        printf("error ptear n from 1 to 4095\r\n");
+        return;
+    }
+    if ((FLASH->OPTSR_CUR & FLASH_OPTSR_IWDG1_SW) == 0u) {
+        printf("error ptear the watchdog is in hardware mode\r\n");
+        return;
+    }
+    char name[CTL_PRESET_NAME_LEN];
+    const int len = snprintf(name, sizeof(name), "tear%04ld", n);
+    printf("ptear armed n=%ld name=%s\r\n", n, name);
+    console_flush();
+    IWDG1->KR = 0xCCCCu; /* Start: LSI on, counting down from the reset reload. */
+    IWDG1->KR = 0x5555u; /* Unlock PR and RLR. */
+    IWDG1->PR = 0u;      /* LSI / 4: 125 us per count at 32 kHz. */
+    IWDG1->RLR = (uint32_t)n;
+    while (IWDG1->SR != 0u) {
+    }
+    IWDG1->KR = 0xAAAAu; /* Reload: n counts from now. */
+    /* Index 1 is the protocol's slot 2 (slots are 1 to 8 on the console, 0 to 7 inside). */
+    const int r = ctl_preset_save(&s_presets, 1, name, (size_t)len, &s_core);
+    printf("ptear save finished first result=%d\r\n", r);
+    console_flush();
+    for (;;) {
+    }
 }
 
 /* Wakes the M4 to run the self-test cases (fw/common/mailbox.h) and prints what it reports. */
@@ -144,6 +193,10 @@ static void handle_line(const char *line) {
         printf("%s\r\n", text);
     } else if (strcmp(line, "ptime") == 0) {
         time_preset_write();
+    } else if (strcmp(line, "flashinfo") == 0) {
+        flash_info();
+    } else if (strncmp(line, "ptear ", 6) == 0) {
+        torn_write(line + 6);
     } else if (strcmp(line, "m4bench") == 0) {
         m4_bench();
     } else if (strcmp(line, "fftbench") == 0) {
@@ -174,6 +227,8 @@ static void control_init(void) {
 }
 
 int main(void) {
+    s_reset_flags = RCC->RSR;
+    RCC->RSR |= RCC_RSR_RMVF; /* So the next start-up sees only its own cause. */
     board_init();
     fault_report_boot();
     print_info();

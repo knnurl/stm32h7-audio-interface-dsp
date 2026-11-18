@@ -81,7 +81,9 @@ Target risks, each marked for the bench:
 - A word torn by a power cut can fail its ECC check, and a load from it is a bus fault. The read
   path masks it (FAULTMASK with SCB CCR.BFHFNMIGN) and reports the double-error flag in
   FLASH_SR2 as a failed read, which the store treats as a bad record. Without that, a torn word
-  would fault at every start-up [Verify by cutting the supply during a write].
+  would fault at every start-up. Shown on the board (2026-11-18, `tools/torn_write_test.py`):
+  96 watchdog resets swept across a save, 32 start-ups met a torn record (up to 2 double and 2
+  single ECC errors), none faulted, and slot 2 always held the old or the new record.
 - FAULTMASK also holds off the audio interrupt, so reads go in 64-byte pieces.
 - An erase blocks the main loop for up to about 2 s [Verify]; the audio interrupt keeps running,
   since the M7 executes from bank 1 [Verify, SPEC V17].

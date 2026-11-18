@@ -141,6 +141,7 @@ From the repository root. Keep this section accurate.
 - Target tests: `python tools/target_test.py --port COMx`
 - The self-test cases on the M4: `python tools/m4_bench.py --port COMx [--results docs/results/bench_m4.md]`
 - Preset store power-cut test (owner pulls the USB cable each round): `python tools/power_cut_test.py --port COMx` (10 rounds; stops if no cut within `--cut-timeout`, 120 s; `--dry-run --rounds 1` checks the script without a cut)
+- Preset store torn-write test (no cable needed; watchdog resets swept across a save, SPEC V18): `python tools/torn_write_test.py --port COMx` (`--repeat 2` for 96 rounds)
 - Control client: `python tools/ctl.py --port COMx <command>`, or `--sim` for the C library on
   the PC (`python tools/ctl.py --sim list`)
 - Protocol fuzz under the address sanitiser: `build\host\ctl\Release\ctl_fuzz.exe 200000 7`
