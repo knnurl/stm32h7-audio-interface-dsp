@@ -6,6 +6,7 @@
 #include <string.h>
 
 static bool s_cm4_parked;
+static uint32_t s_cm4_park_polls;
 
 /* Region 0: SRAM3 (32 KB at 0x30040000), the DMA buffers. Normal memory, not cacheable, so DMA
  * and the core always see the same data. Everything else keeps the default map. */
@@ -88,15 +89,20 @@ static void led_init(void) {
     HAL_GPIO_Init(GPIOE, &pin);
 }
 
-/* The Cortex-M4 image puts its domain (D2) into stop mode as its first act. Wait for that, as
- * ST's template does, but carry on if it never happens (an empty or old M4 image): the M7 does
- * not depend on it, and the banner reports which it was. */
+/* The Cortex-M4 image puts its domain (D2) into stop mode as the first act of its main(). Wait
+ * for that, as ST's template does, before the clocks change, but carry on if it never happens
+ * (an empty or old M4 image): the M7 does not depend on it, and the banner reports which it was
+ * and how many polls it took. Since the M4 carries the DSP library, its start-up code copies the
+ * library to SRAM and zeroes about 250 KB of .bss first, which outlasted the old limit of 65535
+ * polls (2026-11-18: cm4_parked=0 although the M4 then answered m4bench). */
 static bool wait_for_cm4_to_park(void) {
-    for (int32_t tries = 0xFFFF; tries > 0; --tries) {
+    for (uint32_t polls = 0; polls < 0x80000u; ++polls) {
         if (__HAL_RCC_GET_FLAG(RCC_FLAG_D2CKRDY) == RESET) {
+            s_cm4_park_polls = polls;
             return true;
         }
     }
+    s_cm4_park_polls = 0x80000u;
     return false;
 }
 
@@ -120,6 +126,8 @@ void board_init(void) {
 }
 
 bool board_cm4_parked(void) { return s_cm4_parked; }
+
+uint32_t board_cm4_park_polls(void) { return s_cm4_park_polls; }
 
 void board_led(BoardLed led, bool on) {
     const GPIO_PinState state = on ? GPIO_PIN_SET : GPIO_PIN_RESET;

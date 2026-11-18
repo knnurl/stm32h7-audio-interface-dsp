@@ -61,7 +61,8 @@ static void print_info(void) {
            (unsigned long)HAL_RCC_GetSysClockFreq(), (unsigned long)HAL_RCC_GetHCLKFreq(),
            (unsigned long)HAL_RCC_GetPCLK1Freq(),
            (unsigned long)board_measure_cycles_per_ms(20));
-    printf("supply direct-smps vos=1 cm4_parked=%d\r\n", board_cm4_parked() ? 1 : 0);
+    printf("supply direct-smps vos=1 cm4_parked=%d cm4_park_polls=%lu\r\n",
+           board_cm4_parked() ? 1 : 0, (unsigned long)board_cm4_park_polls());
     printf("console dropped=%lu\r\n", (unsigned long)console_dropped());
     printf("info done\r\n");
 }

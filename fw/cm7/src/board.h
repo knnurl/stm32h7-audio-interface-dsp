@@ -42,6 +42,8 @@ uint32_t board_cycles(void); /* DWT cycle counter: 400 counts per microsecond. *
 uint32_t board_measure_cycles_per_ms(uint32_t ms);
 /* True when the Cortex-M4's domain went to stop mode at start-up (the M4 image parked it). */
 bool board_cm4_parked(void);
+/* How many polls the M4 took to park (at the reset clock, before clock_init). */
+uint32_t board_cm4_park_polls(void);
 
 /* Deferred DSP level: the audio interrupt calls board_deferred_request(); the handler then runs
  * deferred_dsp() at PendSV priority, pre-empted by audio, USB and the tick. */
