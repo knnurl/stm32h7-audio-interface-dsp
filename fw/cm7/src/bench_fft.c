@@ -6,6 +6,8 @@
 #include "dsp/dsp_pconv.h"
 #include "dsp/dsp_testsig.h"
 
+#include "arm_math.h"
+
 #include <stdio.h>
 
 enum {
@@ -97,4 +99,60 @@ void bench_conv(void) {
         console_flush();
     }
     printf("convbench done\r\n");
+}
+
+/* CMSIS-DSP's arm_rfft_fast_f32 at the convolver's sizes, against dsp_fft on the same noise:
+ * cycles (minimum of 9) and the largest difference between the two forward spectra, relative to
+ * the largest bin, in parts per billion. CMSIS overwrites its input, so it gets a fresh copy each
+ * run; the copy is outside the timed part. Its inverse scales by 1/n, dsp_fft's does not. */
+void bench_cmsis_fft(void) {
+    static float x[1024], tmp[1024], a[1024], b[1024];
+    for (int32_t n = 256; n <= 1024; n *= 2) {
+        arm_rfft_fast_instance_f32 S;
+        arm_status st = ARM_MATH_ARGUMENT_ERROR;
+        if (n == 256) {
+            st = arm_rfft_fast_init_256_f32(&S);
+        } else if (n == 512) {
+            st = arm_rfft_fast_init_512_f32(&S);
+        } else {
+            st = arm_rfft_fast_init_1024_f32(&S);
+        }
+        if (st != ARM_MATH_SUCCESS) {
+            printf("cmsisfft n=%ld error init\r\n", (long)n);
+            continue;
+        }
+        DspRfftF32 own;
+        (void)dsp_rfft_f32_init(&own, n);
+        noise(x, (size_t)n, 5u, 0.5f);
+        uint32_t fwd = 0xFFFFFFFFu, inv = 0xFFFFFFFFu;
+        for (int run = 0; run < 9; ++run) {
+            for (int32_t i = 0; i < n; ++i) {
+                tmp[i] = x[i];
+            }
+            uint32_t start = board_cycles();
+            arm_rfft_fast_f32(&S, tmp, a, 0u);
+            uint32_t c = board_cycles() - start;
+            fwd = c < fwd ? c : fwd;
+            for (int32_t i = 0; i < n; ++i) {
+                tmp[i] = a[i];
+            }
+            start = board_cycles();
+            arm_rfft_fast_f32(&S, tmp, b, 1u);
+            c = board_cycles() - start;
+            inv = c < inv ? c : inv;
+        }
+        dsp_rfft_f32_forward(&own, x, b);
+        float peak = 0.0f, diff = 0.0f;
+        for (int32_t i = 0; i < n; ++i) {
+            const float m = b[i] < 0.0f ? -b[i] : b[i];
+            const float d = a[i] - b[i];
+            peak = m > peak ? m : peak;
+            diff = (d < 0.0f ? -d : d) > diff ? (d < 0.0f ? -d : d) : diff;
+        }
+        printf("cmsisfft n=%ld fwd=%lu inv=%lu max_diff_ppb=%lu\r\n", (long)n,
+               (unsigned long)fwd, (unsigned long)inv,
+               (unsigned long)(peak > 0.0f ? diff / peak * 1e9f : 0.0f));
+        console_flush();
+    }
+    printf("cmsisfft done\r\n");
 }

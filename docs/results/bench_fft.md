@@ -23,8 +23,25 @@ python tools/m4_bench.py --port COMx     (the same cases on the M4)
 | 2048 | 161479 | 158976 | 79 |
 
 Accuracy against numpy in double precision: 0.9e-7 to 1.3e-7 relative (64 to 2048 points).
-This is a plain radix-2 kernel. CMSIS-DSP's `arm_rfft_fast_f32` is reported at about a third of
-these cycles on the M7 [Verify: measure it here as the yardstick before claiming it].
+This is a plain radix-2 kernel. CMSIS-DSP's `arm_rfft_fast_f32` was reported at about a third of
+these cycles on the M7; measured below, it is about 0.55 to 0.6 of them.
+
+### CMSIS-DSP as the yardstick (2026-11-18, v1.16.2, `cmsisfft`)
+
+Same board, same flags (`-O2 -ffp-contract=off`), its code in ITCM like `dsp_fft`, minimum of 9:
+
+| Points | CMSIS forward | `dsp_fft` forward | CMSIS inverse (scales by 1/n) | `dsp_fft` inverse |
+|---|---|---|---|---|
+| 256 | 8938 | 15567 | 10054 | 15018 |
+| 512 | 19070 | 33639 | 21269 | 32576 |
+| 1024 | 36579 | 72375 | 40957 | 70266 |
+
+The two forward spectra agree to 1.3e-7 to 1.4e-7 of the largest bin. In the convolver at
+B = 256 (one forward and one inverse 512-point FFT per channel per step), CMSIS would save about
+(33639 + 32576 - 19070 - 21269) x 2 / 256 = about 200 cycles per frame, not the 340 estimated.
+Not adopted: it overwrites its input (the convolver would need a copy), its inverse scales by 1/n
+(the filter's 1/N would come out), and the PC build would have to compile CMSIS too to stay
+bit-identical. That is for the owner to weigh against 200 cycles.
 
 ## Partitioned convolver (`dsp_pconv`), stereo, 4096 taps per channel
 

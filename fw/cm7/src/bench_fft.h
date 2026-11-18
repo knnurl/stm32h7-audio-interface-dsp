@@ -16,4 +16,7 @@
 void bench_fft(void);
 void bench_conv(void);
 
+/* CMSIS-DSP's real FFT at 256 to 1024 points against dsp_fft: cycles and difference. */
+void bench_cmsis_fft(void);
+
 #endif

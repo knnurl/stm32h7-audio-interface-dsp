@@ -36,6 +36,19 @@ set(ST_INCLUDES
 
 set(OWN_WARNINGS "-Wall;-Wextra;-Werror;-Wno-unused-parameter")
 
+# CMSIS-DSP's real FFT, M7 only: the yardstick for dsp_fft (`cmsisfft`; owner's go 2026-11-18).
+# Only the size-specific init functions are called, so --gc-sections keeps only their tables.
+set(CMSIS_DSP ${TP}/cmsis_dsp)
+set(CMSIS_DSP_SOURCES
+    ${CMSIS_DSP}/Source/TransformFunctions/arm_rfft_fast_f32.c
+    ${CMSIS_DSP}/Source/TransformFunctions/arm_rfft_fast_init_f32.c
+    ${CMSIS_DSP}/Source/TransformFunctions/arm_cfft_f32.c
+    ${CMSIS_DSP}/Source/TransformFunctions/arm_cfft_init_f32.c
+    ${CMSIS_DSP}/Source/TransformFunctions/arm_cfft_radix8_f32.c
+    ${CMSIS_DSP}/Source/TransformFunctions/arm_bitreversal2.c
+    ${CMSIS_DSP}/Source/CommonTables/arm_common_tables.c
+    ${CMSIS_DSP}/Source/CommonTables/arm_const_structs.c)
+
 function(dsp_firmware target core_define cpu_flags linker_script)
     target_compile_definitions(${target} PRIVATE
         STM32H755xx USE_HAL_DRIVER ${core_define} ${SUPPLY_DEFINE})
@@ -61,9 +74,11 @@ set(CM7_SOURCES
     cm7/src/main.c cm7/src/board.c cm7/src/bench.c cm7/src/bench_fft.c cm7/src/bench_split.c
     cm7/src/console.c cm7/src/fault.c cm7/src/flash_store.c cm7/src/interrupts.c cm7/src/syscalls.c
     common/split_dsp.c)
+set_source_files_properties(${CMSIS_DSP_SOURCES} PROPERTIES COMPILE_OPTIONS "-O2;-ffp-contract=off")
 add_executable(dsp_cm7 ${CM7_SOURCES} ${DSP_SOURCES} ${CTL_SOURCES} ${ST_BOOT_SOURCES}
-    ${HAL_SOURCES})
-target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR} ${CTL_INCLUDE_DIR})
+    ${HAL_SOURCES} ${CMSIS_DSP_SOURCES})
+target_include_directories(dsp_cm7 PRIVATE cm7/src ${DSP_INCLUDE_DIR} ${CTL_INCLUDE_DIR}
+    ${CMSIS_DSP}/Include ${CMSIS_DSP}/PrivateInclude)
 # The self-test's large pool goes to AXI SRAM on this core only (dsp_selftest.c).
 target_compile_definitions(dsp_cm7 PRIVATE DSP_HAS_AXI_BSS)
 # Float policy (SPEC section 7): no fused multiply-add contraction until batch 3 decides, so the

@@ -314,7 +314,7 @@ sides until batch 3 measures both and decides.
 | V24 | The Alps RK09L series offers a threaded bushing, a centre detent and a plain version, and a shaft length for the owner's panel | Batch 5, stage 2 |
 | V25 | A current (not obsolete) 16 Mb/s optical receiver exists in the PLR135 footprint | Batch 5, stage 3, if S/PDIF footprints stay |
 | V26 | A USB-C receptacle with through-hole shell stakes is stocked at LCSC or JLC | Batch 5, stage 2 |
-| V27 | CMSIS-DSP's `arm_rfft_fast_f32` takes about a third of `dsp_fft`'s cycles on the M7 (sets how much a faster FFT saves the room FIR) | Batch 9, on the board, with CMSIS-DSP fetched (owner's go) |
+| V27 | CMSIS-DSP's `arm_rfft_fast_f32` takes about a third of `dsp_fft`'s cycles on the M7 (sets how much a faster FFT saves the room FIR) | **Measured 2026-11-18: false.** 0.55 to 0.6 of `dsp_fft`'s cycles at 256 to 1024 points (`cmsisfft`, `bench_fft.md`) |
 | V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running (settled: the M7's console on USART3, in D2, works with the M4 parked) | Batch 1, on the board |
 
 Settled, with the source:
@@ -431,3 +431,4 @@ Settled, with the source:
 | 2026-11-18 | Panel input: the tap mapping, zones (1 % ends, +/-3 % tone centre, 3 % volume off, re-measured on the real pots), per-unit pot calibration in its own flash record apart from presets, and the 20 ms knob target meaning the first audible change | Owner accepted the recommendations |
 | 2026-11-18 | Main board parts: PCM3168A; outputs 3 and 4 also as balanced line outputs (parts optional); 6.35 mm TRS jacks throughout; S/PDIF footprints with the parts not fitted; Claude reads LCSC and JLC part pages for live price and stock (read-only) | Owner accepted the recommendations (`part_selection.md` section 7) |
 | 2026-11-18 | Headphone amplifier OPA1622, sized for the owner's Audio-Technica ATH-M50x (38 ohm, 99 dB sensitivity) | Owner's headphones; about 1 V peak and 26 mA peak give 110 dB SPL, well inside the part [Verify the sensitivity reference, dB/mW assumed] |
+| 2026-11-18 | CMSIS-DSP v1.16.2 fetched (Apache-2.0, M7 build only) as the FFT yardstick | Owner's go; measured 1.6 to 1.8 times faster than `dsp_fft`, about 200 cycles per frame in the room filter; not adopted into the library yet (`bench_fft.md`) |

@@ -12,6 +12,7 @@
  *   m4bench       wake the M4, have it run every self-test case, print its cycles
  *   fftbench      the real FFT's cycles at 64 to 2048 points (batch 9 spike)
  *   convbench     the partitioned convolver's cycles at partitions of 64 to 512 (batch 9 spike)
+ *   cmsisfft      CMSIS-DSP's real FFT at 256 to 1024 points against dsp_fft (yardstick)
  *   flashinfo     the preset store's scan state and the ECC errors its reads met since start-up
  *   ptear <n>     torn-write test (SPEC V18): the watchdog resets the chip n x 125 us into a save
  *                 of preset 2, n from 1 to 4095; tools/torn_write_test.py drives it
@@ -203,6 +204,8 @@ static void handle_line(const char *line) {
         bench_fft();
     } else if (strcmp(line, "convbench") == 0) {
         bench_conv();
+    } else if (strcmp(line, "cmsisfft") == 0) {
+        bench_cmsis_fft();
     } else if (strcmp(line, "splitbench") == 0 || strncmp(line, "splitbench ", 11) == 0) {
         long seconds = line[10] == ' ' ? strtol(line + 11, NULL, 10) : 1;
         seconds = seconds < 1 ? 1 : (seconds > 600 ? 600 : seconds);

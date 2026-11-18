@@ -37,8 +37,9 @@ SECTIONS
     .text :
     {
         . = ALIGN(4);
-        /* The DSP library's code goes to ITCM instead (.itcm_text below). */
-        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj) *(.text .text*)
+        /* The DSP library's code, and CMSIS-DSP's for a fair comparison, go to ITCM instead
+         * (.itcm_text below). */
+        EXCLUDE_FILE(*dsp/src/dsp_*.c.obj *cmsis_dsp/Source/*.c.obj) *(.text .text*)
         *(.glue_7)
         *(.glue_7t)
         *(.eh_frame)
@@ -96,6 +97,7 @@ SECTIONS
         . = ALIGN(4);
         _sitcm = .;
         *dsp/src/dsp_*.c.obj(.text .text*)
+        *cmsis_dsp/Source/*.c.obj(.text .text*)
         *(.itcm_text)
         *(.itcm_text*)
         . = ALIGN(4);
