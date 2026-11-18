@@ -2,6 +2,7 @@
 
 #include "dsp/dsp_biquad.h"
 #include "dsp/dsp_comp.h"
+#include "dsp/dsp_crossfeed.h"
 #include "dsp/dsp_delayline.h"
 #include "dsp/dsp_fastmath.h"
 #include "dsp/dsp_fxslot.h"
@@ -9,6 +10,8 @@
 #include "dsp/dsp_gate.h"
 #include "dsp/dsp_oversample.h"
 #include "dsp/dsp_limiter.h"
+#include "dsp/dsp_meter.h"
+#include "dsp/dsp_mixer.h"
 #include "dsp/dsp_reverb.h"
 #include "dsp/dsp_saturate.h"
 #include "dsp/dsp_svf.h"
@@ -465,6 +468,118 @@ static void reverb_f32_run(const void *in, void *out) {
     run_stereo16(reverb_fn, &s_8b.reverb, in, out);
 }
 
+/* Batch 8c. Small states, so plain statics (one union: the cases never run together). */
+static union {
+    DspMixerF32 mixer;
+    DspCrossfeedF32 crossfeed;
+    DspMeterF32 meter;
+} s_8c;
+
+/* The monitor mixer as the device will use it: 8 mono channels of 128 frames each (the input
+ * buffer cut in eight). 0 and 1: the strips, panned and sent to the reverb; 2 and 3: USB
+ * playback, hard left and right, sent; 4 and 5: S/PDIF, muted (skipped); 6 and 7: the reverb
+ * return, hard left and right, no send. Half-way, input 1 pans right and input 2 mutes, so two
+ * channels run their ramps (20 ms, longer than the case) to the end. Output: main L, main R,
+ * send L, send R, 128 words each; the rest 0. Frames: 128, so channels = 8 for the bench. */
+static void mixer_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    enum { kN = kDspSelftestFrames / 8 };
+    static const float kPan[8] = {-0.5f, 0.3f, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f};
+    static const float kSend[8] = {0.5f, 0.25f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f};
+    (void)dsp_mixer_f32_init(&s_8c.mixer, 48000.0f, 8, 20.0f);
+    for (int32_t c = 0; c < 8; ++c) {
+        dsp_mixer_f32_set_channel(&s_8c.mixer, c, c < 2 ? 0.8f : 1.0f, kPan[c], kSend[c],
+                                  c == 4 || c == 5);
+    }
+    dsp_mixer_f32_reset(&s_8c.mixer);
+    const float *ins[8];
+    for (int c = 0; c < 8; ++c) {
+        ins[c] = x + c * kN;
+    }
+    for (size_t i = 0; i < kDspSelftestFrames; ++i) {
+        y[i] = 0.0f;
+    }
+    mark();
+    for (size_t i = 0; i < kN; i += 16) {
+        if (i == kN / 2) {
+            dsp_mixer_f32_set_channel(&s_8c.mixer, 0, 0.8f, 0.8f, 0.5f, 0);
+            dsp_mixer_f32_set_channel(&s_8c.mixer, 1, 0.8f, 0.3f, 0.25f, 1);
+        }
+        const float *blk[8];
+        for (int c = 0; c < 8; ++c) {
+            blk[c] = ins[c] + i;
+        }
+        dsp_mixer_f32_process(&s_8c.mixer, blk, y + i, y + kN + i, y + 2 * kN + i,
+                              y + 3 * kN + i, 16);
+    }
+}
+
+/* Crossfeed at full amount (settled), then at 256 frames down to 0.5 (ramped over 10 ms). */
+static void crossfeed_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    const size_t half = kDspSelftestFrames / 2;
+    dsp_crossfeed_f32_init(&s_8c.crossfeed, 48000.0f, 10.0f);
+    dsp_crossfeed_f32_set_amount(&s_8c.crossfeed, 1.0f);
+    dsp_crossfeed_f32_reset(&s_8c.crossfeed);
+    mark();
+    for (size_t i = 0; i < half; i += 16) {
+        if (i == half / 2) {
+            dsp_crossfeed_f32_set_amount(&s_8c.crossfeed, 0.5f);
+        }
+        dsp_crossfeed_f32_process(&s_8c.crossfeed, x + i, x + half + i, y + i, y + half + i, 16);
+    }
+}
+
+/* BS.1770-4's published 48 kHz K-weighting, as float: the meter case does not depend on the
+ * owner's exercise or on the C library. */
+static const DspBiquadCoefsF32 kKweight48[2] = {
+    {1.53512485958697f, -2.69169618940638f, 1.19839281085285f, -1.69065929318241f,
+     0.73248077421585f},
+    {1.0f, -2.0f, 1.0f, -1.99004745483398f, 0.99007225036621f},
+};
+
+/* The meter, stereo. The nominal rate is 4800 Hz, so a 100 ms loudness block is 480 samples and
+ * one completes inside the case; the K-weighting is the 48 kHz one, and the ballistics are set
+ * as plain numbers, so no C library function shapes the output. After each block of 16 frames
+ * the case writes 16 words: held peak L R, largest peak L R, mean square L R, true peak L R, the
+ * newest block power, the blocks done, and zeros. */
+static void meter_run(const void *in, void *out, int32_t flags) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    const size_t half = kDspSelftestFrames / 2;
+    DspMeterF32 *m = &s_8c.meter;
+    (void)dsp_meter_f32_init(m, 4800.0f, 2, flags);
+    dsp_meter_f32_set_kweight(m, kKweight48);
+    m->hold_samples = 48;
+    m->decay_coef = 0.99f;
+    m->rms_coef = 0.999f;
+    for (size_t i = 0; i < kDspSelftestFrames; ++i) {
+        y[i] = 0.0f;
+    }
+    mark();
+    for (size_t i = 0; i < half; i += 16) {
+        dsp_meter_f32_process(m, x + i, x + half + i, 16);
+        float *o = y + i;
+        o[0] = m->held[0];
+        o[1] = m->held[1];
+        o[2] = m->max_peak[0];
+        o[3] = m->max_peak[1];
+        o[4] = m->ms[0];
+        o[5] = m->ms[1];
+        o[6] = m->max_tp[0];
+        o[7] = m->max_tp[1];
+        o[8] = (float)dsp_meter_f32_power(m, 1);
+        o[9] = (float)m->blocks_done;
+    }
+}
+
+static void meter_f32_run(const void *in, void *out) {
+    meter_run(in, out, kDspMeterTruePeak | kDspMeterLoudness);
+}
+static void meter_peak_f32_run(const void *in, void *out) { meter_run(in, out, 0); }
+
 static const SelftestCase kCases[] = {
     {"gain_f32", kDspFmtF32, 1, gain_f32_input, gain_f32_run},
     {"noise_q31", kDspFmtQ31, 1, noise_q31_input, noise_q31_run},
@@ -495,6 +610,10 @@ static const SelftestCase kCases[] = {
     {"fx_crusher_f32", kDspFmtF32, 2, bursts_f32_input, fx_crusher_f32_run},
     {"fxslot_f32", kDspFmtF32, 2, bursts_f32_input, fxslot_f32_run},
     {"reverb_f32", kDspFmtF32, 2, bursts_f32_input, reverb_f32_run},
+    {"mixer_f32", kDspFmtF32, 8, bursts_f32_input, mixer_f32_run},
+    {"crossfeed_f32", kDspFmtF32, 2, bursts_f32_input, crossfeed_f32_run},
+    {"meter_f32", kDspFmtF32, 2, bursts_f32_input, meter_f32_run},
+    {"meter_peak_f32", kDspFmtF32, 2, bursts_f32_input, meter_peak_f32_run},
 };
 
 size_t dsp_selftest_count(void) { return sizeof(kCases) / sizeof(kCases[0]); }
