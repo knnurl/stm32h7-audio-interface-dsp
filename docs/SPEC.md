@@ -90,11 +90,12 @@ block size alone.
 |---|---|---|
 | Nominal level | +4 dBu | target |
 | Input level at 0 dBFS | +20 dBu | target, proposed |
-| Monitor output level at 0 dBFS | +18 dBu | target, proposed [Verify against the rails] |
-| Dynamic range, A-weighted, in and out | 105 dB or better | target [Verify against the chosen converter] |
+| Monitor output level at 0 dBFS | +18 dBu | target, proposed; on +/-12 V rails the stage clips 8.3 dB above 0 dBFS (estimate, `rev_a_architecture.md` 3.1) |
+| Headphone output at 0 dBFS | 0.69 V rms into 38 ohm, about 110 dB SPL on the ATH-M50x | target, proposed (`rev_a_architecture.md` 3.1) |
+| Dynamic range, A-weighted, in and out | 105 dB or better | target; estimates 106.8 dB in, 111.6 dB monitor out, 110.3 dB headphones (`rev_a_input_budget.md`, `rev_a_architecture.md` 4) |
 | THD+N at -1 dBFS, 1 kHz | -90 dB or better | target |
 | Frequency response, 20 Hz to 20 kHz | within 0.2 dB | target |
-| Crosstalk at 1 kHz | -90 dB or better | target |
+| Crosstalk at 1 kHz | -90 dB or better on the line outputs; the headphones about -64 dB, limited by the shared TRS sleeve | target; headphone figure an estimate (`rev_a_architecture.md` 4.3), proposed |
 
 ### 3.4 Cycle budget
 
@@ -148,7 +149,10 @@ out; a front-panel header; the Nucleo's supply.
 Open choices, settled in batch 5: the converter; the dBu value of 0 dBFS; how the analogue rails
 are made; whether the main board meets the Nucleo on the Zio sockets or the morpho rows; whether
 the headphone amplifier sits on the main board or the panel board; seven ADC pins or a
-multiplexer for the potentiometers. Decided: the owner routes the analogue and clock nets.
+multiplexer for the potentiometers. Decided: the owner routes the analogue and clock nets; the
+converter is the PCM3168A (stage 1). Stage 2 (2026-11-18) proposes answers to the rest, awaiting
+the owner's sign-off: `docs/notes/rev_a_architecture.md`, `pin_plan.md`, `mechanical_interface.md`,
+`rev_a_input_budget.md`, and the "Proposed (stage 2)" rows of the decision log.
 
 ## 5. Hardware rev B: the delta
 
@@ -295,25 +299,29 @@ sides until batch 3 measures both and decides.
 | V4 | Rev B can reach 480 MHz with an SMPS feeding the LDO | Batch 12 |
 | V5 | The recovery procedure for a wrong supply setting (see PROGRESS, batch 1) works on this board | Only if it ever happens |
 | V6 | Converter performance, prices, stock and JLC part classes | Batch 5, stage 1 |
-| V7 | The Nucleo may be powered from the shield, and through which pin and jumper | Batch 5, stage 2 |
+| V7 | The Nucleo may be powered from the shield, and through which pin and jumper | **Resolved 2026-11-18 (UM2408 Rev 6, 7.4.3, Table 6):** 5V_EXT on CN11 pin 6 (morpho only), 4.75 to 5.25 V, 500 mA, JP2 on pins 5-6; power first, then the ST-LINK cable (7.4.6). VIN (7 to 11 V) cannot take 12 V |
 | V8 | The full signal path fits under 70 % at 96 kHz (the estimates say it does not) | Batches 3, 6, 8 |
 | V9 | Two 96 kHz stereo streams do not fit full-speed USB (source: Apple TN3190; our arithmetic is an estimate) | Batch 4, if tried |
 | V11 | Ableton on Windows runs the device through an ASIO wrapper (ASIO4ALL or FlexASIO) over the in-box driver, at a usable latency | Batch 4 |
-| V12 | Seven ADC inputs and the panel's GPIO are free on the Nucleo headers; if not, an analogue multiplexer on the panel board | Batch 5 |
-| V13 | The Nucleo's user USB data pins can be driven from a socket on the main board (solder bridges, the Nucleo's USB power switch) | Batch 5, stage 2 |
-| V14 | The stack height (Nucleo, headers, main board, tallest rear connector) fits a 55 mm high case | Batch 5, stage 2 |
+| V12 | Seven ADC inputs and the panel's GPIO are free on the Nucleo headers; if not, an analogue multiplexer on the panel board | **Resolved 2026-11-18 on paper:** seven ADC1 inputs (PA3, PC0, PA4, PA5, PA6, PB1, PF11) and every panel GPIO are free on the morpho rows (`pin_plan.md`, UM2408 Tables 12 to 19); no multiplexer. AF numbers from CubeMX and the HAL; DS12919 not yet read [Verify] |
+| V13 | The Nucleo's user USB data pins can be driven from a socket on the main board (solder bridges, the Nucleo's USB power switch) | **Identified 2026-11-18, open until batch 7:** SB26 (PA12) and SB27 (PA11) join the pins to CN13 (UM2408 Table 16), SB21 joins PA9 to CN13's VBUS (Table 13). Proposed: leave them (CN13 a stub), sense VBUS on PE15; open SB26 and SB27 only if enumeration or the soak fails. CN12 pins 12 and 14 carrying PA12 and PA11 as shipped is V30 |
+| V14 | The stack height (Nucleo, headers, main board, tallest rear connector) fits a 55 mm high case | **Estimated 2026-11-18:** about 9 mm to spare with 15 mm between the boards (`mechanical_interface.md` 2); open until the owner measures the Nucleo's heights (UM2408 Figure 5 is an image) |
 | V15 | The MCU's built-in USB bootloader can update the firmware through the rear USB port | Batch 4 |
 | V16 | The OTG_FS peripheral has the endpoints and FIFO space for UAC2, MIDI and CDC at once | Batch 4, first step |
 | V17 | Flash bank 2's sectors 6 and 7 are 128 KB each (confirmed by the store working), and writing them does not stall the M7 running from bank 1 (not yet: needs audio running, batch 2) | Batch 8a, on the board |
 | V18 | A double ECC error on a flash load is masked by FAULTMASK with CCR.BFHFNMIGN and shows in FLASH_SR2 (the preset store's read path relies on it) | **Verified 2026-11-18** (`tools/torn_write_test.py`): 96 watchdog resets swept 0.125 to 6 ms into a save; 32 start-ups met a torn record, with up to 2 double and 2 single ECC errors, all masked, no fault, slot 2 always the old or the new record. 10 cable pulls tore nothing (the store's `flash_errors` counts failed programs and erases only, so the first reading of that run was wrong) |
 | V19 | A bank 2 sector erase takes up to about 2 s (measured: 0.96 s with a record write), and the flash endures 10 000 cycles (datasheet, not testable here) | Batch 8a, on the board |
-| V20 | The PCM3168A runs TDM at 96 kHz with 8 DAC slots and 6 ADC slots on one line each (BCLK 24.576 MHz), with MCLK at 22.5792 or 24.576 MHz for all four rates, and the H755's SAI keeps up | Batch 5, stage 3 (datasheet), batch 7 (board) |
+| V20 | The PCM3168A runs TDM at 96 kHz with 8 DAC slots and 6 ADC slots on one line each (BCLK 24.576 MHz), with MCLK at 22.5792 or 24.576 MHz for all four rates, and the H755's SAI keeps up | **Corrected 2026-11-18 (SBAS452A Tables 3 and 11):** at 44.1 and 48 kHz TDM uses one line each way, SCKI 512 fs (22.5792 or 24.576 MHz), BCK 256 fs; at 88.2 and 96 kHz it needs DOUT1/2 and DIN1/2 at BCK 128 fs (or the high-speed TDM format, DAC only). One line each way at 96 kHz is false; rev A runs at 48 kHz and is unaffected. BCKAD cycle at least 75 ns in slave mode (8.10). The SAI side stays for batch 7 |
 | V21 | Live LCSC and JLC stock, price and part class for every chosen part | Batch 5, stage 1 sign-off, and again at stage 5 |
 | V22 | The chosen oscillators have an output enable and phase jitter under about 45 ps rms | Batch 5, stage 3 |
-| V23 | The PCM3168A's analogue supply current, to size its 5 V analogue LDO | Batch 5, stage 2 |
-| V24 | The Alps RK09L series offers a threaded bushing, a centre detent and a plain version, and a shaft length for the owner's panel | Batch 5, stage 2 |
+| V23 | The PCM3168A's analogue supply current, to size its 5 V analogue LDO | **Resolved 2026-11-18 (SBAS452A 8.5):** ICC 162 mA typical, 210 mA maximum at 5 V; IDD 106 / 130 mA at 3.3 V. Over the TPS7A4901's 150 mA; proposed TPS7A2050 (300 mA, SBVS338H) from a 5.5 V buck |
+| V24 | The Alps RK09L series offers a threaded bushing, a centre detent and a plain version, and a shaft length for the owner's panel | **Partly resolved 2026-11-18 (RK09L series datasheet):** M9 x 0.75 threaded bushing, 6 mm metal shaft, L1 12.5 to 25 mm, with or without centre detent; L1 = 15 mm suits a 2 mm panel. The exact vertical 10 k linear part numbers [Verify] |
 | V25 | A current (not obsolete) 16 Mb/s optical receiver exists in the PLR135 footprint | Batch 5, stage 3, if S/PDIF footprints stay |
-| V26 | A USB-C receptacle with through-hole shell stakes is stocked at LCSC or JLC | Batch 5, stage 2 |
+| V26 | A USB-C receptacle with through-hole shell stakes is stocked at LCSC or JLC | **Mostly resolved 2026-11-18:** GCT USB4105-GF-A, LCSC C3020560 (snapshot 515 in stock); Digi-Key lists it as surface mount plus through hole (the shell stakes), LCSC as SMD [Verify the drawing] |
+| V28 | The NMJ6HCD2's chrome ferrule is, or is not, connected to its sleeve contact (Neutrik's sheet does not say), which decides whether every rear jack bonds its sleeve to the panel | Batch 5, stage 3 (a meter on one sample) |
+| V29 | The Nucleo draws about 300 to 350 mA at 5 V with the firmware, so with the panel's 3.3 V (about 46 mA) it stays under 5V_EXT's 500 mA | Before batch 7 (USB power meter on the ST-LINK cable), and batch 7 step 5 |
+| V30 | MB1363's CN12 pins 12 and 14 carry PA12 and PA11 as shipped (UM2408 Table 19 says "PA12 or NC", "PA11 or PE6") | Batch 5, stage 3 (continuity check, board unpowered) |
+| V31 | 28 AWG IDC ribbon is about 0.22 ohm/m, so a 150 mm conductor is about 33 mohm (sets the headphone crosstalk estimate) | Batch 7 (measure) |
 | V27 | CMSIS-DSP's `arm_rfft_fast_f32` takes about a third of `dsp_fft`'s cycles on the M7 (sets how much a faster FFT saves the room FIR) | **Measured 2026-11-18: false.** 0.55 to 0.6 of `dsp_fft`'s cycles at 256 to 1024 points (`cmsisfft`, `bench_fft.md`) |
 | V10 | The M4, parked in stop mode, leaves the D2 peripherals the M7 has enabled running (settled: the M7's console on USART3, in D2, works with the M4 parked) | Batch 1, on the board |
 
@@ -436,3 +444,12 @@ Settled, with the source:
 | 2026-11-18 | The room convolver uses CMSIS-DSP's real FFT, on the PC and the target | Owner chose C. Measured: 1120 to 917 cycles per frame at B = 256, bit-identical with the PC; one more N-float buffer per channel; smallest partition 16 |
 | 2026-11-18 | Budget option D: PEQ bands 3 and 4 run in float32 at 48 kHz and below; their registry range starts at 2.5 kHz (strips, speaker, headphones); at 96 kHz every section stays double | Owner ("A + C + D"). Measured on the PC (`peq_f32_noise.md`): band 3's worst peak with band 4's worst shelf at 2.5 kHz keeps 113.9 dB of arithmetic SNR (109.6 dB at 2 kHz, under the 110 dB criterion); saves about 470 cycles per frame in the 48 kHz worst case (estimate from section costs; self-test case `peq_f32` measures it) |
 | 2026-11-18 | Option D's SNR criterion (110 dB, corner 2.5 kHz) under review: the owner proposes 100 dB (corner about 1 kHz) | Withdrawn: an earlier row here recorded a misread answer as a decision; the change waits for the owner's go |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: 0 dBFS = +20 dBu at the line inputs, +18 dBu at the monitor and line outputs, 0.69 V rms (about 110 dB SPL) at the headphones | The input's dynamic range is the ADC's whatever the value, so its 16 dB of headroom costs 2 dB of SNR at nominal against +18; the outputs keep 8.3 dB of analogue headroom (`rev_a_architecture.md` 3, `rev_a_input_budget.md`) |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: TPS563208 (not TPS563201) for the 5.0 and 5.5 V bucks, TPS7A2050 for the converter's 5 V, AMS1117-3.3 for its 3.3 V, the 3 W wide-input WRA1215S-3WR2 (not the 2 W) for +/-15 V | The 201 skips pulses at light load; the converter draws up to 210 mA (V23); the analogue rails need 90.5 mA per rail worst case against the 2 W part's 66 mA (`rev_a_architecture.md` 5) |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: the main board meets the Nucleo on the morpho rows (headers soldered into CN11 and CN12), fed through 5V_EXT with JP2 on 5-6 | 5V_EXT exists only on CN11 (V7) |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: USB-C option A first (Nucleo bridges untouched, VBUS sensed on PE15) | No rework of the Nucleo unless batch 7 shows the CN13 stub matters (V13) |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: headphone amplifier on the main board with a dedicated return pair on the ribbon; the phones jack a vertical NJ6FD-V with a 1.5 mm spot face in the 2 mm front panel | No supply current or rails on the ribbon, mute and power-fail local; the jack's plastic body isolates the sleeve, and it takes a 1.2 to 1.5 mm panel (`rev_a_architecture.md` 12) |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: line outputs 3 and 4 from DAC 5 and 6 | Independent of the headphone volume at no hardware cost |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: main board 200 x 100 mm (case about 210 wide), panel board 160 x 46 mm on 2 layers | Six TRS jacks and five other rear items need about 192 mm; a 55 mm case has about 51 mm inside (`rev_a_architecture.md` 13) |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: the ribbon pin-out of `rev_a_architecture.md` 11.1; pots on seven ADC1 pins, no multiplexer; LEDs sink-driven from timer channels | V12; LED current kept out of the ribbon's grounds |
+| 2026-11-18 | Proposed (stage 2), awaiting sign-off: one chassis bond next to the USB-C and DC entry, jack sleeves on a chassis strip, the Nucleo and every other hole insulated; mute held in hardware by RAILS_OK | `rev_a_architecture.md` 7 and 8 |
