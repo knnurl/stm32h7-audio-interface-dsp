@@ -37,7 +37,17 @@ def wait_for_port(port, present, timeout_s):
 
 def board_state(port):
     """Opens the port after a boot and returns (fault line, stat line, slot-2 name or None)."""
-    link = SerialLink(port)
+    # Windows can list the port a moment before it opens, or drop and re-list it if the plug
+    # bounces (round 10 of the first run, 2026-11-18): retry for a while.
+    end = time.monotonic() + 15.0
+    while True:
+        try:
+            link = SerialLink(port)
+            break
+        except Exception:
+            if time.monotonic() > end:
+                raise
+            time.sleep(0.5)
     time.sleep(1.5)  # The banner and the M4's start-up.
     link.send("fault")
     fault = None

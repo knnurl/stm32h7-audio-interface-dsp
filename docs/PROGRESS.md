@@ -4,6 +4,27 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-18: power-cut test, run by the owner
+
+**Transcripts read:** none listed (a test run, no new design).
+
+- 10 rounds of pulling the Nucleo's USB cable during preset saves (`tools/power_cut_test.py`). The
+  owner's paste starts at round 5's result; rounds 5 to 9 passed. Round 10 crashed the script
+  (Windows listed COM22 and then could not open it); read by hand afterwards: `fault none`,
+  `flash_errors=0`, slot 2 holds `r10w000003`, the write in flight: a pass.
+- In 4 of the 6 rounds seen, slot 2 holds the write that was in flight when the port vanished:
+  the write finished after USB had gone.
+- **No round tore a write** (flash_errors 0 every time), so V18 (the ECC error masked on the read
+  path) is still unproven. Likely reason, not measured: the board's 3.3 V decays over tens of ms
+  after the cable goes, longer than a 4.5 ms write.
+- Script fix: `board_state` retries opening the port for 15 s.
+
+**For the owner:** to exercise V18, a write has to be torn on purpose. Two ways:
+- a firmware command that starts a save and forces a reset partway through;
+- cutting 3.3 V on the MCU side with a switch or MOSFET instead of the USB cable.
+
+Your call; neither is built.
+
 ## 2026-11-18: the 8c core split on the board, and the 8c answers (owner: "do 1, 2, 4")
 
 **Transcripts read:** #55 (double buffering) and the double-buffering passage of "Digital Audio
