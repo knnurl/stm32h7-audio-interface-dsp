@@ -19,6 +19,14 @@ samples in a way that matters (the converter clips at the sample), and the speak
 detects true peak itself. The meters run on the M4 (SPEC decision log), so their 601 + 3 x 57
 cycles leave the M7.
 
+**Reading in two halves.** `dsp_meter_f32_read` is `dsp_meter_f32_snapshot` (the linear values,
+the since-last-read maxima cleared, no C library call) followed by `dsp_meter_raw_to_reading`
+(the logarithms). With the meters on the M4, the M4 takes only the snapshot and the reader converts
+it: on the board the conversion made the reading block 164 % of a block period and its `log10f`
+differed from the M7's in the last bit; with the split, 83 % and bit-identical
+(`docs/results/budget_target.md`, the 8c split). `test_snapshot_then_convert_equals_read` checks the
+two halves give read's result byte for byte.
+
 **Clip indication.** The meter keeps the largest sample since the last read, so no clip between
 two reads is lost. The PC meter latches a clip until it is clicked or cleared; the panel LED
 keeps its 300 ms hold (8d.3). Both are applied by the reader, not by this block.

@@ -65,7 +65,14 @@ class DspMeterReading(ctypes.Structure):
                 ("kweighted", c_int32)]
 
 
-MIRRORS = [DspMixerF32, DspCrossfeedF32, DspMeterF32, DspMeterReading]
+class DspMeterRaw(ctypes.Structure):
+    _fields_ = [("held", c_float * 2), ("max_peak", c_float * 2), ("ms", c_float * 2),
+                ("max_tp", c_float * 2), ("momentary_power", c_double),
+                ("short_term_power", c_double), ("loudness_blocks", c_uint32),
+                ("channels", c_int32), ("flags", c_int32), ("kweighted", c_int32)]
+
+
+MIRRORS = [DspMixerF32, DspCrossfeedF32, DspMeterF32, DspMeterReading, DspMeterRaw]
 
 
 def bind(lib):
@@ -98,6 +105,8 @@ def bind(lib):
     sig("dsp_meter_f32_reset", None, m)
     sig("dsp_meter_f32_process", None, m, _f32_p, _f32_p, c_size)
     sig("dsp_meter_f32_read", None, m, P(DspMeterReading))
+    sig("dsp_meter_f32_snapshot", None, m, P(DspMeterRaw))
+    sig("dsp_meter_raw_to_reading", None, P(DspMeterRaw), P(DspMeterReading))
     sig("dsp_meter_f32_power", c_double, m, c_int32)
 
     sig("dsp_kweight_design", c_int32, c_double, P(DspBiquadCoefsF64))

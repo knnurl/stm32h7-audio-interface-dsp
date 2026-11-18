@@ -23,7 +23,11 @@
  *
  * Reading: dsp_meter_f32_read converts to dB (log10f) and clears the since-last-read maxima. It
  * must run in the same context as process (the audio path reads at the meter rate and publishes
- * the reading to the control level); it is not safe against a concurrent process.
+ * the reading to the control level); it is not safe against a concurrent process. It is the two
+ * halves below in one call: dsp_meter_f32_snapshot (linear values and the maxima cleared, a few
+ * hundred cycles, no C library) in the audio context, and dsp_meter_raw_to_reading (the
+ * logarithms) wherever the value is shown. Split that way, the audio core does no log10 and the
+ * dB values come from one core's C library only (the 8c split, 2026-11-18).
  * Values below DSP_METER_FLOOR_DB (and silence) read as DSP_METER_FLOOR_DB.
  *
  * Assumptions: 1 or 2 channels (in_r ignored for 1); any block size; a 100 ms block is rounded
@@ -88,6 +92,20 @@ typedef struct {
     int32_t kweighted;
 } DspMeterReading;
 
+/* Linear values: dsp_meter_f32_snapshot's output, dsp_meter_raw_to_reading's input. */
+typedef struct {
+    float held[2];
+    float max_peak[2];
+    float ms[2];       /* Mean square: the RMS squared. */
+    float max_tp[2];
+    double momentary_power;  /* Mean power of the momentary window; 0 without loudness. */
+    double short_term_power;
+    uint32_t loudness_blocks;
+    int32_t channels;
+    int32_t flags;
+    int32_t kweighted;
+} DspMeterRaw;
+
 /* Hold 1000 ms, decay 11.8 dB/s (20 dB in 1.7 s [Verify] against IEC 60268-18), RMS 300 ms.
  * Returns 0, or -1 for a channel count other than 1 or 2. */
 int32_t dsp_meter_f32_init(DspMeterF32 *meter, float sample_rate_hz, int32_t channels,
@@ -101,6 +119,10 @@ void dsp_meter_f32_reset(DspMeterF32 *meter);
 void dsp_meter_f32_process(DspMeterF32 *meter, const float *in_l, const float *in_r,
                            size_t n_frames);
 void dsp_meter_f32_read(DspMeterF32 *meter, DspMeterReading *reading);
+/* The first half of read: copies the linear values and clears the since-last-read maxima. */
+void dsp_meter_f32_snapshot(DspMeterF32 *meter, DspMeterRaw *raw);
+/* The second half: the dB conversion. dsp_meter_f32_read gives exactly this. */
+void dsp_meter_raw_to_reading(const DspMeterRaw *raw, DspMeterReading *reading);
 /* The mean power of the newest `n_blocks` blocks (clamped to 1 to kDspMeterBlocks), linear. */
 double dsp_meter_f32_power(const DspMeterF32 *meter, int32_t n_blocks);
 

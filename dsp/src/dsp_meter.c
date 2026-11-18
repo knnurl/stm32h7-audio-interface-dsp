@@ -180,25 +180,47 @@ static float to_lufs(double power) {
     return l > DSP_METER_FLOOR_DB ? l : DSP_METER_FLOOR_DB;
 }
 
-void dsp_meter_f32_read(DspMeterF32 *meter, DspMeterReading *r) {
+void dsp_meter_f32_snapshot(DspMeterF32 *meter, DspMeterRaw *raw) {
     for (int ch = 0; ch < 2; ++ch) {
-        const int on = ch < meter->channels;
-        r->peak_db[ch] = on ? to_db(meter->held[ch]) : DSP_METER_FLOOR_DB;
-        r->max_peak_db[ch] = on ? to_db(meter->max_peak[ch]) : DSP_METER_FLOOR_DB;
-        r->rms_db[ch] = on ? to_db(sqrtf(meter->ms[ch])) : DSP_METER_FLOOR_DB;
-        r->true_peak_db[ch] = on && (meter->flags & kDspMeterTruePeak)
-                                  ? to_db(meter->max_tp[ch])
-                                  : DSP_METER_FLOOR_DB;
+        raw->held[ch] = meter->held[ch];
+        raw->max_peak[ch] = meter->max_peak[ch];
+        raw->ms[ch] = meter->ms[ch];
+        raw->max_tp[ch] = meter->max_tp[ch];
         meter->max_peak[ch] = 0.0f;
         meter->max_tp[ch] = 0.0f;
     }
-    if (meter->flags & kDspMeterLoudness) {
-        r->momentary_lufs = to_lufs(dsp_meter_f32_power(meter, kDspMeterMomentaryBlocks));
-        r->short_term_lufs = to_lufs(dsp_meter_f32_power(meter, kDspMeterBlocks));
+    const int loud = (meter->flags & kDspMeterLoudness) != 0;
+    raw->momentary_power = loud ? dsp_meter_f32_power(meter, kDspMeterMomentaryBlocks) : 0.0;
+    raw->short_term_power = loud ? dsp_meter_f32_power(meter, kDspMeterBlocks) : 0.0;
+    raw->loudness_blocks = meter->blocks_done;
+    raw->channels = meter->channels;
+    raw->flags = meter->flags;
+    raw->kweighted = meter->kweighted;
+}
+
+void dsp_meter_raw_to_reading(const DspMeterRaw *raw, DspMeterReading *r) {
+    for (int ch = 0; ch < 2; ++ch) {
+        const int on = ch < raw->channels;
+        r->peak_db[ch] = on ? to_db(raw->held[ch]) : DSP_METER_FLOOR_DB;
+        r->max_peak_db[ch] = on ? to_db(raw->max_peak[ch]) : DSP_METER_FLOOR_DB;
+        r->rms_db[ch] = on ? to_db(sqrtf(raw->ms[ch])) : DSP_METER_FLOOR_DB;
+        r->true_peak_db[ch] = on && (raw->flags & kDspMeterTruePeak)
+                                  ? to_db(raw->max_tp[ch])
+                                  : DSP_METER_FLOOR_DB;
+    }
+    if (raw->flags & kDspMeterLoudness) {
+        r->momentary_lufs = to_lufs(raw->momentary_power);
+        r->short_term_lufs = to_lufs(raw->short_term_power);
     } else {
         r->momentary_lufs = DSP_METER_FLOOR_DB;
         r->short_term_lufs = DSP_METER_FLOOR_DB;
     }
-    r->loudness_blocks = meter->blocks_done;
-    r->kweighted = meter->kweighted;
+    r->loudness_blocks = raw->loudness_blocks;
+    r->kweighted = raw->kweighted;
+}
+
+void dsp_meter_f32_read(DspMeterF32 *meter, DspMeterReading *r) {
+    DspMeterRaw raw;
+    dsp_meter_f32_snapshot(meter, &raw);
+    dsp_meter_raw_to_reading(&raw, r);
 }

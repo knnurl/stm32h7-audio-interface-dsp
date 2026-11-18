@@ -65,6 +65,7 @@ size_t dsp_abi_sizeof(const char *name) {
         {"DspCrossfeedF32", sizeof(DspCrossfeedF32)},
         {"DspMeterF32", sizeof(DspMeterF32)},
         {"DspMeterReading", sizeof(DspMeterReading)},
+        {"DspMeterRaw", sizeof(DspMeterRaw)},
     };
     for (size_t i = 0; i < sizeof(kSizes) / sizeof(kSizes[0]); ++i) {
         if (strcmp(kSizes[i].name, name) == 0) {

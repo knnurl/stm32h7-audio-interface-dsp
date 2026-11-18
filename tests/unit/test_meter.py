@@ -173,3 +173,22 @@ def test_block_size_does_not_change_the_state(lib8c):
     a.process(xl, xr, block=16)
     b.process(xl, xr, block=5)
     assert bytes(a.st) == bytes(b.st)
+
+
+@pytest.mark.parametrize("flags", [0, b8c.METER_TRUE_PEAK | b8c.METER_LOUDNESS])
+def test_snapshot_then_convert_equals_read(lib8c, flags):
+    """The 8c split's two halves (the snapshot on the audio core, the dB conversion where it is
+    shown) give exactly what read gives, and the snapshot clears the maxima as read does."""
+    x = bursts(7, 48000)
+    one, two = b8c.Meter(lib8c, 48000.0, flags=flags), b8c.Meter(lib8c, 48000.0, flags=flags)
+    for k in range(3):
+        seg = x[k * 16000:(k + 1) * 16000]
+        one.process(seg, 0.5 * seg)
+        two.process(seg, 0.5 * seg)
+        want = one.read()
+        raw = b8c.DspMeterRaw()
+        lib8c.dsp_meter_f32_snapshot(ctypes.byref(two.st), ctypes.byref(raw))
+        got = b8c.DspMeterReading()
+        lib8c.dsp_meter_raw_to_reading(ctypes.byref(raw), ctypes.byref(got))
+        assert bytes(got) == bytes(want)
+        assert list(two.st.max_peak) == [0.0, 0.0] and list(two.st.max_tp) == [0.0, 0.0]
