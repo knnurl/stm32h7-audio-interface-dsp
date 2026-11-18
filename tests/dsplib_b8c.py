@@ -41,7 +41,7 @@ class DspMixerF32(ctypes.Structure):
 class DspCrossfeedF32(ctypes.Structure):
     _fields_ = [("sample_rate_hz", c_float), ("ramp_samples", c_int32), ("delay", c_int32),
                 ("lp", b8.DspOnePoleF32 * 2), ("ring", (c_float * XF_RING) * 2), ("pos", c_int32),
-                ("g", b8.DspRampF32), ("norm", b8.DspRampF32)]
+                ("h", b8.DspRampF32)]
 
 
 class DspMeterF32(ctypes.Structure):

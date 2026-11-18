@@ -124,13 +124,25 @@ def test_amount_changes_ramp_and_return_to_exact_bypass(lib8c):
     lib8c.dsp_crossfeed_f32_set_amount(ctypes.byref(st), 1.0)  # ramps from 0 over 480
     import dsplib_b8b as b8
     yl, _ = b8.run_stereo(lib8c.dsp_crossfeed_f32_process, st, x, x)
-    assert st.g.cur == pytest.approx(G) and st.g.left == 0
+    assert st.h.cur == pytest.approx(G / (1 + G)) and st.h.left == 0
     lib8c.dsp_crossfeed_f32_set_amount(ctypes.byref(st), 0.0)
     zl, zr = b8.run_stereo(lib8c.dsp_crossfeed_f32_process, st, x, -x)
-    assert st.g.cur == 0.0
+    assert st.h.cur == 0.0
     # After the 480-sample ramp and the end of the block it finished in, bit-exact again.
     assert zl[496:].tobytes() == x[496:].tobytes()
     assert zr[496:].tobytes() == (-x)[496:].tobytes()
+
+
+def test_centred_source_stays_exact_while_the_amount_ramps(lib8c):
+    """Only h ramps, so a centred source is the input during a ramp too."""
+    x = noise(9, 2000)
+    st = b8c.DspCrossfeedF32()
+    lib8c.dsp_crossfeed_f32_init(ctypes.byref(st), 48000.0, 10.0)
+    lib8c.dsp_crossfeed_f32_set_amount(ctypes.byref(st), 1.0)
+    import dsplib_b8b as b8
+    yl, yr = b8.run_stereo(lib8c.dsp_crossfeed_f32_process, st, x, x)
+    np.testing.assert_allclose(yl, x, atol=1e-6)
+    np.testing.assert_allclose(yr, x, atol=1e-6)
 
 
 def test_block_size_does_not_change_the_output(lib8c):

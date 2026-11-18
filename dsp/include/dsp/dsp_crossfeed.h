@@ -6,13 +6,17 @@
  *   y  = ((1 + g) x - g lp + g lp_opposite[n - D]) / (1 + g)
  * which is the near ear's own signal with its highs lifted, x + g (x - lp), plus the other
  * channel's low-passed signal g lp_opposite, D samples late, all scaled by 1 / (1 + g).
+ * Computed as the same thing rearranged, with h = g / (1 + g):
+ *   y  = x + h (lp_opposite[n - D] - lp)
+ * one multiply-add per ear, and only h ramps when the amount changes, so a centred source stays
+ * exact during a ramp too (ramping g and 1 / (1 + g) separately bumped it by 0.47 dB half-way).
  * The delayed low-pass is the low-pass of the delayed signal (both are linear and time-invariant),
  * so one low-pass per channel serves both paths and the delay line holds lp.
  *
  * The delay: D = 0 by default. The low-pass itself delays the far ear's low frequencies by its
  * group delay, a / (1 - a) samples at DC: 0.22 ms at 700 Hz, about the time difference between
  * the ears for a speaker 30 degrees off centre [Verify]. With D = 0 a centred (mono) source passes
- * unchanged, because the far ear's g lp cancels the near ear's -g lp exactly. An explicit delay
+ * unchanged, because lp_opposite - lp is then exactly 0. An explicit delay
  * (dsp_crossfeed_f32_set_delay_us) breaks that cancellation: measured at 48 kHz and full amount, a
  * centred source then dips by 1.4 dB at 1.7 kHz for 100 us and by 3.5 dB at 890 Hz for 300 us
  * (tests/unit/test_crossfeed.py). That colours every centred vocal, so it is not the default.
@@ -24,7 +28,7 @@
  *     unity; the far ear gets the lows at g / (1 + g) (-8.5 dB), D samples later.
  * amount 0 (or off) passes the input through bit for bit once the ramp has finished; the filters
  * and the delay line keep running, so turning it on starts from a filled state.
- * g and 1 / (1 + g) move linearly over the ramp time when the amount changes.
+ * h moves linearly over the ramp time when the amount changes.
  *
  * Assumptions: stereo; any block size; in and out may be the same buffers.
  * Latency: 0 samples (the near ear is not delayed). Cycles: self-test case crossfeed_f32.
@@ -47,8 +51,7 @@ typedef struct {
     DspOnePoleF32 lp[2];
     float ring[2][kDspCrossfeedRing];
     int32_t pos;
-    DspRampF32 g;            /* g */
-    DspRampF32 norm;         /* 1 / (1 + g) */
+    DspRampF32 h;            /* g / (1 + g) */
 } DspCrossfeedF32;
 
 /* Amount 0, fc 700 Hz, no explicit delay. */
