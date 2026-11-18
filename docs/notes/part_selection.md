@@ -168,12 +168,16 @@ stock), AD1939 (not at LCSC), the separate pair (above).
 | Buttons | Omron B3F-5000 series, 12 x 12 mm, through-hole: 10 million operations per Omron | Omron B3F-4000 (12 mm, standard life) [Verify life] | Long-life rating from Omron's own FAQ. A cap through the panel; stem height chosen in stage 2 from the panel stack |
 | LEDs | 3 mm diffused through-hole LEDs, fitted by hand at the height that reaches the panel | 0603 SMD LEDs with light pipes [Verify a light pipe family] | Through-hole is cheap, robust and the height is free; light pipes need exact stack heights |
 | Headphone jack | Neutrik NMJ6HCD2, as the line jacks | Rean NYS216 | One jack type throughout keeps one footprint and one nut size |
-| Footswitch jack (rear) | The same jack | | Mono or TRS pedal both fit a stereo jack |
 | USB-C receptacle | A 16-pin USB 2.0 receptacle with through-hole shell stakes, for example GCT USB4105-GF-A [Verify LCSC stock] | HRO TYPE-C-31-M-12 (LCSC C165948) | The plan asks for through-hole shell legs; JLC lists C165948 as surface mount and Extended, so it is only the fallback |
 | USB ESD | USBLC6-2SC6 [Verify JLC class] | TPD2E2U06 [Verify] | Standard part for a full-speed pair |
 | Ribbon between the boards | 2.54 mm shrouded box header and IDC ribbon, provisionally 2 x 20 | 1.27 mm pitch 2 x 20 header and fine ribbon | Count: 7 pots, 5 buttons, 7 LEDs, OLED I2C (2), two encoders (6), the headphone pair if the amplifier stays on the main board, clean pot reference, supplies, interleaved grounds: about 36 to 40 pins. Fewer if stage 2 picks a multiplexer for the pots (SPEC V12) |
 
 ## 7. What the owner decides before stage 2
+
+**Decided 2026-11-18:** the owner accepted every recommendation below. Headphones: Audio-Technica
+ATH-M50x (38 ohm, 99 dB sensitivity, 1600 mW maximum input), so the OPA1622. Panel material and
+thickness: 2 mm aluminium unless the owner says otherwise. Live prices and stock: Claude reads the
+LCSC and JLC part pages (read-only). No footswitch, so no rear footswitch jack.
 
 1. **Converter:** PCM3168A (recommended) or AK4619VN.
 2. **Outputs 3 and 4 as balanced line outputs too?** With the PCM3168A the converter channels are

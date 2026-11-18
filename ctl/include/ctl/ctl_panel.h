@@ -1,11 +1,11 @@
-/* The control panel: seven potentiometers, five buttons and the footswitch into the control
+/* The control panel: seven potentiometers and five buttons into the control
  * core, and the seven LEDs out of it (batch 8d, docs/notes/panel_input.md).
  *
  * ctl_panel_tick runs once per millisecond with that millisecond's pot readings (ctl_pot.h) and
  * contacts (ctl_button.h). Pots go through ctl_core_knob, so knob ownership and pick-up apply
  * (docs/notes/knob_pickup.md); buttons write with kCtlSrcButton, so the budget rule applies.
  *
- * Button mapping (proposed, for the owner to confirm):
+ * Button mapping (owner, 2026-11-18; no footswitch):
  * - FX select: a short press selects the next effect, a long press the previous one. An effect
  *   the budget rule refuses is skipped, so the button never seems dead.
  * - FX on: each press toggles.
@@ -14,9 +14,6 @@
  *   while MIDI clock runs, and remembers the tempo it replaced. A long press undoes that: auto
  *   again (MIDI clock if present) and the remembered tempo back.
  * - Mute, dim: each press toggles.
- * - Footswitch, by the setting footswitch_type: 0 each press toggles FX on (a momentary pedal);
- *   1 FX on follows the contact (a latching pedal, or a momentary one held down). Edges only, so
- *   at start-up a latched pedal switches the effect on with its first debounced press.
  *
  * LEDs (ctl_panel_leds, at about 100 Hz): signal per input at CTL_LED_SIGNAL_DB with a 100 ms
  * hold, clip at CTL_LED_CLIP_DB with 300 ms, from the input peak meters; mute, dim and FX on
@@ -50,7 +47,6 @@ typedef enum {
     kCtlBtnTap,
     kCtlBtnMute,
     kCtlBtnDim,
-    kCtlBtnFootswitch,
     CTL_PANEL_BUTTONS
 } CtlPanelButton;
 
@@ -88,7 +84,7 @@ typedef struct {
     CtlLedHold clip[2];
     int32_t pot_param[CTL_PANEL_POTS];
     int32_t idx_fx_select, idx_fx_on, idx_mute, idx_dim;
-    int32_t idx_tempo_source, idx_tempo_bpm, idx_footswitch_type;
+    int32_t idx_tempo_source, idx_tempo_bpm;
     int32_t idx_peak[2];
     uint8_t tap_override; /* The panel switched the tempo source to tap. */
     float bpm_before_tap;

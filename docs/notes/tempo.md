@@ -5,7 +5,7 @@ Batch 8b.5. `ctl_tempo` (in `ctl/`, beside the control core).
 ## Purpose
 
 The synced effects (echo, flanger, phaser, tremolo note values) need the tempo of whatever is
-playing. Sources: MIDI clock from Ableton over USB MIDI, tap tempo (panel button, footswitch or
+playing. Sources: MIDI clock from Ableton over USB MIDI, tap tempo (panel button or
 CC 31), and the stored `tempo_bpm`.
 
 ## Rules

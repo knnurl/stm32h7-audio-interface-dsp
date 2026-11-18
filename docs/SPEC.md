@@ -223,8 +223,8 @@ Ways in, all onto the same registry:
 
 - **Control panel.** Potentiometers (centre detent on the tone three): bass, mid, treble,
   monitor volume, headphone volume, effect amount, input and playback blend. Buttons: effect
-  select, effect on and off, mute, dim (-20 dB), tap tempo. A footswitch jack that mirrors
-  effect on and off. LEDs: signal and clip for each input, and one for each of mute, dim and
+  select, effect on and off, mute, dim (-20 dB), tap tempo. No footswitch (owner, 2026-11-18).
+  LEDs: signal and clip for each input, and one for each of mute, dim and
   effect on. The potentiometers are read by the MCU's ADC, filtered, with hysteresis so a still
   knob sends nothing.
 - **PC control link** (USB serial): every parameter and the meters.
@@ -415,7 +415,7 @@ Settled, with the source:
 | 2026-11-18 | Room FIR spike: own radix-2 real FFT (CMSIS packed layout, generated twiddles) and uniformly partitioned overlap-save convolver | Measured on the M7: 1120 cycles per frame, stereo, 4096 taps, B = 256 (estimate was 900); bit-identical with the PC on both cores; 132 dB below the output against double precision |
 | 2026-11-18 | The M7 waits up to 524288 polls for the M4 to park | Measured 48075 and 49141 polls with the DSP library in the M4 image; the old 65535 failed once |
 | 2026-11-18 | Pots: rest detection (0.4 % of travel to leave rest, 12-bit steps while moving) instead of plain hysteresis | Plain 0.4 % hysteresis gives either about 8 bits or a still knob that keeps sending; tested on synthetic ADC streams (`panel_input.md`) |
-| 2026-11-18 | Panel button mapping, footswitch types, end and centre zones as in `panel_input.md` | Proposed; owner to confirm |
+| 2026-11-18 | Panel button mapping, end and centre zones as in `panel_input.md` | Owner confirmed 2026-11-18 |
 | 2026-11-18 | Crossfeed with no explicit delay by default; the low-pass's group delay (0.22 ms at 700 Hz) stands in for the time between the ears | Owner, 2026-11-18 (the plan said "delayed"). Measured on the PC: 300 us of delay dips a centred source 3.5 dB at 886 Hz, 100 us 1.4 dB at 1.69 kHz; with none it passes unchanged |
 | 2026-11-18 | BS.1770 loudness from 100 ms block sums in double, not a running sum | Free of float drift; gated integrated loudness is computed from the block values |
 | 2026-11-18 | One true-peak detector for the limiter and the meters (`dsp_truepeak.h`) | Same code; the limiter's output byte-identical before and after |
@@ -427,3 +427,7 @@ Settled, with the source:
 | 2026-11-18 | The 8c split: the reverb and the meters run on the M4; the exchange is two slots per direction in SRAM4, one block of delay on the reverb return; meters cross as linear snapshots and the reader converts to dB | Owner; measured with `splitbench 60`: 0 late blocks in 180 000, M4 mean 67 % and dearest block 83 %, return and meters bit-identical with the M7; the M7 saves about 1680 cycles per frame and pays 151 (`core_split.md`) |
 | 2026-11-18 | `dsp_meter_f32_read` split into `dsp_meter_f32_snapshot` and `dsp_meter_raw_to_reading` | Measured: the dB conversion on the M4 made its reading block 164 % of a block period and differed from the M7 in the last bit of log10f |
 | 2026-11-18 | The M4 runs libgcc (soft double) and the split's code from its SRAM | Measured: the meters' double sums from flash made one block per reading late; from SRAM, none (dearest block 104 % to 83 %) |
+| 2026-11-18 | No footswitch: the jack, its input, the setting `footswitch_type` (id 905) and its mapping removed | Owner |
+| 2026-11-18 | Panel input: the tap mapping, zones (1 % ends, +/-3 % tone centre, 3 % volume off, re-measured on the real pots), per-unit pot calibration in its own flash record apart from presets, and the 20 ms knob target meaning the first audible change | Owner accepted the recommendations |
+| 2026-11-18 | Main board parts: PCM3168A; outputs 3 and 4 also as balanced line outputs (parts optional); 6.35 mm TRS jacks throughout; S/PDIF footprints with the parts not fitted; Claude reads LCSC and JLC part pages for live price and stock (read-only) | Owner accepted the recommendations (`part_selection.md` section 7) |
+| 2026-11-18 | Headphone amplifier OPA1622, sized for the owner's Audio-Technica ATH-M50x (38 ohm, 99 dB sensitivity) | Owner's headphones; about 1 V peak and 26 mA peak give 110 dB SPL, well inside the part [Verify the sensitivity reference, dB/mW assumed] |

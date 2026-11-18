@@ -37,7 +37,7 @@ POT_LINEAR, POT_CENTRE, POT_VOLUME = 0, 1, 2
 PRESS, RELEASE, LONG, SHORT = 1, 2, 4, 8
 POTS = ("tone_bass_db", "tone_mid_db", "tone_treble_db", "monitor_volume_db", "phones_volume_db",
         "fx_amount", "blend")
-BTN_FX_SELECT, BTN_FX_ON, BTN_TAP, BTN_MUTE, BTN_DIM, BTN_FOOTSWITCH = range(6)
+BTN_FX_SELECT, BTN_FX_ON, BTN_TAP, BTN_MUTE, BTN_DIM = range(5)
 LED_SIGNAL1, LED_CLIP1, LED_SIGNAL2, LED_CLIP2, LED_MUTE, LED_DIM, LED_FX_ON = (1 << k for k in range(7))
 
 

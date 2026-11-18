@@ -130,7 +130,6 @@ second small board, joined to the shield by a ribbon cable, and reused in rev B.
 | Potentiometers, 10 k linear | 7 | Bass, mid, treble (centre detent); monitor volume; headphone volume; effect amount; blend. Each wiper has an RC filter and goes to an ADC input. |
 | Buttons | 5 | Effect select, effect on and off, mute, dim, tap tempo |
 | LEDs | 7 | Signal and clip per input; mute; dim; effect on |
-| Footswitch jack | 1 | 6.35 mm, mirrors effect on and off |
 | OLED and two encoders | header | Fitted in batch 11 |
 
 Questions for stage 2: seven ADC inputs straight to the Nucleo, or one input and an analogue
@@ -151,14 +150,14 @@ proposal for batch 5 to check; no dimension has been checked against a real case
   panels made as circuit boards: black solder mask, printed legends, drilled and routed by the
   board house.
 - Main board: 160 by 100 mm, the Eurocard size such cases take in their slots [Verify]. Every
-  rear connector sits on its rear edge: power switch, 12 V jack, USB-C, footswitch, optical in
+  rear connector sits on its rear edge: power switch, 12 V jack, USB-C, optical in
   and out, two line inputs, two monitor outputs.
 - The Nucleo plugs into the underside of the main board on rev A [Verify the stack height
   against the case]. Rev B is the same board outline with the MCU on it, so the case, both
   panels and the control board carry over.
 - Control panel board: behind the front panel, joined to the main board by a ribbon inside the
-  case. The headphone jack moves to the front, next to its volume. The footswitch jack moves to
-  the rear.
+  case. The headphone jack moves to the front, next to its volume. (No footswitch: owner,
+  2026-11-18.)
 - Front panel groups, left to right, in signal order: input (signal and clip LEDs, blend),
   display (OLED, two encoders), effect (select, on, tap, amount), tone (bass, mid, treble),
   output (headphone jack and volume, mute, dim, and the largest knob: monitor volume).

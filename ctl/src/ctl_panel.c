@@ -50,7 +50,6 @@ void ctl_panel_init(CtlPanel *panel, uint32_t adc_bits) {
     panel->idx_dim = find("dim");
     panel->idx_tempo_source = find("tempo_source");
     panel->idx_tempo_bpm = find("tempo_bpm");
-    panel->idx_footswitch_type = find("footswitch_type");
     panel->idx_peak[0] = find("in1_peak_db");
     panel->idx_peak[1] = find("in2_peak_db");
     panel->tap_override = 0u;
@@ -134,17 +133,6 @@ void ctl_panel_tick(CtlPanel *panel, CtlCore *core, const uint32_t sums[CTL_PANE
     }
     if ((ev[kCtlBtnDim] & kCtlButtonPress) != 0u) {
         toggle(panel, core, panel->idx_dim);
-    }
-    const uint32_t fs = ev[kCtlBtnFootswitch];
-    if (ctl_core_get(core, (size_t)panel->idx_footswitch_type) >= 0.5f) {
-        if ((fs & kCtlButtonPress) != 0u) {
-            put(panel, core, panel->idx_fx_on, 1.0f);
-        }
-        if ((fs & kCtlButtonRelease) != 0u) {
-            put(panel, core, panel->idx_fx_on, 0.0f);
-        }
-    } else if ((fs & kCtlButtonPress) != 0u) {
-        toggle(panel, core, panel->idx_fx_on);
     }
 }
 

@@ -1,4 +1,4 @@
-/* Panel buttons and the footswitch: debouncing and press events (batch 8d,
+/* Panel buttons: debouncing and press events (batch 8d,
  * docs/notes/panel_input.md).
  *
  * Input: the contact sampled once per millisecond (1 = closed; the firmware inverts an

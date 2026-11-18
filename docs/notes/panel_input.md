@@ -6,7 +6,7 @@ here is hardware-free C in `ctl/`, tested on the PC with synthetic ADC and conta
 
 ## Purpose
 
-Seven potentiometers, five buttons and a footswitch drive the parameter registry; seven LEDs
+Seven potentiometers and five buttons drive the parameter registry; seven LEDs
 show state. The hard requirement is the one a live user notices: a knob nobody touches must
 send nothing (no audio change, no MIDI out, no PC traffic), while a knob being turned must still
 resolve fine steps. Buttons must give one event per press whatever the contact does.
@@ -86,7 +86,6 @@ short with the release of a press that never became long.
 | FX on | Each press toggles |
 | Tap | Each press is a tap, timed at the press. In auto tempo source, the first tap switches the source to "tap or stored", so the tap is heard even while MIDI clock runs, and remembers the tempo it replaced. A long press undoes that: auto again (MIDI clock if present) and the remembered tempo back. A "MIDI clock only" source is left alone |
 | Mute, dim | Each press toggles |
-| Footswitch | Setting `footswitch_type`: 0, each press toggles FX on (a momentary pedal); 1, FX on follows the contact (a latching pedal, or a momentary one held). Edges only: a pedal latched at power-up switches the effect on with its first debounced press |
 
 A long press of tap is also a tap at its press. A lone tap changes nothing (the follower needs
 two), but one within 2 s of an earlier tap does, just before the long press restores the old
@@ -150,8 +149,8 @@ low-pass smoothing of a noisy sensor.
   a notch width). The registry curves do the same, with log and audio tapers where the
   parameter wants them.
 - **Footswitch:** every pedal video turns the effect on and off with a footswitch (#162 uses it
-  as a bypass to measure a flat response first). Here it mirrors FX on, with the two pedal
-  types as a setting.
+  as a bypass to measure a flat response first). Not taken: the owner removed the footswitch
+  (2026-11-18); FX on is the panel button.
 - **Smoothing:** #34 low-passes a noisy sensor before using it; the one-pole here is the same
   idea at its simplest.
 - Nothing in the transcripts covers debouncing or LED holds.

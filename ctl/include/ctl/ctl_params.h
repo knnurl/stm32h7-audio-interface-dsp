@@ -31,7 +31,7 @@ typedef enum {
 
 enum {
     kCtlFlagKnob = 1u << 0,     /* a potentiometer on the panel: knob ownership applies */
-    kCtlFlagButton = 1u << 1,   /* set by a panel button or the footswitch */
+    kCtlFlagButton = 1u << 1,   /* set by a panel button */
     kCtlFlagPreset = 1u << 2,   /* saved in presets and in the power-on record */
     kCtlFlagSetting = 1u << 3,  /* a device setting: saved in the power-on record only */
     kCtlFlagReadOnly = 1u << 4, /* a meter or status: written only by the device */

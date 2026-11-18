@@ -4,7 +4,7 @@ Batch 8d. Yours to do. Claude reviews it when you ask and does not do it.
 
 ## Why this one
 
-The panel has five buttons and a footswitch, and every extra function wants a button. A double
+The panel has five buttons, and every extra function wants a button. A double
 press is the usual way to get a second one out of the same switch, and it is a small state
 machine with a real design trade-off in it: the moment you allow a double press on a button, its
 single press can no longer act at once, because you cannot know yet whether a second press is

@@ -196,8 +196,6 @@ static const CtlParamDesc kTable[] = {
     P(902, "tempo_bpm", "Tempo", "BPM", 40.0f, 300.0f, 120.0f, LIN, PRESET, 0.0f),
     P(903, "midi_channel", "MIDI channel (0 omni)", "", 0.0f, 16.0f, 1.0f, STEP, SETTING, 0.0f),
     P(904, "midi_cc_out", "MIDI control change out", "", 0.0f, 1.0f, 1.0f, STEP, SETTING, 0.0f),
-    P(905, "footswitch_type", "Footswitch (0 press to toggle, 1 hold)", "", 0.0f, 1.0f, 0.0f,
-      STEP, SETTING, 0.0f),
 
     /* Knob ownership: 0 knob wins, 1 PC wins (SPEC 6.7, docs/notes/knob_pickup.md). */
     P(910, "mode_tone_bass", "Bass knob ownership", "", 0.0f, 1.0f, 0.0f, STEP, SETTING, 0.0f),

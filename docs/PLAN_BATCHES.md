@@ -30,7 +30,7 @@ LINE IN 1-2 -> ADC -> [ Input strip x2: trim, HPF, 4-band PEQ, gate, compressor,
                              [ Tone: BASS, MID, TREBLE knobs ]  (never recorded)
                                    |-> [ Speaker stage: room FIR, PEQ, delay, limiter, MUTE, DIM, MONITOR ] -> OUT 1-2
                                    '-> [ Headphone stage: PEQ, crossfeed, limiter, PHONES ]              -> OUT 3-4
-Control: 7 knobs, 5 buttons, footswitch, LEDs | USB control link | USB MIDI | presets in flash
+Control: 7 knobs, 5 buttons, LEDs | USB control link | USB MIDI | presets in flash
 ```
 
 One batch is one reviewable unit and one session. It ends with the build clean, the tests
@@ -280,7 +280,7 @@ the manual's page for each row. Reserve, without using them yet:
 - the I2S_CKIN pin, an SPDIFRX input, a second SAI sub-block for S/PDIF out, an I2C bus;
 - the user USB data pins, which the main board's USB-C socket will drive (SPEC V13);
 - seven ADC inputs for the potentiometers (or one input and three GPIO for a multiplexer, SPEC
-  V12), five button inputs, the footswitch input, seven LED outputs, preferably on timer
+  V12), five button inputs, seven LED outputs, preferably on timer
   channels for PWM;
 - for batch 11: an SPI or I2C bus for the display and two timer pairs in encoder mode.
 
@@ -493,7 +493,7 @@ starting drafts.
 
 **Scope of rev A.**
 - **Main board.** 4 layers, about 160 by 100 mm, the Nucleo-H755ZI-Q plugged in underneath.
-  Every rear connector on its rear edge, in one line: power switch, 12 V DC, USB-C, footswitch,
+  Every rear connector on its rear edge, in one line: power switch, 12 V DC, USB-C,
   optical in and out, line in 1 and 2, monitor out L and R. It carries:
   - power entry and all rails, including the Nucleo's supply;
   - two audio oscillators (22.5792 and 24.576 MHz) selected by GPIO, feeding the converter and
@@ -553,8 +553,7 @@ starting drafts.
   - the ribbon pin-out, with grounds between groups of signals;
   - a clean reference for the potentiometers and an RC filter on each wiper;
   - seven ADC pins, or a multiplexer (SPEC V12);
-  - button and footswitch inputs with pull-ups and RC filters, the footswitch working with both
-    momentary and latching pedals;
+  - button inputs with pull-ups and RC filters;
   - LED drive: GPIO with PWM, or a driver.
 - Headphone signal path: the amplifier on the main board with the line-level signal over the
   ribbon, or the amplifier on the panel board next to the jack. Compare crosstalk from the
@@ -646,7 +645,7 @@ Gets its detailed spec when the boards are ordered.
 - USB through the main board's USB-C socket: enumeration and a one-hour duplex soak with no
   error.
 - Panel board: every potentiometer reads its full travel; reading noise per pot; every button,
-  LED and the footswitch work; nothing from the ribbon is audible on the outputs at full
+  LED work; nothing from the ribbon is audible on the outputs at full
   monitor volume.
 - One lab session with a written protocol: frequency response, THD+N against level and
   frequency, dynamic range, crosstalk, maximum level, output noise, for each input and output,
@@ -681,7 +680,7 @@ DLL and the firmware. `tests/unit/` gets its tests; `tools/ctl.py` is the PC cli
   - tone bass, mid and treble;
   - speaker stage PEQ, delay, limiter; headphone PEQ, crossfeed, limiter;
   - monitor volume, phones volume, mute, dim;
-  - record source, tempo source, MIDI channel, footswitch type, knob ownership modes.
+  - record source, tempo source, MIDI channel, knob ownership modes.
 - Values are floats in engineering units, clamped to range on every write.
 - Hand-off to the audio level: a single-producer single-consumer queue of (id, value) from the
   main loop to the audio interrupt, drained at the start of each block. Its depth is stated. On
@@ -912,7 +911,7 @@ coefficients, then re-derived for 96 kHz, with a test against the published valu
 
 ### 10.4 Batch 8d: control panel firmware
 
-Goal: the knobs, buttons, LEDs and footswitch drive the registry. Before the panel board exists
+Goal: the knobs, buttons and LEDs drive the registry. Before the panel board exists
 it runs with a few pots and buttons on a breadboard wired to the Nucleo; on the real panel after
 batch 7.
 
@@ -929,15 +928,15 @@ batch 7.
   - FX amount and blend: linear.
 - Each pot is owned as 8a.2 sets out.
 
-**8d.2 Buttons and footswitch.**
+**8d.2 Buttons.**
 - Debounced by integrating samples taken at 1 kHz over 5 ms; events: press, release, long press
   (600 ms).
-- Mapping (proposed):
+- Mapping (owner confirmed 2026-11-18):
   - FX SELECT: short press next effect, long press previous;
   - FX ON: toggle;
   - TAP: taps feed the tempo; a long press returns to MIDI clock or the stored tempo;
   - MUTE and DIM: toggle.
-- Footswitch: momentary or latching pedal, chosen in settings; it mirrors FX ON.
+- No footswitch (owner, 2026-11-18).
 
 **8d.3 LEDs.**
 - Signal per input at -40 dBFS with 100 ms hold; clip at -0.5 dBFS with 300 ms hold, from the
@@ -978,7 +977,7 @@ digital domain. S/PDIF in joins the monitor mixer.
 mapping, presets and the panel input move to the M4 under FreeRTOS; the M7 keeps audio and USB
 audio. `ctl/` is unchanged; only its home moves. A mailbox in SRAM4 with a hardware semaphore
 carries parameter changes and meters. The OLED and two encoders: a menu for effect parameters,
-presets and settings (knob ownership, MIDI channel, footswitch type), and the screen shown in
+presets and settings (knob ownership, MIDI channel), and the screen shown in
 `device_look.svg`.
 
 **Batch 12 (stretch): rev B main board.** The H755 and a ULPI PHY on a main board of the same

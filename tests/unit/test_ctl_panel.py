@@ -1,5 +1,5 @@
 """ctl_panel on a whole control stack: pots into the registry through knob ownership, the button
-mapping (proposed), the footswitch modes, the budget rule from the panel, and the LEDs
+mapping (owner, 2026-11-18; no footswitch), the budget rule from the panel, and the LEDs
 (docs/notes/panel_input.md)."""
 import ctypes
 
@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 import ctllib
-from ctllib import (BTN_DIM, BTN_FOOTSWITCH, BTN_FX_ON, BTN_FX_SELECT, BTN_MUTE, BTN_TAP,
+from ctllib import (BTN_DIM, BTN_FX_ON, BTN_FX_SELECT, BTN_MUTE, BTN_TAP,
                     LED_CLIP1, LED_CLIP2, LED_DIM, LED_FX_ON, LED_MUTE, LED_SIGNAL1, LED_SIGNAL2,
                     SRC_DEVICE)
 
@@ -141,29 +141,12 @@ def test_tap_leaves_a_midi_only_source_alone(panel, dev):
     assert dev.get("tempo_source") == 1
 
 
-def test_footswitch_press_to_toggle(panel, dev):
-    panel.press(BTN_FOOTSWITCH, hold_ms=200)
-    assert dev.get("fx_on") == 1.0
-    panel.press(BTN_FOOTSWITCH, hold_ms=200)
-    assert dev.get("fx_on") == 0.0
-
-
-def test_footswitch_hold_follows_the_contact(panel, dev):
-    dev.set("footswitch_type", 1.0)
-    panel.closed |= 1 << BTN_FOOTSWITCH
-    panel.tick(300)
-    assert dev.get("fx_on") == 1.0
-    panel.closed = 0
-    panel.tick(20)
-    assert dev.get("fx_on") == 0.0
-
-
-def test_bouncing_footswitch_toggles_once(panel, dev):
+def test_bouncing_button_toggles_once(panel, dev):
     rng = np.random.default_rng(5)
     for t in range(12):
-        panel.closed = int(rng.integers(0, 2)) << BTN_FOOTSWITCH
+        panel.closed = int(rng.integers(0, 2)) << BTN_FX_ON
         panel.tick()
-    panel.closed = 1 << BTN_FOOTSWITCH
+    panel.closed = 1 << BTN_FX_ON
     panel.tick(100)
     panel.closed = 0
     panel.tick(50)
