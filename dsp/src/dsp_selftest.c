@@ -4,10 +4,12 @@
 #include "dsp/dsp_comp.h"
 #include "dsp/dsp_delayline.h"
 #include "dsp/dsp_fastmath.h"
+#include "dsp/dsp_fft.h"
 #include "dsp/dsp_fxslot.h"
 #include "dsp/dsp_gain.h"
 #include "dsp/dsp_gate.h"
 #include "dsp/dsp_oversample.h"
+#include "dsp/dsp_pconv.h"
 #include "dsp/dsp_limiter.h"
 #include "dsp/dsp_reverb.h"
 #include "dsp/dsp_saturate.h"
@@ -465,6 +467,57 @@ static void reverb_f32_run(const void *in, void *out) {
     run_stereo16(reverb_fn, &s_8b.reverb, in, out);
 }
 
+/* Batch 9's costing spike: the room correction's FFT and convolver at the sizes SPEC 3.4 assumes.
+ * They come last in the list, so a build that left them out would keep every other index. */
+
+/* rfft512_f32: two forward 512-point transforms of the noise; the output is their spectra. */
+static void rfft512_f32_run(const void *in, void *out) {
+    DspRfftF32 fft;
+    (void)dsp_rfft_f32_init(&fft, 512);
+    mark();
+    dsp_rfft_f32_forward(&fft, (const float *)in, (float *)out);
+    dsp_rfft_f32_forward(&fft, (const float *)in + 512, (float *)out + 512);
+}
+
+/* pconv_f32: stereo, 4096 taps per channel (85 ms at 48 kHz), B = 256, in 16-frame calls as
+ * the audio interrupt will make them. Each channel steps twice in the 512 frames. The filters
+ * are noise under an exponential decay (time constant 683 taps), different per side. On the M7
+ * the 138 KB pool sits in AXI SRAM, where the real filters will. */
+enum { kPconvTaps = 4096, kPconvBlock = 256, kPconvMem = 17664 /* mem_needed(256, 4096) */ };
+static float s_pool9[2 * kPconvMem] SELFTEST_AXI;
+/* The filter is built in the 8b pool (7680 floats, idle while this case runs), which keeps the
+ * M4's image inside its 256 KB of SRAM. */
+static float *const s_filter9 = s_pool8b;
+static DspPconvF32 s_pconv[2];
+
+static void room_filter(uint32_t seed) {
+    DspNoise noise;
+    dsp_noise_seed(&noise, seed);
+    dsp_noise_f32(&noise, s_filter9, kPconvTaps, 0.2f);
+    float g = 1.0f;
+    for (size_t i = 0; i < kPconvTaps; ++i) {
+        s_filter9[i] *= g;
+        g *= 0.998536f; /* e^(-1/683) */
+    }
+}
+
+static void pconv_f32_run(const void *in, void *out) {
+    const float *x = (const float *)in;
+    float *y = (float *)out;
+    const size_t half = kDspSelftestFrames / 2;
+    for (int ch = 0; ch < 2; ++ch) {
+        (void)dsp_pconv_f32_init(&s_pconv[ch], kPconvBlock, kPconvTaps, s_pool9 + ch * kPconvMem,
+                                 kPconvMem);
+        room_filter(11u + (uint32_t)ch);
+        (void)dsp_pconv_f32_set_filter(&s_pconv[ch], s_filter9, kPconvTaps);
+    }
+    mark();
+    for (size_t i = 0; i < half; i += 16) {
+        dsp_pconv_f32_process(&s_pconv[0], x + i, y + i, 16);
+        dsp_pconv_f32_process(&s_pconv[1], x + half + i, y + half + i, 16);
+    }
+}
+
 static const SelftestCase kCases[] = {
     {"gain_f32", kDspFmtF32, 1, gain_f32_input, gain_f32_run},
     {"noise_q31", kDspFmtQ31, 1, noise_q31_input, noise_q31_run},
@@ -495,6 +548,8 @@ static const SelftestCase kCases[] = {
     {"fx_crusher_f32", kDspFmtF32, 2, bursts_f32_input, fx_crusher_f32_run},
     {"fxslot_f32", kDspFmtF32, 2, bursts_f32_input, fxslot_f32_run},
     {"reverb_f32", kDspFmtF32, 2, bursts_f32_input, reverb_f32_run},
+    {"rfft512_f32", kDspFmtF32, 1, gain_f32_input, rfft512_f32_run},
+    {"pconv_f32", kDspFmtF32, 2, gain_f32_input, pconv_f32_run},
 };
 
 size_t dsp_selftest_count(void) { return sizeof(kCases) / sizeof(kCases[0]); }

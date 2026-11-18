@@ -85,3 +85,23 @@ def test_argument_checks(lib9):
     assert lib9.dsp_pconv_f32_init(state, 256, 4096, b9.dsplib.f32(mem), len(mem)) == -1
     conv = b9.Pconv(lib9, 64, 128)
     assert conv.set_filter(np.zeros(129, dtype=np.float32)) == -1
+
+
+def test_selftest_cases_run_the_blocks_they_name(lib9):
+    """rfft512_f32 and pconv_f32 (timed on the target) equal the blocks run from Python."""
+    from ref import testsig
+
+    cases = {name: index for index, name, _ in b9.dsplib.selftest_cases(lib9)}
+    x, y = b9.dsplib.selftest_run(lib9, cases["rfft512_f32"])
+    fft = b9.Rfft(lib9, 512)
+    assert np.array_equal(y, np.concatenate([fft.forward(x[:512]), fft.forward(x[512:])]))
+
+    x, y = b9.dsplib.selftest_run(lib9, cases["pconv_f32"])
+    decay = np.ones(4096, dtype=np.float32)
+    for i in range(1, 4096):
+        decay[i] = np.float32(decay[i - 1] * np.float32(0.998536))
+    for ch in range(2):
+        h = (np.asarray(testsig.noise_f32(11 + ch, 4096, 0.2), dtype=np.float32) * decay)
+        conv = b9.Pconv(lib9, 256, 4096)
+        conv.set_filter(h.astype(np.float32))
+        assert np.array_equal(y[ch * 512:(ch + 1) * 512], conv.process(x[ch * 512:(ch + 1) * 512]))
