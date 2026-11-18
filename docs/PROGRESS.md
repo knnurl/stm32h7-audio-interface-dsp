@@ -56,6 +56,15 @@ Commits: `9052220` (draft save), `802f9f8` (source checks), `fbbfdef` (SPEC), an
     NMJ6HCD2 for the ferrule (V28).
 15. JLC instant quotes: 4 layers 100 x 100, 160 x 100, 200 x 100; the panel on 2 layers (V21).
 
+**Claude's review notes (2026-11-18):**
+- Claude read #78 and #142 in full himself, against the agent's summary.
+- The pot reference comes straight from the Nucleo's VREF+ over the ribbon. That loads the ADC
+  reference (7 x 10 k, about 2.3 mA [estimate]), and the ribbon could carry noise into it.
+  Suggest an RC-filtered or buffered copy for the pots, as #78 feeds its pots a filtered 3.3 V.
+- Ground stitching round the analogue section is for the stage 4 layout rules.
+- DS12919 and RM0399 were unreachable (st.com timed out); the pin alternate functions are checked
+  against ST's CubeMX database and the HAL only.
+
 ## 2026-11-18: budget A + C + D, on the board (owner: "A + C + D sounds good")
 
 **Transcripts read:** #172, #89, #32 for D (forked agent; "From the transcripts" in
