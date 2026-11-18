@@ -108,14 +108,14 @@ Every row is an estimate until its batch replaces it with a measurement.
 | Input strip, each: gate and compressor | 120 | estimate | 6 |
 | Input strip, each: saturation at 4x oversampling | 400 | estimate | 6 |
 | Monitor mixer (8 inputs) | 239 at 48 kHz | measured 2026-11-18 (`mixer_f32`) | 8c |
-| Reverb, 8-line FDN | 350 | estimate (self-test case reverb_f32; docs/results/b8b_cycles.md) | 8b |
+| Reverb, 8-line FDN | 350 | estimate (self-test case reverb_f32; docs/results/b8b_cycles.md); on the M4 since the 8c split (2026-11-18), 151 per frame for the exchange stays on the M7 | 8b |
 | Speaker stage: PEQ and delay, stereo | 210 | estimate | 3 |
 | Speaker stage: true-peak limiter, stereo | 300 | estimate | 6 |
 | Speaker stage: room FIR, stereo, 4096 taps, 256-sample partitions | 1120 at 48 kHz | measured 2026-11-18 (`docs/results/bench_fft.md`; 940 at 512-sample partitions) | 9 |
 | Headphone stage: PEQ, crossfeed, limiter | 390 | estimate | 8c |
 | Tone: three bands, stereo | 60 | estimate | 3 |
 | Effect slot: the dearest single effect, stereo | 250 | estimate (self-test cases fx_overdrive_f32, and fx_echo96_f32 for the 96 kHz echo; docs/results/b8b_cycles.md) | 8b |
-| Metering | 601 per stereo meter with true peak and loudness, 57 with peak and RMS only | measured 2026-11-18 (`meter_f32`, `meter_peak_f32`) | 8c |
+| Metering | 601 per stereo meter with true peak and loudness, 57 with peak and RMS only | measured 2026-11-18 (`meter_f32`, `meter_peak_f32`); on the M4 since the 8c split | 8c |
 | **Total** (two strips) | **3940** | estimate | |
 
 **Measured 2026-11-17 on the board** (`docs/results/budget_target.md`): about 14 300 cycles per
@@ -424,3 +424,6 @@ Settled, with the source:
 | 2026-11-18 | Meter ballistics: hold 1 s, fall 11.8 dB/s, RMS 300 ms | Owner; IEC type I return time [Verify], RMS close to a VU's integration |
 | 2026-11-18 | True peak and loudness on the monitor mix only; inputs and the speaker and headphone outputs get peak and RMS | Owner; an input clips at the sample, and the speaker limiter detects true peak itself. One 601-cycle meter instead of three |
 | 2026-11-18 | Clip indication: the PC meter latches a clip until cleared; the panel LED holds 300 ms. Both from the meter's largest-sample-since-read | Owner; no clip between two reads is lost |
+| 2026-11-18 | The 8c split: the reverb and the meters run on the M4; the exchange is two slots per direction in SRAM4, one block of delay on the reverb return; meters cross as linear snapshots and the reader converts to dB | Owner; measured with `splitbench 60`: 0 late blocks in 180 000, M4 mean 67 % and dearest block 83 %, return and meters bit-identical with the M7; the M7 saves about 1680 cycles per frame and pays 151 (`core_split.md`) |
+| 2026-11-18 | `dsp_meter_f32_read` split into `dsp_meter_f32_snapshot` and `dsp_meter_raw_to_reading` | Measured: the dB conversion on the M4 made its reading block 164 % of a block period and differed from the M7 in the last bit of log10f |
+| 2026-11-18 | The M4 runs libgcc (soft double) and the split's code from its SRAM | Measured: the meters' double sums from flash made one block per reading late; from SRAM, none (dearest block 104 % to 83 %) |

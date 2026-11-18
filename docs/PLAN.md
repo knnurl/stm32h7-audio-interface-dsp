@@ -18,7 +18,7 @@ One batch is one session. It ends with the build clean, the tests passing, its n
 | 7 | Bring-up of both boards, lab session | Both boards, lab analyser | 4, 5 | Not started |
 | 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console for the target part) | 1 | Done 2026-11-17 except the supply-cut test of the flash store (SPEC V18) |
 | 8b | Effect slot, reverb and tempo | Host part: none. Target part: Nucleo | 3, 6 | Host part and cycles on the board done 2026-11-17; the listening check waits for batch 2 |
-| 8c | The full signal path on the boards | Both boards | 6, 7, 8a, 8b | 8c.1 blocks done 2026-11-18 (mixer, crossfeed, meters; PC and cycles on the M7); assembly waits for the audio path |
+| 8c | The full signal path on the boards | Both boards | 6, 7, 8a, 8b | 8c.1 blocks done 2026-11-18 (mixer, crossfeed, meters; PC and cycles on the M7); core split decided and measured (reverb and meters on the M4, `splitbench`); assembly waits for the audio path |
 | 8d | Control panel firmware | Panel board, or a breadboard | 8a (7 for the real panel) | PC side done 2026-11-18 (pots, buttons, mapping, LEDs in `ctl/`); firmware wiring waits for a panel or a breadboard |
 | 9 | Room correction | Both boards, lab microphone | 8c | Costing spike done 2026-11-18 (FFT and convolver, measured on both cores); the rest needs the boards and the microphone |
 | 10 | S/PDIF and ASRC (stretch) | Both boards | 8c | Not started |

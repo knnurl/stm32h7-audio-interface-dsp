@@ -27,6 +27,7 @@ folders are gitignored: the text is the author's, and this repository is meant t
 | 5: shield design | Mini 6-Layer Mixed-Signal Hardware Design Walkthrough (#78); How To Write A Driver (#142) for the codec's control interface |
 | 6: dynamics and saturation | Audio Compressor Software Implementation; Noise Gate (#58); Recursive RMS (#103); DSP Overdrive Algorithm (#117); DSP Overdrive, Asymmetrical Clipping (#153); Decimation Filters (#42) for the oversampler |
 | 8: mixer, reverb, metering | Comb Filters & Delay Lines (#124); Delay-Based Audio FX (#140); All-Pass Filter (#162); Tremolo Effect; Recursive RMS (#103) |
+| 8c split (reverb and meters on the M4) | STM32 I2S ADC DMA & Double Buffering (#55), the double-buffering passage of Digital Audio Processing with STM32 #1; none of the 29 covers two cores |
 | 9: room correction | Real-Time Impulse Response Simulation (#126); STM32 Fast Fourier Transform, CMSIS DSP FFT (#111); STM32 Real-Time FIR Filter Implementation, CMSIS DSP (#141) |
 | 10: S/PDIF and ASRC | Decimation Filters (#42) |
 | Not used by this project | Sensor Fusion #1 to #4 (#33, #34, #37, #73): accelerometers, complementary filter, extended Kalman filter |

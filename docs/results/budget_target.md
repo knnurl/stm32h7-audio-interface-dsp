@@ -182,3 +182,39 @@ Metering only feeds the display, the LEDs and the PC, so it can run late and els
 mixer's output differs on the M4 (its pan law calls `cosf` and `sinf`, which the M4's C library
 rounds differently), like the overdrive's set-up.
 
+## The 8c split, measured (2026-11-18)
+
+Owner's decision: the reverb and the meters move to the M4 (`docs/notes/core_split.md`). With no
+audio path yet, `splitbench` runs the split at the real block rate: the M7 posts 16-frame blocks
+of -20 dBFS noise every 333 us, the M4 runs the reverb and four meters (the mix with true peak and
+loudness; inputs, speaker out and headphone out with peak and RMS) and hands the return back one
+block later, and the M7 runs the same code on the same blocks to check it.
+
+```
+cmake --build --preset fw
+powershell -File tools/flash.ps1
+python tools/console.py --port COMx      then: splitbench 60
+```
+
+| | First run | Meter read split | And libgcc in the M4's SRAM |
+|---|---|---|---|
+| Late blocks (of 180 000) | 1 in 30 | 1790 (one per reading) | **0** |
+| M4 load, mean | 74 % | 74 % | **67 %** |
+| M4 load, dearest block | 165 % | 104 % | **83 %** |
+| Reverb return, M4 vs M7 | bit-identical | bit-identical | bit-identical |
+| Meter readings, M4 vs M7 | differ (last bit of log10f) | bit-identical | bit-identical |
+| Removed from the M7, cycles per frame | | | 1772 (about 90 of it the bench's checksum) |
+| The exchange on the M7, cycles per frame | | | 151 |
+
+| Worst case at 48 kHz, room FIR at B = 256 | Cycles per frame |
+|---|---|
+| Everything on the M7, with the four meters of the decision (601 + 3 x 57) | about 8410 (101 %) |
+| Reverb and meters on the M4, plus the exchange | **about 6890 (83 %)**, ceiling 5833 |
+
+About 1050 cycles per frame are still over the ceiling. Candidates, for the owner: CMSIS-DSP's FFT
+in the room filter (about 340, estimate), the room filter at B = 512 (180, 5.3 ms more latency),
+a budget rule like the one that keeps the overdrive and the strip saturation apart, and the
+mixer writing the send straight into the exchange slot (part of the 151, not measured).
+
+After the linker change the M4's self-test cycles were taken again (`bench_m4.md`): the full meter
+1312 to 1020, the reverb 1451 to 1387, every bit-identical case still bit-identical.
