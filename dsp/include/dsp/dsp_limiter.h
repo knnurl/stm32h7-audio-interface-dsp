@@ -66,7 +66,7 @@ enum {
     kDspLimiterMinLookahead = 32,
     kDspLimiterMaxLookahead = 480, /* 5 ms at 96 kHz */
     kDspLimiterDetectorDelay = 9,
-    kDspLimiterTpTaps = 16,
+    kDspLimiterTpTaps = 16, /* kDspTruePeakTaps (dsp_truepeak.h) */
     kDspLimiterWindow = kDspLimiterMaxLookahead + 3,
     kDspLimiterMaxDelay = kDspLimiterMaxLookahead + kDspLimiterDetectorDelay,
 };

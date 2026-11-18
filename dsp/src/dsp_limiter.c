@@ -1,44 +1,10 @@
 #include "dsp/dsp_limiter.h"
 
 #include "dsp/dsp_env.h"
+#include "dsp/dsp_truepeak.h"
 
 #include <math.h>
 #include <string.h>
-
-/* tools/design/tp_detector.py, 16 taps per phase, Kaiser 4.1. Phase 3/4 is phase 1/4 reversed;
- * phase 1/2 is symmetric. Index i meets the sample i steps back from the newest. */
-static const float kTpQuarter[kDspLimiterTpTaps] = {
-    -2.356659854e-03f, 6.230897736e-03f, -1.268179156e-02f, 2.283323370e-02f,
-    -3.870575503e-02f, 6.502874196e-02f, -1.173553094e-01f, 2.951403856e-01f,
-    8.986518979e-01f, -1.718815416e-01f, 8.588046581e-02f, -5.004023388e-02f,
-    2.986130491e-02f, -1.720060594e-02f, 9.075933136e-03f, -4.025056027e-03f,
-};
-static const float kTpHalf[kDspLimiterTpTaps / 2] = {
-    -4.425711464e-03f, 1.070061512e-02f, -2.095292322e-02f, 3.698274866e-02f,
-    -6.223199144e-02f, 1.053786874e-01f, -1.984295547e-01f, 6.319220662e-01f,
-};
-
-/* The true peak around the sample 8 steps back: the sample itself and the three phases after
- * it, from a history `x` holding the newest 16 samples newest first. */
-static float true_peak(const float *x) {
-    float q1a = 0.0f, q1b = 0.0f, q3a = 0.0f, q3b = 0.0f, h0 = 0.0f, h1 = 0.0f;
-    for (int32_t i = 0; i < kDspLimiterTpTaps / 2; ++i) {
-        const float a = x[i], b = x[kDspLimiterTpTaps - 1 - i];
-        q1a += kTpQuarter[i] * a;
-        q1b += kTpQuarter[kDspLimiterTpTaps - 1 - i] * b;
-        q3a += kTpQuarter[kDspLimiterTpTaps - 1 - i] * a;
-        q3b += kTpQuarter[i] * b;
-        if ((i & 1) == 0) {
-            h0 += kTpHalf[i] * (a + b);
-        } else {
-            h1 += kTpHalf[i] * (a + b);
-        }
-    }
-    const float p0 = fabsf(x[kDspLimiterTpTaps / 2]);
-    const float p1 = fabsf(q1a + q1b), p2 = fabsf(h0 + h1), p3 = fabsf(q3a + q3b);
-    const float m01 = p0 > p1 ? p0 : p1, m23 = p2 > p3 ? p2 : p3;
-    return m01 > m23 ? m01 : m23;
-}
 
 void dsp_limiter_f32_init(DspLimiterF32 *lim, float sample_rate_hz, float ceiling_db,
                           float lookahead_ms, float release_ms) {
@@ -148,7 +114,7 @@ void dsp_limiter_f32_process(DspLimiterF32 *lim, const float *in_l, const float 
                     float *hist = lim->tp_hist[ch];
                     hist[pos] = lim->clean[ch][i];
                     hist[pos + n_taps] = lim->clean[ch][i];
-                    const float p = true_peak(&hist[pos]);
+                    const float p = dsp_true_peak16(&hist[pos]);
                     m = p > m ? p : m;
                 }
                 lim->peak[i] = m;

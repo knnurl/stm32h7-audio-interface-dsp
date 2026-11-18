@@ -2,12 +2,15 @@
  * have the same layout as the compiler's. A mirror that is wrong by one field would otherwise
  * read and write the wrong bytes without any error. Not used by the firmware. */
 #include "dsp/dsp_comp.h"
+#include "dsp/dsp_crossfeed.h"
 #include "dsp/dsp_delayline.h"
 #include "dsp/dsp_env.h"
 #include "dsp/dsp_fxslot.h"
 #include "dsp/dsp_gate.h"
 #include "dsp/dsp_lfo.h"
 #include "dsp/dsp_limiter.h"
+#include "dsp/dsp_meter.h"
+#include "dsp/dsp_mixer.h"
 #include "dsp/dsp_oversample.h"
 #include "dsp/dsp_pconv.h"
 #include "dsp/dsp_peq.h"
@@ -57,6 +60,11 @@ size_t dsp_abi_sizeof(const char *name) {
         {"DspFxCrusherF32", sizeof(DspFxCrusherF32)},
         {"DspFxSlotF32", sizeof(DspFxSlotF32)},
         {"DspReverbF32", sizeof(DspReverbF32)},
+        /* Batch 8c. */
+        {"DspMixerF32", sizeof(DspMixerF32)},
+        {"DspCrossfeedF32", sizeof(DspCrossfeedF32)},
+        {"DspMeterF32", sizeof(DspMeterF32)},
+        {"DspMeterReading", sizeof(DspMeterReading)},
     };
     for (size_t i = 0; i < sizeof(kSizes) / sizeof(kSizes[0]); ++i) {
         if (strcmp(kSizes[i].name, name) == 0) {

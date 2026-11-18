@@ -78,6 +78,8 @@ dsp_firmware(dsp_cm7 CORE_CM7
 # It carries the DSP library too, to measure the self-test cases on this core (m4bench).
 add_executable(dsp_cm4 cm4/src/main.c ${DSP_SOURCES} ${ST_BOOT_SOURCES} ${HAL_SOURCES})
 target_include_directories(dsp_cm4 PRIVATE ${DSP_INCLUDE_DIR})
+# The last self-test case (pconv_f32, 138 KB) leaves the M4's image; every other index is kept.
+target_compile_definitions(dsp_cm4 PRIVATE DSP_SELFTEST_NO_PCONV)
 set_source_files_properties(cm4/src/main.c PROPERTIES COMPILE_OPTIONS "${OWN_WARNINGS}")
 dsp_firmware(dsp_cm4 CORE_CM4
     "-mcpu=cortex-m4;-mthumb;-mfpu=fpv4-sp-d16;-mfloat-abi=hard"
