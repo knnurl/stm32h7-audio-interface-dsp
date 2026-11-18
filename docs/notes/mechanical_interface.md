@@ -67,7 +67,7 @@ centred on a wider panel)
 | FX on LED | 74 | 9.7 | |
 | FX amount | 74 | 33.6 | RK09L |
 | Bass, mid, treble | 97, 110.6, 124.2 | 33.6 | RK09L with centre detent |
-| Phones jack | 139.6 | 14.3 | NJ6FD-V vertical [Verify] |
+| Phones jack | 139.6 | 14.3 | NJ6FD-V vertical: 12 mm hole, panel 1.2 to 1.5 mm, so a 1.5 mm spot face in the 2 mm panel (Neutrik sheet); height [Verify] |
 | Phones volume | 139.6 | 34.5 | RK09L |
 | Mute, dim buttons | 153, 163 | 14.3 | B3F-5000 |
 | Mute, dim LEDs | 153, 163 | 9.7 | |
@@ -83,11 +83,16 @@ L1 = 15 mm leaves about 10 mm for a knob after the nut. V24: series confirmed; e
 Rear panel 2 + main board 100 + gap for the ribbon header about 15 + panel board 1.6 + pot body
 about 7.5 [Verify] + front panel 2 = about 128 mm, inside a 140 mm case.
 
-## 6. Not finished yet
+## 6. Still open
 
-Nucleo hole positions and heights (Figure 5 is an image; calipers), NMJ6HCD2 and NJ6FD-V
-drawings, B3F-5000 height and caps, encoder bodies, toslink module dimensions, DC jack and
-switch parts.
+- Nucleo outline, hole positions and heights: UM2408 Figure 5 is an image with no text layer, so
+  133.34 x 70 mm and every height above stay [Verify]. The owner measures with calipers: the
+  RJ45, the Zio sockets, the jumpers, the bottom-side pin length, the hole positions, and whether
+  the holes are plated to ground.
+- NMJ6HCD2 and NJ6FD-V: Neutrik's technical sheets (read 2026-11-18) give panel thickness, hole
+  and materials but no drawing; heights and pin positions come from a sample or the footprint
+  download.
+- B3F-5000 height and caps, encoder bodies, Toslink module dimensions, DC jack and switch parts.
 
 ## 7. From the transcripts
 

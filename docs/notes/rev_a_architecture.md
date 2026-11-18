@@ -1,33 +1,10 @@
 # Rev A architecture (batch 5, stage 2)
 
-## Handover (draft saved 2026-11-18 before the PC slept)
-
-**Done:** this note (sections 0 to 18, complete as a draft); `pin_plan.md` (complete draft);
-`mechanical_interface.md` (draft, heights mostly [Verify]); `EX5_input_budget.md`;
-`rev_a_input_budget.md` (worked numbers).
-
-**Not finished yet:**
-- SPEC updates: assumptions V7, V12, V13, V14, V20, V23, V24, V26 (findings are in this note,
-  sections 5.2, 6, 10, 11.2, 15 and `mechanical_interface.md`); new rows V28 (NMJ6HCD2 ferrule to
-  sleeve), V29 (Nucleo current incl. panel 3.3 V under 500 mA), V30 (MB1363 CN12 pins 12/14 carry
-  PA12/PA11), V31 (ribbon 28 AWG resistance); decision-log rows marked "Proposed (stage 2),
-  awaiting sign-off" for section 17's items; SPEC 3.3 headphone row and crosstalk "line outputs".
-- `docs/PLAN.md` batch 5 status; `docs/PROGRESS.md` entry; `transcripts_index.md` row.
-- Splitting the save commit is not needed; the next commits are the SPEC/PLAN/PROGRESS ones.
-- Not checked: DS12919 alternate-function table (CubeMX database used), RM0399 (SAI2 S/PDIF on
-  block A, OTG_FS internal termination), Nucleo mechanical heights (Figure 5 is an image), the
-  Neutrik NMJ6HCD2 and NJ6FD-V drawings, TPS7A2050 datasheet, YLPTEC module datasheet.
-
-**Sources already read (do not repeat):** PCM3168A SBAS452A sections 8.5, 8.7, 8.10, 9.3.1 to
-9.3.6, 9.3.14, 9.4.1 (Table 6), 9.4.4 (Table 11), 10.2, Figures 58 to 63, 11, 12.1; OPA1622
-SBOS727B electrical characteristics and 7.3; OPA167x SBOS855E features and characteristics;
-TPS7A49 and TPS7A30 features; TPS56320x features and Fsw; UM2408 Rev 6 sections 7.4 (all), 7.6,
-7.7, 7.9, 7.10, 7.11 (Table 13), 7.12 (Table 14), 7.14 (Table 16), 7.15 to 7.17 (Figure 17,
-Tables 17 and 19); CubeMX 6.15 database for SAI, SPDIFRX, I2S_CKIN, ADC, I2C, TIM, USB pins
-(script in the session scratchpad, not committed); LCSC/JLC pages for C48888070, C5369659,
-C2876559, C368502, C468250 (snapshots), C3020560, C7419101; Neutrik NMJ6HCD2 product page;
-Alps RK09L series datasheet (M9 x 0.75 bushing, 6 mm shaft, L1 12.5 to 25 mm). Transcripts #78
-and #142 in full; all 29 searched (section 1).
+**Still open after the source checks (2026-11-18):** DS12919 and RM0399 could not be fetched
+(st.com timed out), so the alternate functions, the S/PDIF output on SAI block A and the OTG_FS
+termination stay [Verify]; the Nucleo's heights (UM2408 Figure 5 is an image) and the Neutrik
+drawings (the technical sheets carry none) wait for calipers and a sample. Everything else in
+the stage 2 list is drafted.
 
 Written 2026-11-18. Stage 2 of batch 5 (`docs/PLAN_BATCHES.md` section 7), after the owner's
 stage 1 decisions (`part_selection.md` section 7). Everything here is a **proposal for the owner's
@@ -45,11 +22,18 @@ sign-off**; nothing is in the SPEC decision log as decided until he says so. Com
 
 - **Datasheets read in full text this session** (downloaded from ti.com and read with
   `pdftotext`): PCM3168A SBAS452A (Jan 2016), OPA1622 SBOS727B, OPA167x SBOS855E, TPS7A49
-  SBVS121E, TPS7A30 SBVS125D, TPS56320x. Board manual UM2408 Rev 6 (Feb 2025), from the owner's
-  `Downloads` folder. Figures from them carry the section or table.
+  SBVS121E, TPS7A30 SBVS125D, TPS56320x, TPS7A20 SBVS338H (Jul 2024); Mornsun WRA_S-3WR2 &
+  WRB_S-3WR2 datasheet 2024.02.28-B; Neutrik technical information sheets for NMJ6HCD2 and
+  NJ6FD-V (dated 18.11.2026; they carry no drawings). Board manual UM2408 Rev 6 (Feb 2025), from
+  the owner's `Downloads` folder. Figures from them carry the section or table.
+- **Not reachable this session:** DS12919 (STM32H755xI datasheet, Rev 2 Feb 2023) and RM0399
+  (reference manual): st.com timed out on five attempts, and the only mirror found shows the table
+  of contents.
 - **Pin alternate functions** come from the STM32CubeMX 6.15 database shipped with STM32CubeIDE
   1.19.0 (`STM32H755ZITx.xml`, `GPIO-STM32H747_gpio_v1_0_Modes.xml`), which encodes the
-  datasheet's alternate-function table. Each still needs a check against DS12919 [Verify].
+  datasheet's alternate-function table, cross-checked against the AF macros of the pinned HAL
+  1.11.5 (`stm32h7xx_hal_gpio_ex.h`): they agree for every peripheral used. Still a proxy for
+  DS12919 [Verify].
 - **Live prices and stock.** The LCSC and JLC part pages were reached read-only (for example
   C48888070, C2876559, C368502), but both sites render price and stock by script, and the fetch
   tool saw neither. Where a figure is given it is a search-index snapshot, marked "snapshot,
@@ -299,11 +283,15 @@ SBAS452A 8.5, power-supply requirements, at 5 V / 3.3 V, 48 kHz, 512 fs:
 | Power dissipation | 1160 mW | 1480 mW |
 
 The stage 1 rule ("TPS7A4901 if under about 120 mA") fails: 210 mA is over its 150 mA. Chosen:
-**TPS7A2050** (300 mA, so 70 % at the maximum), noise 7 uV rms, PSRR 40 to 65 dB from 100 Hz to
-1 MHz, dropout 140 mV max at 300 mA, input 6 V max (distributor summaries of the TI datasheet,
-seen 2026-11-18 [Verify in the datasheet]). From 5.5 V: (5.5 - 5.0) x 0.21 = 0.11 W. The SOT-23-5
-`DBVR` was not found at LCSC; the 1 x 1 mm `DQNR` is (C2866499, snapshot 650 in stock) [Verify
-JLC can place it, or pick the runner-up]. Runner-up: TPS7A4701 (1 A, 36 V) from 6.5 V.
+**TPS7A2050** (300 mA, so 70 % at the maximum). From SBVS338H: input 1.6 to 6.0 V, 6.5 V absolute
+maximum (5.1); dropout 140 mV (DQN) or 145 mV (DBV) maximum at 300 mA for outputs of 2.5 to
+5.5 V; current limit 360 mA minimum; PSRR at a 300 mA load 92 dB at 1 kHz, 75 dB at 10 kHz, 60 dB
+at 100 kHz, 40 dB at 1 MHz; noise 7 uV rms, 10 Hz to 100 kHz (5.5). From 5.5 V:
+(5.5 - 5.0) x 0.21 = 0.11 W: +18 C in the X2SON (166.1 C/W, 5.4), +6 C in the SOT-23-5 (54.4 C/W).
+The buck's 5.5 V +/- 2 % stays inside the 6.0 V operating maximum. The SOT-23-5
+`TPS7A2050PDBVR` is in TI's orderable list (SBVS338H, packaging addendum) but was not found at
+LCSC; the 1 x 1 mm `TPS7A2050PDQNR` is (C2866499, snapshot 650 in stock) [Verify JLC can place
+it, or pick the runner-up]. Runner-up: TPS7A4701 (1 A, 36 V) from 6.5 V.
 
 Why its noise matters little: the PCM3168A's ADC reference is VCCAD1 itself (VREFAD1 = VCCAD1,
 SBAS452A 8.5) and the DAC's full scale is 1.6 x VCCDA1, so supply noise modulates the gain, a
@@ -328,16 +316,26 @@ Per rail, all outputs at 0 dBFS sine (the honest sizing case):
 
 - The 2 W module (66 mA per rail) covers the typical case at 74 % and fails the worst case at
   137 %. **The 3 W module (100 mA) covers the worst case at 91 %.** A 6 W module is not needed.
-- **WRA1215S-3WR2** (YLPTEC, LCSC C5369659): 9 to 18 V input, +/-15 V 100 mA, 80 % efficiency,
-  100 mV pp ripple, 300 kHz, 220 uF maximum capacitive load, SIP 22 x 9.5 x 12 mm (LCSC page,
-  2026-11-18; stock 210 in a search snapshot). The wide input also removes the stage 1 worry that
-  the 2 W part (10.8 to 13.2 V) needs a 12 V adapter within 10 %, and it rides through to 9 V when
-  12 V is pulled (section 8). Several makers sell this part number; the Mornsun original is "not
-  for new designs" at Digi-Key [Verify the YLPTEC datasheet: regulation, isolation, start-up into
-  the capacitive load].
-- Filtering: module, then 22 uH and 100 uF per rail (corner 3.4 kHz, about -80 dB at 300 kHz), so
-  100 mV pp of ripple is about 10 uV at the LDO, which rejects at least 52 to 55 dB more
-  (TPS7A49/30 features). Total capacitance per rail stays within the module's 220 uF.
+- **WRA1215S-3WR2.** Mornsun's datasheet (2024.02.28-B): 9 to 18 V input; +/-15 V at 100 mA
+  maximum and **5 mA minimum** per output; efficiency 81 % minimum, 83 % typical; voltage accuracy
+  +/-1 % typical, +/-3 % maximum; load regulation +/-0.6 % typical; maximum capacitive load
+  680 uF per output; switching **250 kHz in PFM mode** at full load and nominal input (so the
+  frequency moves with load); the two outputs' loads should match within +/-5 %; isolation
+  1500 V dc, 120 pF; 22 x 9.5 x 12 mm SIP; recommended circuit (its Fig. 2) 100 uF / 25 V at the
+  input, 2.2 to 10 uH and capacitors at the outputs. The LCSC part is YLPTEC's (C5369659; its
+  listing says 300 kHz, 100 mV pp, **220 uF** maximum load; stock 210 in a search snapshot); the
+  YLPTEC datasheet itself only opened as a viewer page, not as text. The design keeps to the
+  stricter of the two: at most 220 uF per output, and a filter that works from 250 kHz down. The
+  wide input removes the stage 1 worry that the 2 W part (10.8 to 13.2 V) needs a 12 V adapter
+  within 10 %, and it rides through to 9 V when 12 V is pulled (section 8). Our loads are
+  symmetric to within the 5 % (the op-amps' and headphones' currents are drawn equally from both
+  rails on average) [measure at bring-up, with the module's frequency at the idle load of about
+  30 mA].
+- Filtering: module, then 22 uH and 100 uF per rail (corner 3.4 kHz, about -75 dB at 250 kHz),
+  so about 100 mV pp of ripple is about 18 uV at the LDO, which rejects at least 52 to 55 dB more
+  (TPS7A49/30 features). Total capacitance per rail stays within 220 uF. If PFM pulls the
+  frequency below about 30 kHz at idle, the filter still gives over 35 dB there [Verify on the
+  bench].
 - LDO dissipation at 90.5 mA: (15 - 12) x 0.0905 = 0.27 W each (HVSSOP PowerPAD).
 - Module input: worst 30 V x 90.5 mA / 0.8 = 3.4 W; typical 1.8 W; idle 1.1 W.
 
@@ -416,7 +414,9 @@ Connections:
   shield currents (sleeves) then flow in the chassis, not across the analogue plane: the "pin 1
   to chassis at the entry" practice of AES48 [Verify reference]. If the NMJ6HCD2's ferrule
   touches the sleeve, the rear panel bonds the strip to the case at every jack too; that is
-  consistent (all on one edge) [Verify the ferrule, V28].
+  consistent (all on one edge) [Verify the ferrule, V28]. Neutrik's sheet calls it a "chrome
+  ferrule" on a polyamide shell with a polyamide nut and washer, and says nothing of a ground
+  contact; a meter on one sample settles it.
 - **12 V return:** the DC jack's negative is circuit ground, entering at the power corner next to
   the bond point. It is not chassis.
 - **USB:** the USB-C GND pins are circuit ground (the MCU's reference); the shell goes to the
@@ -641,10 +641,15 @@ layers. The only thing B wins is about 2 dB of crosstalk that the TRS jack limit
 **Condition for A:** the headphone jack's sleeve must not touch the front panel, or headphone
 current would also return through the case. The decided NMJ6HCD2 is a horizontal PCB jack and
 would point sideways on a panel board that is parallel to the front panel; a vertical-mount jack
-is needed there anyway. Proposed: **Neutrik NJ6FD-V** (vertical PCB mount, all contacts switched,
-12 mm panel hole, plastic body; distributor listings 2026-11-18 [Verify the drawing, LCSC stock
-and that its sleeve is isolated from the panel]). This replaces NMJ6HCD2 for the phones only
-[owner decides: it changes a stage 1 decision for one jack].
+is needed there anyway. Proposed: **Neutrik NJ6FD-V**. Its technical sheet (Neutrik, 18.11.2026):
+vertical PCB mount, three switching contacts (T/TN/R/RN/S/SN), plastic body (POM, cap PA 6.6),
+12 mm chassis hole, contact resistance under 10 mohm initial, **panel thickness 1.2 to 1.5 mm**.
+The plastic body isolates the sleeve from the panel, which is what option A needs, but **the 2 mm
+front panel is too thick for it.** Two ways: the owner machines a spot face on the panel's rear,
+1.5 mm thick, about 20 mm across, round the phones hole (the case is his CNC work anyway); or a
+vertical jack rated for 2 mm is found [Verify a part]. The drawing (height above the PCB) is not
+in the sheet [Verify]. This replaces NMJ6HCD2 for the phones only [owner decides: it changes a
+stage 1 decision for one jack, and needs the spot face].
 
 ## 13. Board sizes and JLC price steps
 
@@ -724,7 +729,7 @@ get test pads only (DIN2 tied low through 10 k). V20 is corrected accordingly.
 | TPS7A2050PDQNR | 5V_ANA | C2866499 | snapshot 650 in stock; SOT-23-5 version not found at LCSC |
 | AMS1117-3.3 | 3V3_DIG | C6186 [Verify] | not read |
 | USB4105-GF-A | USB-C | C3020560 | snapshot 515 in stock, about $1.05 |
-| Neutrik NJ6FD-V | phones jack | not found | distributor listings only |
+| Neutrik NJ6FD-V | phones jack | not found | Neutrik sheet read: panel 1.2 to 1.5 mm |
 | RK09L1140A5L | pot (stage 1) | C7419101 | page reached, no price; Digi-Key lead time 24 weeks |
 
 Price and stock fields on the LCSC and JLC pages are drawn by script and were not visible to the
@@ -742,7 +747,8 @@ Listed with the PROGRESS entry of 2026-11-18 and in the report; the same list:
 4. The 3 W wide-input module WRA1215S-3WR2 instead of the 2 W (5.3).
 5. Morpho mounting and soldering male headers into CN11 and CN12; JP2 to 5-6 (section 6).
 6. USB Option A (no rework) first; the CN12 pin 12/14 continuity check (section 10).
-7. Headphone amplifier on the main board, and the NJ6FD-V for the phones jack (section 12).
+7. Headphone amplifier on the main board, and the NJ6FD-V for the phones jack with a 1.5 mm
+   spot face in the front panel (section 12).
 8. Line outputs 3 and 4 from DAC 5 and 6 (section 2).
 9. Main board 200 x 100 mm, case about 210 wide; panel board 160 x 46 mm, 2 layers (section 13).
 10. LED colours (11.4).

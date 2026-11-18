@@ -8,7 +8,13 @@ Figure 17 (Zio, p. 36-41), Table 16 (solder bridges, p. 32-35), Table 13 (USB, p
 (Ethernet, p. 31-32), Table 12 (USART3, p. 30), 7.6 (LEDs, p. 27), 7.7 (buttons, p. 28), Table 11
 (external SMPS, p. 26), 7.4 (power, p. 18-23). **Alternate functions:** STM32CubeMX 6.15 database
 (`STM32H755ZITx.xml`, `GPIO-STM32H747_gpio_v1_0_Modes.xml`, in STM32CubeIDE 1.19.0), which encodes
-DS12919's alternate-function table: every AF number [Verify against DS12919].
+DS12919's alternate-function table. Cross-checked against the pinned HAL 1.11.5's AF macros
+(`stm32h7xx_hal_gpio_ex.h`): `GPIO_AF6_SAI1`, `GPIO_AF4_I2C1`, `GPIO_AF4_I2C4`, `GPIO_AF1_TIM1`,
+`GPIO_AF1_TIM2`, `GPIO_AF1_TIM16`, `GPIO_AF2_TIM3`, `GPIO_AF2_TIM4`, `GPIO_AF9_SPDIF`,
+`GPIO_AF10_SAI2` and `GPIO_AF10_OTG2_FS` all agree (the HAL calls the PA11/PA12 core OTG2_FS;
+CubeMX calls it USB_OTG_FS). I2S_CKIN on AF5 sits in the HAL's SPI/I2S AF5 group. DS12919 itself
+(Rev 2, Feb 2023) could not be fetched on 2026-11-18 (st.com timed out five times), so every AF
+number stays [Verify against DS12919], as does RM0399 for the S/PDIF output on SAI block A.
 
 ## 1. Mounting
 
@@ -89,8 +95,9 @@ TIM17, LPTIMs. The firmware today uses only USART3 (grep of `fw/`).
 
 ## 4. Not finished yet
 
-- Every AF number against DS12919's table; the per-pin and total GPIO current limits for the LED
-  sinks; the FT (5 V tolerant) status of PE15 with VDD off.
+- Every AF number against DS12919's table (CubeMX and the HAL agree; the datasheet was not
+  reachable); the per-pin and total GPIO current limits for the LED sinks; the FT (5 V tolerant)
+  status of PE15 with VDD off; RM0399 for S/PDIF on SAI2 block A.
 - The two CN12 USB pins by continuity on the owner's board.
 - 96 kHz on rev B needs DOUT2/DIN2 (SBAS452A Table 11): no pins reserved on rev A (test pads only).
 
