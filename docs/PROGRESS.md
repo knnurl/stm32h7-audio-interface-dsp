@@ -24,10 +24,9 @@ entry with no transcripts line is unfinished.
   about 75.**
 - 929 host tests pass; all 36 cases match the PC on the M7.
 
-**For the owner:**
-- D restricts bands 3 and 4 of every PEQ to 2.5 to 20 kHz. Accept it, or lower the SNR
-  criterion to 100 dB, which allows about 1 kHz.
-- The tone's treble shelf in float32 is a further 78 cycles, not done.
+**Owner, later the same day:** keep the 110 dB criterion and the 2.5 kHz start for bands 3 and 4
+(lowering it saves no cycles; at 100 dB the arithmetic noise would sit above the converter's
+floor at extreme settings). The tone's treble shelf in float32, a further 78 cycles, is not done.
 
 ## 2026-11-18: owner's answers; V18 verified; CMSIS-DSP measured (owner: "3 and 5 fine, no footswitch, 6 and 7 go ahead")
 
