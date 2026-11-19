@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "filename": "rev_a_pr.kicad_pro",
+    "version": 3
+  },
+  "sheets": [
+    [
+      "645cf89f-0bb3-5fb7-9c83-8db44a87e9dd",
+      "Root"
+    ],
+    [
+      "3a8b7284-2705-5e22-917c-9b165b3773ff",
+      "Cables and mounting"
+    ],
+    [
+      "a57f846a-b46d-5917-8dc3-dc6017abfa8e",
+      "Pots"
+    ],
+    [
+      "0355efa7-023a-5005-972e-e4ee01e2a556",
+      "Buttons and LEDs"
+    ],
+    [
+      "329f72d5-b8a2-529e-bead-7692793f1f02",
+      "Phones jack"
+    ]
+  ],
+  "erc": {
+    "rule_severities": {
+      "lib_symbol_mismatch": "ignore",
+      "lib_symbol_issues": "warning",
+      "footprint_link_issues": "warning"
+    }
+  }
+}

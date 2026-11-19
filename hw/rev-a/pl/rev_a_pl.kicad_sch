@@ -1,0 +1,225 @@
+(kicad_sch
+	(version 20250610)
+	(generator "kisch")
+	(generator_version "10.0")
+	(uuid "9f74a603-2567-53af-8ff8-6c22b451a181")
+	(paper "A4")
+	(title_block
+		(title "Rev A panel left")
+		(date "2026-11-19")
+		(rev "A")
+		(company "stm32h7-audio-interface-dsp")
+	)
+	(lib_symbols)
+	(sheet
+		(at 25.4 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "a74d5d56-77c3-53b2-9c3d-e727039e86c4")
+		(property "Sheetname" "Cables and mounting"
+			(at 25.4 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "cables.kicad_sch"
+			(at 25.4 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pl"
+				(path "/9f74a603-2567-53af-8ff8-6c22b451a181"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 88.9 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "dfff2087-aeaf-5c0c-b6fe-18cfbd00050b")
+		(property "Sheetname" "LEDs"
+			(at 88.9 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "leds.kicad_sch"
+			(at 88.9 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pl"
+				(path "/9f74a603-2567-53af-8ff8-6c22b451a181"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 152.4 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "2461e591-800c-50cf-a96b-f2d9b5f8f2c9")
+		(property "Sheetname" "Pots"
+			(at 152.4 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "pots.kicad_sch"
+			(at 152.4 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pl"
+				(path "/9f74a603-2567-53af-8ff8-6c22b451a181"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 215.9 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "d550ce8a-8075-51b0-b298-35513dd3249d")
+		(property "Sheetname" "Encoders and buttons"
+			(at 215.9 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "controls.kicad_sch"
+			(at 215.9 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pl"
+				(path "/9f74a603-2567-53af-8ff8-6c22b451a181"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 25.4 76.2)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "6726e46f-cab2-5205-a183-0eccae4ca52c")
+		(property "Sheetname" "OLED header"
+			(at 25.4 75.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "oled.kicad_sch"
+			(at 25.4 97.2 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pl"
+				(path "/9f74a603-2567-53af-8ff8-6c22b451a181"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

@@ -1,0 +1,184 @@
+(kicad_sch
+	(version 20250610)
+	(generator "kisch")
+	(generator_version "10.0")
+	(uuid "645cf89f-0bb3-5fb7-9c83-8db44a87e9dd")
+	(paper "A4")
+	(title_block
+		(title "Rev A panel right")
+		(date "2026-11-19")
+		(rev "A")
+		(company "stm32h7-audio-interface-dsp")
+	)
+	(lib_symbols)
+	(sheet
+		(at 25.4 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "3a8b7284-2705-5e22-917c-9b165b3773ff")
+		(property "Sheetname" "Cables and mounting"
+			(at 25.4 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "cables.kicad_sch"
+			(at 25.4 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pr"
+				(path "/645cf89f-0bb3-5fb7-9c83-8db44a87e9dd"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 88.9 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "a57f846a-b46d-5917-8dc3-dc6017abfa8e")
+		(property "Sheetname" "Pots"
+			(at 88.9 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "pots.kicad_sch"
+			(at 88.9 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pr"
+				(path "/645cf89f-0bb3-5fb7-9c83-8db44a87e9dd"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 152.4 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "0355efa7-023a-5005-972e-e4ee01e2a556")
+		(property "Sheetname" "Buttons and LEDs"
+			(at 152.4 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "controls.kicad_sch"
+			(at 152.4 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pr"
+				(path "/645cf89f-0bb3-5fb7-9c83-8db44a87e9dd"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 215.9 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "329f72d5-b8a2-529e-bead-7692793f1f02")
+		(property "Sheetname" "Phones jack"
+			(at 215.9 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "phones.kicad_sch"
+			(at 215.9 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_pr"
+				(path "/645cf89f-0bb3-5fb7-9c83-8db44a87e9dd"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)

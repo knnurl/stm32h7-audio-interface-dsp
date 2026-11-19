@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "filename": "rev_a_pl.kicad_pro",
+    "version": 3
+  },
+  "sheets": [
+    [
+      "9f74a603-2567-53af-8ff8-6c22b451a181",
+      "Root"
+    ],
+    [
+      "a74d5d56-77c3-53b2-9c3d-e727039e86c4",
+      "Cables and mounting"
+    ],
+    [
+      "dfff2087-aeaf-5c0c-b6fe-18cfbd00050b",
+      "LEDs"
+    ],
+    [
+      "2461e591-800c-50cf-a96b-f2d9b5f8f2c9",
+      "Pots"
+    ],
+    [
+      "d550ce8a-8075-51b0-b298-35513dd3249d",
+      "Encoders and buttons"
+    ],
+    [
+      "6726e46f-cab2-5205-a183-0eccae4ca52c",
+      "OLED header"
+    ]
+  ],
+  "erc": {
+    "rule_severities": {
+      "lib_symbol_mismatch": "ignore",
+      "lib_symbol_issues": "warning",
+      "footprint_link_issues": "warning"
+    }
+  }
+}
