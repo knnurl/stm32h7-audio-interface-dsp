@@ -47,8 +47,8 @@ so nothing on PR is bonded to the front panel.
 2.5 kohm mid-travel source: 6.4 kHz (see PL's notes). RV1 to RV3 are the centre-detent version;
 their Value says `10k lin detent`.
 
-**Buttons and LEDs.** BTN4, BTN5 to GND. LED5, LED6: anode to PANEL_3V3 through 510 ohm, cathode
-to the LEDn line, which the MCU sinks: (3.3 - 2.0) / 510 = 2.55 mA (derivation and spread in PL's
+**Buttons and LEDs.** BTN4, BTN5 to GND. LED5, LED6: anode to PANEL_3V3 through 360 ohm (plus 150 ohm on board D), cathode
+to the LEDn line, which the MCU sinks: (3.3 - 2.0) / (360 + 150) = 2.55 mA (derivation and spread in PL's
 notes).
 
 **Phones jack (architecture 12, board split 3.4).**

@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "filename": "rev_a_d.kicad_pro",
+    "version": 3
+  },
+  "sheets": [
+    [
+      "a698516e-27d9-5e58-a3e9-7f03803480c8",
+      "Root"
+    ],
+    [
+      "00e87acc-c2c8-5a00-9583-a80d31d1e608",
+      "Power entry and protection"
+    ],
+    [
+      "5113f2b4-5ea6-5404-a613-f3950b368faa",
+      "Bucks: 5V_DIG and 5V5_PRE"
+    ],
+    [
+      "b49576cd-9cff-50df-b777-ade843b5a143",
+      "Isolated supply: +15V_RAW and -15V_RAW"
+    ],
+    [
+      "17009d5d-42bc-5c9d-a593-7977c83901e2",
+      "Supervisor: RAILS_OK"
+    ],
+    [
+      "e0bb3577-61b6-56d8-9770-f66ccd882516",
+      "Nucleo morpho sockets"
+    ],
+    [
+      "205dbcd6-d2e1-5887-b2ae-73d022809200",
+      "USB-C"
+    ],
+    [
+      "8393802d-8030-5ad4-963a-6c455e8fe6c1",
+      "Optical S/PDIF (batch 10, not fitted)"
+    ],
+    [
+      "485f741a-5c22-53fc-8942-9db3c8e1052e",
+      "Panel interface: J_PANEL"
+    ],
+    [
+      "1168ca6a-dbbc-5a78-97f6-3d8bd3c8dc12",
+      "Link to board A: J_LINK"
+    ],
+    [
+      "35175fa4-a665-517e-9d0f-b8d07440b9b6",
+      "Mechanical and test points"
+    ]
+  ],
+  "erc": {
+    "rule_severities": {
+      "lib_symbol_mismatch": "ignore",
+      "lib_symbol_issues": "warning",
+      "footprint_link_issues": "warning"
+    }
+  }
+}

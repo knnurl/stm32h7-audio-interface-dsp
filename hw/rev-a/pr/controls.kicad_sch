@@ -1180,7 +1180,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "510"
+		(property "Value" "360"
 			(at 20.296 57.78 0)
 			(effects
 				(font
@@ -1477,7 +1477,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "510"
+		(property "Value" "360"
 			(at 20.296 93.34 0)
 			(effects
 				(font
@@ -1756,7 +1756,7 @@
 		)
 		(uuid "62309b11-92cd-57cf-8aea-f6fb45e7b95a")
 	)
-	(text "Buttons to GND; pull-ups and filters on board D. LED anode from PANEL_3V3 through 510 ohm, the MCU sinks the cathode line."
+	(text "Buttons to GND; pull-ups and filters on board D. LED anode from PANEL_3V3 through 360 ohm here plus 150 ohm on board D, the MCU sinks the cathode line."
 		(exclude_from_sim no)
 		(at 15 15 0)
 		(effects

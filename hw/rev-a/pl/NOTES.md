@@ -45,7 +45,7 @@ cathode goes to its LEDn line, and the MCU sinks it (active low PWM). The resist
 anode side so the ribbon conductor carries the LED current back to the MCU pin, not the shared
 grounds.
 
-- R = (3.3 V - Vf) / I = (3.3 - 2.0) / 2.5 mA = 520 ohm; E24 **510 ohm** gives 2.55 mA.
+- R = (3.3 V - Vf) / I = (3.3 - 2.0) / 2.5 mA = 520 ohm in all. Board D already has 150 ohm in each LED line at the MCU end (its protection resistor, architecture 9), so the panel fits **360 ohm** (E24): 510 ohm in all, 2.55 mA.
 - Over an amber Vf spread of 1.9 to 2.2 V: 2.7 to 2.2 mA. The MCU pin's low level at 2.5 mA
   (tens of mV) lowers it slightly [Verify V_OL in DS12919].
 - Seven LEDs at 2.55 mA: 18 mA from PANEL_3V3 and into the MCU's pins [Verify the H7's per-pin

@@ -22,8 +22,10 @@ BTN_FP = "Button_Switch_THT:SW_SPST_Omron_B3F-50xx"
 LED_FP = "LED_THT:LED_D3.0mm"
 HOLE_FP = "MountingHole:MountingHole_3.2mm_M3"
 
-# 2.5 mA from PANEL_3V3 with an amber LED at about 2.0 V: (3.3 - 2.0) / 2.5 mA = 520 ohm, E24 510.
-LED_R = "510"
+# 2.5 mA from PANEL_3V3 with an amber LED at about 2.0 V: (3.3 - 2.0) / 2.5 mA = 520 ohm in all.
+# Board D has 150 ohm in each LED line at the MCU end (protection, architecture 9), so the
+# panel's share is 520 - 150 = 370: E24 360 ohm, 510 ohm in all, 2.55 mA.
+LED_R = "360"
 LED_COLOUR = "amber"
 
 
@@ -50,7 +52,7 @@ def build():
 
     s = b.sheet("leds", "LEDs")
     s.note("Anode from PANEL_3V3 through the resistor; the MCU sinks the cathode line "
-           "(active low PWM). 510 ohm: about 2.5 mA at Vf 2.0 V.")
+           "(active low PWM). 360 ohm here plus 150 ohm on board D: about 2.5 mA at Vf 2.0 V.")
     for n, use in ((1, "input 1 signal"), (2, "input 1 clip"), (3, "input 2 signal"),
                    (4, "input 2 clip"), (7, "FX on")):
         s.r(f"R{n}", LED_R, "PANEL_3V3", f"LED{n}_A")

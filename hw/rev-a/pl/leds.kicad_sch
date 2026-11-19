@@ -526,7 +526,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "510"
+		(property "Value" "360"
 			(at 20.296 40 0)
 			(effects
 				(font
@@ -823,7 +823,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "510"
+		(property "Value" "360"
 			(at 20.296 75.56 0)
 			(effects
 				(font
@@ -1120,7 +1120,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "510"
+		(property "Value" "360"
 			(at 20.296 111.12 0)
 			(effects
 				(font
@@ -1417,7 +1417,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "510"
+		(property "Value" "360"
 			(at 20.296 146.68 0)
 			(effects
 				(font
@@ -1714,7 +1714,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "510"
+		(property "Value" "360"
 			(at 20.296 182.24 0)
 			(effects
 				(font
@@ -1993,7 +1993,7 @@
 		)
 		(uuid "e2b485a0-fbf8-5b61-b1de-569eec8b60b9")
 	)
-	(text "Anode from PANEL_3V3 through the resistor; the MCU sinks the cathode line (active low PWM). 510 ohm: about 2.5 mA at Vf 2.0 V."
+	(text "Anode from PANEL_3V3 through the resistor; the MCU sinks the cathode line (active low PWM). 360 ohm here plus 150 ohm on board D: about 2.5 mA at Vf 2.0 V."
 		(exclude_from_sim no)
 		(at 15 15 0)
 		(effects
