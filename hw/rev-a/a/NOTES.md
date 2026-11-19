@@ -83,7 +83,7 @@ so it is stable unloaded. Test points are on the regulator side (`*_REG`).
 - R1 93.1k, R2 10.0k: SBVS125D Table 2 ("standard 1 % values", -12 V). With the typical VREF
   of -1.176 V this gives -12.12 V; the table implies an effective 1.164 V [Verify on the bench].
 - CFF and CNR/SS 10 nF as for U201 [Verify: SBVS125D's soft-start equation not re-read; assumed
-  the same order, about 14 ms]. EN tied to IN (Pin Functions). Caps as U201, electrolytic with
+  the same order, about 14 ms]. Review m13: SBVS125D Eq. 1 gives 0.9 ms/nF, so **9 ms**. EN tied to IN (Pin Functions). Caps as U201, electrolytic with
   its + to GND.
 
 ### Hold-up and the raw rails' capacitance (arch 5.3 and 8; board D's constraint)
@@ -351,7 +351,7 @@ Per leg: AC coupling, MFB low-pass, build-out, relay, bleed, TVS.
 
 1. TPS7A49 VFB = 1.194 V typical (table garbled; features line used).
 2. TPS7A30 -12 V divider: Table 2's 93.1k implies 1.164 V; expect -12.0 to -12.1 V.
-3. TPS7A30 soft start with 10 nF assumed like the TPS7A49 (about 14 ms).
+3. TPS7A30 soft start with 10 nF: 9 ms (SBVS125D Eq. 1, review m13). Closed.
 4. HVSSOP thermal resistance for 0.27 W per LDO (stage 4).
 5. TPS7A20 thermal table reading (DBV RthJA 187.1 C/W) and DBV stock at LCSC/JLC (V21).
 6. 3V3_A load: oscillator supply current about 10 mA.
@@ -369,7 +369,8 @@ Per leg: AC coupling, MFB low-pass, build-out, relay, bleed, TVS.
 17. BSS138 RDS(on) at VGS = 3.3 V; JLC class.
 18. PCM3168A footprint against the PAP0064 land pattern (7.25 x 7.00 mm pad).
 19. NMJ6HCD2 ferrule and sleeve contact (V28).
-20. Hold-up margin: about 5 ms (D's figure) against a 3 ms release; measure at bring-up step 4.
+20. Hold-up margin: the review computes 6.7 ms, or 5.4 ms from the lowered RAILS_OK threshold
+    (9.76 V), against a 3 ms release; measure at bring-up step 5.
 
 ## Open owner decisions
 

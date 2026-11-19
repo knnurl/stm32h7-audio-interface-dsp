@@ -159,6 +159,9 @@ s.r("R43", "10k", "RAILS_OK", "NUCLEO_3V3")
 s = b.sheet("nucleo", "Nucleo morpho sockets")
 s.note("J2 = CN11, J3 = CN12 (UM2408 Table 19). JP2 on the Nucleo must sit on 5-6 (EXT). "
        "CN12-12 and CN12-14 as shipped carry PA12 and PA11 [Verify, V30]. 5V_EXT load [Verify, V29].")
+s.note("J2 and J3 go on the BOTTOM side (B.Cu): they mate with headers on the Nucleo below D, and "
+       "only a bottom-side placement keeps pin n over pin n (review m10). Check CN11 and CN12 "
+       "positions against the Nucleo drawing (V14).")
 CN11 = {
     1: "BTN3_MCU", 2: "BTN4_MCU", 3: "BTN5_MCU", 4: "ENC1_SW_MCU", 5: "NUCLEO_VDD",
     6: "5V_DIG", 7: "BOOT0", 8: "GND", 9: "LED7_MCU", 16: "NUCLEO_3V3", 19: "GND", 20: "GND",
@@ -167,7 +170,7 @@ CN11 = {
     50: "BCK_MCU", 55: "BTN2_MCU", 57: "BTN1_MCU", 60: "GND", 62: "DIN1_MCU",
 }
 CN12 = {
-    1: "MCLK_MCU", 3: "I2C1_SCL", 4: "ENC1_A_MCU", 5: "I2C1_SDA", 7: "VREFP", 9: "GND",
+    1: "MCLK_PC9", 3: "I2C1_SCL", 4: "ENC1_A_MCU", 5: "I2C1_SDA", 7: "VREFP", 9: "GND",
     11: "POT4_ADC", 12: "USB_D_P", 13: "POT5_ADC", 14: "USB_D_N", 18: "LED6_MCU",
     19: "ENC1_B_MCU", 20: "GND", 24: "POT6_ADC", 25: "LED5_MCU", 32: "POT_GND",
     37: "POT1_ADC", 39: "GND", 40: "MUTE_LINE34", 41: "ENC2_B_MCU", 43: "ENC2_A_MCU",
@@ -195,6 +198,16 @@ s.r("R51", "33", "LRCK_MCU", "LRCK")
 s.r("R52", "33", "DIN1_MCU", "DIN1")
 s.r("R53", "2.2k", "I2C1_SCL", "NUCLEO_3V3")
 s.r("R54", "2.2k", "I2C1_SDA", "NUCLEO_3V3")
+s.row()
+# MCLK_MCU arrives series-terminated from A. R55 (0 ohm) and C53 (not fitted) leave room for a
+# series resistor or an RC at the receiving end if the scope shows ringing at PC9 (review m9).
+s.r("R55", "0", "MCLK_MCU", "MCLK_PC9")
+s.c("C53", "10p 50V C0G", "MCLK_PC9", "GND", dnp=True)
+# Inputs driven from board A: defined when J_LINK is unplugged (review m4). 100 k is light
+# against the drivers (33 ohm series) and the I2S_CKIN edge (about 3 pF pin, 0.3 ns).
+s.r("R56", "100k", "MCLK_PC9", "GND")
+s.r("R57", "100k", "DOUT1", "GND")
+s.r("R58", "100k", "CODEC_OVF", "GND")
 
 # ------------------------------------------------------------------ 6. USB-C
 s = b.sheet("usb", "USB-C")
@@ -247,6 +260,9 @@ s.c("C82", "1u 10V X7R", "POT_REF", "POT_GND")
 s.r("R81", "10k", "POT_REF", "POTBUF_FB")
 s.c("C81", "330n 16V X7R", "POTBUF_OUT", "POTBUF_FB")
 s.r("R83", "0", "VREFP", "POT_REF", dnp=True)
+# U8's input is defined without the Nucleo (bring-up steps 1 to 4): 1 M, 3.3 uA from VREF+ in
+# use (review m7).
+s.r("R84", "1M", "VREFP", "GND")
 s.row()
 for k in range(1, 8):  # Wipers: 1 k and 100 nF to POT_GND at the MCU end (11.2).
     s.r(f"R{100 + k}", "1k", f"POT{k}", f"POT{k}_ADC")
@@ -274,6 +290,8 @@ s.c("C84", "100n 16V", "PANEL_3V3", "GND")
 s = b.sheet("link", "Link to board A: J_LINK")
 s.note("Pin-out from hw/tools/links.py (rev_a_board_split.md 3.1). Series resistors for BCK, "
        "LRCK and DIN1 are on the Nucleo sheet; DOUT1 and MCLK_MCU are terminated on A.")
+s.note("Once JP1 to JP4 are bridged, J7 carries live 5V_DIG, 5V5_PRE and +/-15 V on open pins "
+       "next to GND whenever its cable is unplugged: silkscreen 'LIVE' (review m4).")
 pins, nc = links.pins("J_LINK")
 s.part("Connector_Generic:Conn_02x20_Odd_Even", "J7", "J_LINK", IDC_2X20, pins, nc=nc,
        fields=HAND)

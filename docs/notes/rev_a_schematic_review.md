@@ -473,7 +473,15 @@ Behaviour:
   simulation before layout.
 - **M2** is open: it changes the input stage's topology (the owner's EX5 subject), so it waits
   for the owner's decision.
-- The minor findings and the verify-before-layout list wait for the owner's review.
+- **Minor, applied the same day:** m4 (pull-downs on the A-driven MCU inputs, J7 marked live),
+  m7 (1 M on the pot buffer's input; bring-up order changed), m9 (0 ohm plus a 10 pF footprint at
+  PC9), m10 (sheet note: morpho sockets on the bottom side), m13 (A's and D's notes corrected).
+  m5, m6 and m8 written into `rev_a_architecture.md` (sections 8 and 15) as firmware and bench
+  rules. m11 needs no change.
+- **Left for the owner:** m1 (input coupling capacitors, tied to M2), m2 (the module maker and
+  its capacitive-load limit), m3 (1 M pot pull-downs cost about 0.25 % of linearity), m12
+  (5V_DIG capacitance, or measure the load step at bring-up), and the verify-before-layout list
+  (section 4).
 
 ## From the transcripts
 

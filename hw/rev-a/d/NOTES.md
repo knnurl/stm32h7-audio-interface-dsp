@@ -356,7 +356,8 @@ solder jumpers. Control lines to A have no series resistors (their pull-downs ar
 8. Module pin numbers (rev_a symbol) against the WRA_S-3WR2 drawing.
 9. Fig. 2's component positions, including Cd.
 10. Board A's capacitance on +15V_RAW and -15V_RAW: at most 110 uF each (220 uF module limit).
-11. Hold-up after a 12 V pull: now about 5 ms worst against a 3 ms relay release (bring-up 4).
+11. Hold-up after a 12 V pull: the review computes 6.7 ms (5.4 ms from RAILS_OK's lowered
+    9.76 V threshold) against a 3 ms relay release (bring-up step 5).
 12. Module ripple frequency at idle (PFM) and the filter's attenuation there.
 13. SRN4018 inductors' ratings for L3, L4, L5.
 14. Supervisor: rising threshold up to about 11.15 V with tolerances against the adapter's minimum
@@ -403,3 +404,12 @@ power output pin), resolved by not flagging GND.
 - **M3, adapter margin:** R40 255 k to 237 k: RAILS_OK falls at 9.76 V and rises at about
   10.04 V (review computation), leaving about 1.4 V to a 12 V adapter at -5 %. Hold-up from 9.76 V
   still exceeds the relays' 3 ms release (review: about 5.4 ms) [measure at bring-up step 4].
+- **m4:** 100 k pull-downs R56 to R58 on the three inputs board A drives (MCLK_PC9, DOUT1,
+  CODEC_OVF), so they are defined with J_LINK unplugged; a sheet note marks J7 as live once the
+  rail jumpers are bridged.
+- **m7:** R84, 1 M from VREFP to GND, defines U8's input without the Nucleo. The supervisor's
+  dependence on the Nucleo's 3V3 stays; the bring-up order now fits the Nucleo before the
+  RAILS_OK measurements (architecture 15).
+- **m9:** MCLK_MCU reaches PC9 through R55 (0 ohm) with C53 (10 pF, not fitted), room for a
+  series resistor or an RC at the receiving end if the scope shows ringing (bring-up step 6).
+- **m10:** sheet note: J2 and J3 on the bottom side.

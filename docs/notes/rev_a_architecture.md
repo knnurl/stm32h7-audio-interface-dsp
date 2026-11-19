@@ -458,6 +458,14 @@ SBOS727B 7.3.3; "designed to eliminate click and pop" on entering and leaving sh
 PCM3168A RST pulled low (SBAS452A 9.3.6). Every control line has a pull-down, so a reset or a
 crash of the MCU (pins high-impedance) mutes.
 
+**Firmware rules from the schematic review (2026-11-19):**
+- Release the converter's RST only after the ±12 V rails are up: RAILS_OK watches 12V_P only,
+  and with ±12V_ANA absent the op-amp inputs' clamp diodes pull VCOMAD from 2.5 V to about
+  0.6 V (review m6). In the normal sequence they are up long before RAILS_OK's 189 ms delay ends.
+- Raise HP_EN no sooner than about 1 s after the converter leaves reset or power-save: the
+  OPA1622's two input couplings settle with different time constants and would pass a
+  transient of a few tens of mV (review m8) [Verify by measurement at bring-up step 9].
+
 **RAILS_OK** is an open-drain supervisor on 12V_P (threshold about 10.5 V with hysteresis, a
 delay of about 200 ms after power-up [part chosen in stage 3]). Low forces both relay drivers and
 the OPA1622 EN low in hardware, whatever the MCU does, and interrupts the MCU (EXTI).
@@ -698,11 +706,21 @@ stage 1 decision for one jack, and needs the spot face].
    reverse the supply (limit 50 mA) and check nothing conducts; raise it slowly to 17 V and check
    the cut-off trips near 16 V; bucks and module unloaded: voltages and ripple (20 MHz bandwidth).
 2. Close the links one at a time: each LDO, then its loads. Voltages, ripple, temperatures.
-3. RAILS_OK: rising delay, falling threshold.
-4. **Power-fail timing:** pull 12 V and scope RAILS_OK, a relay coil and both ±12 V rails: the
-   relay must open (coil current gone plus 3 ms) before either rail leaves regulation.
-5. JP2 to pins 5-6, mount the Nucleo on its insulating standoffs, 12 V on, then the ST-LINK cable
-   (UM2408 7.4.6). Flash, console. Measure the 5V_EXT current.
+3. JP2 to pins 5-6, mount the Nucleo on its insulating standoffs, 12 V on, then the ST-LINK cable
+   (UM2408 7.4.6). Flash, console. Measure the 5V_EXT current. (Moved before RAILS_OK: on board
+   D the supervisor, its pull-up and the I2C pull-ups run from the Nucleo's 3V3; schematic
+   review m7.)
+4. RAILS_OK: rising delay, falling threshold (9.76 V falling, about 10.04 V rising, board D).
+5. **Power-fail timing:** pull 12 V and scope RAILS_OK, a relay coil and both ±12 V rails: the
+   relay must open (coil current gone plus 3 ms) before either rail leaves regulation. Do it
+   twice: at the barrel plug, and by switching the adapter off at the mains with the plug left
+   in (Q1 and Q2 conduct both ways when on, so an adapter left in the jack can load 12V_P;
+   review m13).
+
+Rules that hold throughout: never run the Nucleo from the ST-LINK cable (JP2 on 1-2) with board
+D fitted and 12 V off: VREF+ would back-power 5V_DIG through the pot buffer's input (review m7,
+[Verify the TLV9001 input structure]). With the lid off, strap A's chassis hole to D's bond
+hole H1, or A's jack sleeves and ESD parts float (review m5).
 6. Clocks: frequency, duty and ringing of each oscillator at SCKI and at PC9; the switch-over.
 7. Converter control: release RST, see the OVF pulse, read the registers over I2C, write and read
    back (#142).

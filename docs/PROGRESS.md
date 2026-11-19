@@ -27,7 +27,8 @@ entry with no transcripts line is unfinished.
   low 12 V adapter) fixed on D. **M2 open, the owner decides:** a TS (unbalanced) source needs 2
   V rms on one ADC pin for 0 dBFS, beyond the PCM3168A's pin limits; the fix is a
   differential-output input stage plus clamps, and it changes `rev_a_input_budget.md` (EX5's
-  subject). Thirteen minor findings listed there.
+  subject). Thirteen minor findings: m4, m7, m9, m10, m13 applied; m5, m6, m8 written into the
+  architecture's firmware and bring-up rules; m1, m2, m3, m12 left for the owner.
 - **Part changes:** mux 74LVC1G97 for the 74LVC1G157 (no KiCad symbol, pin table unreadable);
   3V3_A from a TPS7A2033 on 5V5_PRE (the AMS1117 is gone); TPS7A20s in SOT-23-5; four relays
   (line 3/4 needs one per leg pair); relay clamp diode plus 10 V zener; Q2 FDS9435A.
