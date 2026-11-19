@@ -1,0 +1,59 @@
+{
+  "meta": {
+    "filename": "rev_a_a.kicad_pro",
+    "version": 3
+  },
+  "sheets": [
+    [
+      "4d2a3175-647c-5172-82d8-ba86b8d3a658",
+      "Root"
+    ],
+    [
+      "7ff5876a-ef90-5a5e-b1fc-d5b58ab51d75",
+      "Link to board D"
+    ],
+    [
+      "e32c4a08-fa4e-5bb0-9f39-cb4582f4fd69",
+      "Linear regulators"
+    ],
+    [
+      "6a1ef955-e5ad-588e-be5a-7f0172793368",
+      "Clocks"
+    ],
+    [
+      "afce7614-2674-5d7c-98b6-b66cdae35925",
+      "Converter PCM3168A"
+    ],
+    [
+      "cb2b7be5-b311-5b94-933f-737df223440a",
+      "Line inputs 1 and 2"
+    ],
+    [
+      "51cc65cc-112c-531f-bb96-5af17338aa0d",
+      "Monitor outputs L and R"
+    ],
+    [
+      "61914a93-1d37-5a7f-8e8c-7a488e4ad5c9",
+      "Line outputs 3 and 4"
+    ],
+    [
+      "9b549e99-c266-5705-ac69-ec6faadc9d85",
+      "Headphone amplifier"
+    ],
+    [
+      "66b0fa8e-434a-5fe1-ba70-c6ece664fc3c",
+      "Mute and relay drivers"
+    ],
+    [
+      "15f377d7-3a44-5c28-ac50-3c86ff87126e",
+      "Mechanical and test points"
+    ]
+  ],
+  "erc": {
+    "rule_severities": {
+      "lib_symbol_mismatch": "ignore",
+      "lib_symbol_issues": "warning",
+      "footprint_link_issues": "warning"
+    }
+  }
+}

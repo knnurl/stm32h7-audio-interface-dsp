@@ -1,0 +1,430 @@
+(kicad_sch
+	(version 20250610)
+	(generator "kisch")
+	(generator_version "10.0")
+	(uuid "4d2a3175-647c-5172-82d8-ba86b8d3a658")
+	(paper "A4")
+	(title_block
+		(title "Rev A board A: converter and analogue")
+		(date "2026-11-19")
+		(rev "A")
+		(company "stm32h7-audio-interface-dsp")
+	)
+	(lib_symbols)
+	(sheet
+		(at 25.4 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "7ff5876a-ef90-5a5e-b1fc-d5b58ab51d75")
+		(property "Sheetname" "Link to board D"
+			(at 25.4 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "link.kicad_sch"
+			(at 25.4 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 88.9 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "e32c4a08-fa4e-5bb0-9f39-cb4582f4fd69")
+		(property "Sheetname" "Linear regulators"
+			(at 88.9 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "power.kicad_sch"
+			(at 88.9 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 152.4 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "6a1ef955-e5ad-588e-be5a-7f0172793368")
+		(property "Sheetname" "Clocks"
+			(at 152.4 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "clocks.kicad_sch"
+			(at 152.4 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 215.9 38.1)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "afce7614-2674-5d7c-98b6-b66cdae35925")
+		(property "Sheetname" "Converter PCM3168A"
+			(at 215.9 37.4 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "converter.kicad_sch"
+			(at 215.9 59.1 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 25.4 76.2)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "cb2b7be5-b311-5b94-933f-737df223440a")
+		(property "Sheetname" "Line inputs 1 and 2"
+			(at 25.4 75.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "inputs.kicad_sch"
+			(at 25.4 97.2 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 88.9 76.2)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "51cc65cc-112c-531f-bb96-5af17338aa0d")
+		(property "Sheetname" "Monitor outputs L and R"
+			(at 88.9 75.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "monitor.kicad_sch"
+			(at 88.9 97.2 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "7")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 152.4 76.2)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "61914a93-1d37-5a7f-8e8c-7a488e4ad5c9")
+		(property "Sheetname" "Line outputs 3 and 4"
+			(at 152.4 75.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "line34.kicad_sch"
+			(at 152.4 97.2 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "8")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 215.9 76.2)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "9b549e99-c266-5705-ac69-ec6faadc9d85")
+		(property "Sheetname" "Headphone amplifier"
+			(at 215.9 75.5 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "phones.kicad_sch"
+			(at 215.9 97.2 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "9")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 25.4 114.3)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "66b0fa8e-434a-5fe1-ba70-c6ece664fc3c")
+		(property "Sheetname" "Mute and relay drivers"
+			(at 25.4 113.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "mute.kicad_sch"
+			(at 25.4 135.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "10")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 88.9 114.3)
+		(size 50.8 20.32)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "15f377d7-3a44-5c28-ac50-3c86ff87126e")
+		(property "Sheetname" "Mechanical and test points"
+			(at 88.9 113.6 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "mech.kicad_sch"
+			(at 88.9 135.3 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "rev_a_a"
+				(path "/4d2a3175-647c-5172-82d8-ba86b8d3a658"
+					(page "11")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
+)
