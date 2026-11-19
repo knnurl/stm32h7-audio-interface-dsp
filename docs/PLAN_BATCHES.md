@@ -44,7 +44,7 @@ the owner. Do not start the next batch in the same session unless the owner said
 | 2 | Audio pass-through on breakouts | Nucleo, two breakouts, scope | 1 | Waiting for the modules |
 | 3 | Filters, float and Q31, and the tone control | Host part: none. Target part: Nucleo | 1 | Not started |
 | 4 | USB audio, USB MIDI, Ableton. **Portfolio checkpoint P1** | Nucleo, breakouts | 2, 3 | Not started |
-| 5 | Rev A boards: main board and control panel, five stages | No | 0 | Outline drafted |
+| 5 | Rev A boards: D, A and two panel boards (100 x 100 mm split), five stages | No | 0 | Stage 3 schematics drafted and reviewed (2026-11-19); order parked |
 | 6 | Dynamics and saturation | Host part: none. Target part: Nucleo | 3 | Not started |
 | 7 | Bring-up of both boards, lab session | Both boards, lab analyser | 4, 5 | Not started |
 | 8a | Control core: registry, knob ownership, protocol, MIDI mapping, presets | None (the UART console on the Nucleo for the target part) | 1 | Not started |

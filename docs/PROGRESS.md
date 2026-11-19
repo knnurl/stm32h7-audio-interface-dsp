@@ -4,6 +4,43 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-19: batch 5 stage 3, rev A schematics (drafted and reviewed; order parked)
+
+**Transcripts read:** #78 again in full (the batch's list: #78, #142). "From the transcripts" in
+`rev_a_board_split.md` and `rev_a_schematic_review.md`.
+
+- **Owner's decisions:** boards no larger than 100 x 100 mm (JLC's price step), joined by IDC
+  cables; schematics now, order parked; the owner builds batch 2 on the Nucleo with the two
+  modules and a Behringer HA400 for headphones. Split written up in
+  `docs/notes/rev_a_board_split.md`: D (power, digital, over the Nucleo), A (converter and
+  analogue, linear regulators only, the oscillators beside the converter), panel PL and PR;
+  cable pin-outs J_LINK, J_PANEL, J_PJ, J_HP.
+- **Tooling (`hw/`):** each board is a Python netlist (`hw/rev-a/<board>/design.py`) drawn as a
+  KiCad 10 project by `hw/tools/kisch.py`; `make_lib.py` writes the custom symbols;
+  `check_links.py` compares both ends of every cable from KiCad's netlists. Python is the source
+  until the owner signs off the review; then KiCad is (`hw/README.md`).
+- **Result:** A 328 parts, D 187, PL 26, PR 24. ERC 0 errors, 0 warnings on all four;
+  `check_links.py`: all four cables match. Commands:
+  `python hw/rev-a/a/design.py` (likewise d, pl, pr), `python hw/tools/check_links.py`.
+- **Review** (independent agent, `docs/notes/rev_a_schematic_review.md`): no blocker; three
+  major. M1 (inrush through the over-voltage FET) and M3 (supervisor threshold too close to a
+  low 12 V adapter) fixed on D. **M2 open, the owner decides:** a TS (unbalanced) source needs 2
+  V rms on one ADC pin for 0 dBFS, beyond the PCM3168A's pin limits; the fix is a
+  differential-output input stage plus clamps, and it changes `rev_a_input_budget.md` (EX5's
+  subject). Thirteen minor findings listed there.
+- **Part changes:** mux 74LVC1G97 for the 74LVC1G157 (no KiCad symbol, pin table unreadable);
+  3V3_A from a TPS7A2033 on 5V5_PRE (the AMS1117 is gone); TPS7A20s in SOT-23-5; four relays
+  (line 3/4 needs one per leg pair); relay clamp diode plus 10 V zener; Q2 FDS9435A.
+- **Pin numbers not verified** (drawings only): WRA1215S-3WR2 (assumed Vin 2, GND 1, Ctrl 3,
+  +Vo 6, 0V 7, -Vo 8), PLR135, PLT133; also check the G6K footprint's NC/COM/NO pads, the
+  TLV9001 DCK pin-out, the oscillators' OE pin, the PCM3168A pad size. Listed in the review.
+- **Owner's open decisions:** M2; panel buttons B3F-5000 (12 mm) against a 9 mm pitch (B3F-1000
+  6 mm proposed); LED colours (blue needs 5 V on the panel cable); J_LINE34 pin-out; solder
+  jumpers or 0 ohm links on the rails; PTC part and the adapter's minimum voltage; pot
+  reference buffer on 5V_DIG or the stage 2 wiring; J1 JST XH or a screw terminal; TPS7A20
+  package and the 4.7 ohm before 3V3_A; the zener relay clamp. Still open from stage 2: EX5,
+  V14, V28, V29, V30, JLC quotes, the 100 dB EQ criterion (1.2 kHz floor measured 2026-11-19).
+
 ## 2026-11-18: batch 5 stage 2, rev A architecture (forked agent; drafted, not signed off)
 
 **Transcripts read:** #78 (mixed-signal walkthrough) and #142 (codec driver) again in full; all 29

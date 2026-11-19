@@ -474,3 +474,19 @@ Behaviour:
 - **M2** is open: it changes the input stage's topology (the owner's EX5 subject), so it waits
   for the owner's decision.
 - The minor findings and the verify-before-layout list wait for the owner's review.
+
+## From the transcripts
+
+Read for stage 3: #78 (mixed-signal hardware walkthrough) in full, again; #142 (codec driver)
+was read in stages 1 and 2 and adds nothing to the schematic beyond the I2C address straps.
+
+- **#78:** Phil's checklist habits, used as review items here: one 100 nF per VDD pin plus bulk
+  (item 1); 33 ohm series resistors on clock lines at the transmitter (item 3); address-select
+  pins strapped with 10 k (item 2.5 here: the PCM3168A's ADR pins); an RF low-pass and ESD at
+  each audio input and a 100 ohm build-out at each output (checked on board A); a filtered
+  supply and an RC on each pot's ADC input (board D); differential pairs named _P and _N
+  (USB_D_P, USB_D_N). His input bias resistor "of a high value" is board A's 1 M bleed.
+- **#78** also uses a 5 V single-supply analogue section; this design uses +/-12 V, so the
+  converter's 5 V analogue inputs meet stages with a wider swing than in his board. That
+  difference is exactly where finding M2 sits: his unity-gain followers on 5 V cannot exceed
+  the converter's pins, ours can.
