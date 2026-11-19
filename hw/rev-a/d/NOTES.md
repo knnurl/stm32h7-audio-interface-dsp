@@ -391,3 +391,15 @@ solder jumpers. Control lines to A have no series resistors (their pull-downs ar
 
 None. The only ERC finding during development was deviation 10 (PWR_FLAG on GND against PS1's
 power output pin), resolved by not flagging GND.
+
+## Changes after the schematic review (2026-11-19)
+
+- **M1, inrush:** C1 moved from Q2's gate-source to gate-drain and raised to 470 nF, so Q2 ramps
+  12V_P at about 190 V/s (12 V in about 60 ms, about 0.22 A into the 1.17 mF downstream) instead
+  of switching on hard. Q2 still dissipates about 84 mJ per plug-in (1/2 C V^2, independent of
+  the ramp rate), about 1.4 W for 60 ms, so it is now an FDS9435A in SO-8 instead of the SOT-23
+  DMP3099L. Q1 is unchanged (it is fully on before the ramp starts). Simulate trip, release and
+  the ramp before layout [Verify].
+- **M3, adapter margin:** R40 255 k to 237 k: RAILS_OK falls at 9.76 V and rises at about
+  10.04 V (review computation), leaving about 1.4 V to a 12 V adapter at -5 %. Hold-up from 9.76 V
+  still exceeds the relays' 3 ms release (review: about 5.4 ms) [measure at bring-up step 4].

@@ -910,7 +910,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "31ee77f6-23e3-5225-a83b-906335437274")
-		(property "Reference" "#PWR064"
+		(property "Reference" "#PWR068"
 			(at 38.1 50.8 0)
 			(effects
 				(font
@@ -951,7 +951,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR064")
+					(reference "#PWR068")
 					(unit 1)
 				)
 			)
@@ -1025,7 +1025,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "28fd5a8b-3795-5c7a-ad89-ae414703ce9e")
-		(property "Reference" "#PWR065"
+		(property "Reference" "#PWR069"
 			(at 38.1 30.48 0)
 			(effects
 				(font
@@ -1066,7 +1066,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR065")
+					(reference "#PWR069")
 					(unit 1)
 				)
 			)
@@ -1161,7 +1161,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "9e036828-9f96-5daf-b3e5-b361e3e58944")
-		(property "Reference" "#PWR066"
+		(property "Reference" "#PWR070"
 			(at 71.12 31.75 0)
 			(effects
 				(font
@@ -1202,7 +1202,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR066")
+					(reference "#PWR070")
 					(unit 1)
 				)
 			)
@@ -1228,7 +1228,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "bb11f696-3411-5979-ae56-c435310fa85b")
-		(property "Reference" "#PWR067"
+		(property "Reference" "#PWR071"
 			(at 71.12 44.45 0)
 			(effects
 				(font
@@ -1269,7 +1269,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR067")
+					(reference "#PWR071")
 					(unit 1)
 				)
 			)
@@ -1293,7 +1293,7 @@
 				(justify left)
 			)
 		)
-		(property "Value" "255k 1%"
+		(property "Value" "237k 1%"
 			(at 93.956 40 0)
 			(effects
 				(font
@@ -1364,7 +1364,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "a803f6c2-f7ae-5c09-b82b-8d4a99c6f5f6")
-		(property "Reference" "#PWR068"
+		(property "Reference" "#PWR072"
 			(at 91.44 31.75 0)
 			(effects
 				(font
@@ -1405,7 +1405,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR068")
+					(reference "#PWR072")
 					(unit 1)
 				)
 			)
@@ -1544,7 +1544,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "1078fd02-8b23-557b-9208-efc665c3dfe5")
-		(property "Reference" "#PWR069"
+		(property "Reference" "#PWR073"
 			(at 109.22 46.99 0)
 			(effects
 				(font
@@ -1585,7 +1585,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR069")
+					(reference "#PWR073")
 					(unit 1)
 				)
 			)
@@ -1825,7 +1825,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "320ba8fe-0e59-51f7-8812-9ce11e97bb6e")
-		(property "Reference" "#PWR070"
+		(property "Reference" "#PWR074"
 			(at 147.32 46.99 0)
 			(effects
 				(font
@@ -1866,7 +1866,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR070")
+					(reference "#PWR074")
 					(unit 1)
 				)
 			)
@@ -1983,7 +1983,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "251a2f04-4e8b-58cc-9dbb-3f26f6679800")
-		(property "Reference" "#PWR071"
+		(property "Reference" "#PWR075"
 			(at 165.1 44.45 0)
 			(effects
 				(font
@@ -2024,7 +2024,7 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR071")
+					(reference "#PWR075")
 					(unit 1)
 				)
 			)
@@ -2151,7 +2151,7 @@
 		(on_board yes)
 		(dnp no)
 		(uuid "48672861-1432-5350-9694-27343a889b27")
-		(property "Reference" "#PWR072"
+		(property "Reference" "#PWR076"
 			(at 187.96 49.53 0)
 			(effects
 				(font
@@ -2192,13 +2192,13 @@
 		(instances
 			(project "rev_a_d"
 				(path "/a698516e-27d9-5e58-a3e9-7f03803480c8/17009d5d-42bc-5c9d-a593-7977c83901e2"
-					(reference "#PWR072")
+					(reference "#PWR076")
 					(unit 1)
 				)
 			)
 		)
 	)
-	(text "RAILS_OK low below 12V_P = 10.47 V, high 189 ms after 12V_P rises above about 10.9 V. R42 from the output adds hysteresis. Open drain, pulled up on D only."
+	(text "RAILS_OK low below 12V_P = 9.76 V, high 189 ms after 12V_P rises above about 10.04 V (review M3: a 12 V adapter at -5 % must clear the rising threshold with its tolerances). R42 from the output adds hysteresis. Open drain, pulled up on D only."
 		(exclude_from_sim no)
 		(at 15 15 0)
 		(effects

@@ -56,12 +56,15 @@ s.r("R1", "100k", "Q1_G", "GND")
 s.part("Device:D_Zener", "D1", "BZT52C10", SOD123, {"K": "12V_RP", "A": "Q1_G"})
 s.row()
 # Over-voltage cut-off: Q2 back to back with Q1 (common source), turned off by Q3 when the
-# TL431 sees 12V_RP above about 15.7 V. C1 with R2 soft-starts Q2 (inrush into C2).
-s.part("Transistor_FET:DMP3099L", "Q2", "DMP3099L-7", SOT23,
+# TL431 sees 12V_RP above about 15.7 V. C1 gate to drain with R2 makes Q2 ramp 12V_P (Miller
+# integrator): dV/dt = (about 9 V / R2) / C1 = 190 V/s, 12 V in about 60 ms, inrush into the
+# about 1.17 mF downstream: 1.17 mF x 190 V/s = 0.22 A. Q2 still dissipates 1/2 C V^2 = 84 mJ
+# per plug-in, about 1.4 W for 60 ms: an SO-8 part, not SOT-23 (review M1). Simulate [Verify].
+s.part("Transistor_FET:FDS9435A", "Q2", "FDS9435A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
        {"S": "12V_RP", "D": "12V_P", "G": "Q2_G"})
 s.r("R2", "100k", "Q2_G", "GND")
 s.part("Device:D_Zener", "D2", "BZT52C10", SOD123, {"K": "12V_RP", "A": "Q2_G"})
-s.c("C1", "100n 25V", "Q2_G", "12V_RP")
+s.c("C1", "470n 25V", "Q2_G", "12V_P")
 s.r("R3", "53.6k 1%", "12V_RP", "OV_SENSE")
 s.r("R4", "10k 1%", "OV_SENSE", "GND")
 s.r("R5", "1M 1%", "Q2_G", "OV_SENSE")
@@ -138,13 +141,14 @@ s.flag("-15V_RAW")
 
 # ------------------------------------------------------------------ 4. supervisor
 s = b.sheet("supervisor", "Supervisor: RAILS_OK")
-s.note("RAILS_OK low below 12V_P = 10.47 V, high 189 ms after 12V_P rises above about 10.9 V. "
+s.note("RAILS_OK low below 12V_P = 9.76 V, high 189 ms after 12V_P rises above about 10.04 V "
+       "(review M3: a 12 V adapter at -5 % must clear the rising threshold with its tolerances). "
        "R42 from the output adds hysteresis. Open drain, pulled up on D only.")
 s.part("Power_Supervisor:TPS3808DBV", "U4", "TPS3808G01DBVR", "Package_TO_SOT_SMD:SOT-23-6",
        {"VDD": "NUCLEO_3V3", "GND": "GND", "SENSE": "UV_SENSE", "CT": "SUP_CT",
         "~{RESET}": "RAILS_OK"}, nc=["~{MR}"])
 s.c("C40", "100n 16V", "NUCLEO_3V3", "GND")
-s.r("R40", "255k 1%", "12V_P", "UV_SENSE")
+s.r("R40", "237k 1%", "12V_P", "UV_SENSE")
 s.r("R41", "10k 1%", "UV_SENSE", "GND")
 s.r("R42", "2.8M 1%", "RAILS_OK", "UV_SENSE")
 s.c("C41", "1n 50V", "UV_SENSE", "GND")
