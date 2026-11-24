@@ -147,6 +147,9 @@ From the repository root. Keep this section accurate.
   the PC (`python tools/ctl.py --sim list`)
 - Protocol fuzz under the address sanitiser: `build\host\ctl\Release\ctl_fuzz.exe 200000 7`
   (also run by `python -m pytest`)
+- Rev A schematics (KiCad 10 installed; close the project in KiCad first): `python hw/tools/make_lib.py`
+  (custom symbols), `python hw/rev-a/<a|d|pl|pr>/design.py` (draws one board and runs its ERC),
+  `python hw/tools/check_links.py` (both ends of every cable). See `hw/README.md`.
 
 ## Repository layout
 
@@ -156,6 +159,6 @@ ctl/      include/ctl/  src/  fuzz/    control library: parameters, protocol, MI
 tests/    unit/  exercises/  ref/      pytest suites and Python reference models
 fw/       cmake/  common/  cm7/  cm4/  firmware for both cores; third_party/ is fetched
 tools/    flash.ps1  console.py  target_test.py  ctl.py
-hw/       shield-a/                    KiCad project (batch 5)
-docs/     SPEC, plans, PROGRESS, notes/, exercises/, results/
+hw/       tools/  lib/  rev-a/{a,d,pl,pr}/   schematic generator, custom symbols, the four rev A boards (batch 5)
+docs/     SPEC, plans, PROGRESS, notes/, exercises/, results/; datasheets/ and transcripts/ local only
 ```
