@@ -78,6 +78,32 @@ Pots (Alps RK09L series datasheet): M9 x 0.75 bushing, 6 mm metal shaft, shaft l
 L1 = 15 mm leaves about 10 mm for a knob after the nut. V24: series confirmed; exact vertical
 10 k linear part numbers with and without detent [Verify].
 
+### 4.1 The phones jack and the front panel's thickness (2026-11-19)
+
+- **Why the NJ6FD-V:** the panel boards are vertical, parallel to the front panel, so the jack
+  must be a vertical type (axis perpendicular to its board); the horizontal NMJ6HCD2 would point
+  along the board. Its POM body and PA nut insulate the sleeve from the metal panel, which the
+  headphone amplifier on board A needs: a sleeve touching the panel would return part of the
+  headphone current through the case and the chassis bond (crosstalk, and the PC ground loop as
+  hum). Its switch contacts (tip, ring, sleeve) could give a plug-detect line later.
+- **The problem:** Neutrik's sheet allows a 1.2 to 1.5 mm panel; on 2 mm the nut catches a thread
+  or two.
+- **Option 1, recommended:** make the whole front panel 1.5 mm aluminium. The RK09L pots and the
+  encoders take 1.5 mm, and a panel about 160 x 51 mm is stiff enough at that thickness.
+- **Option 2:** a spot face: a flat-bottomed pocket milled into the panel's rear round the 12 mm
+  hole, 0.5 mm deep (1.5 mm of metal left), about 20 mm across so the jack's body seats flat
+  [Verify against the jack's drawing]. Mill the hole and the pocket in one setup from the rear
+  so they are concentric; from the front only the hole shows.
+- **Seating heights, either way:** the panel boards hang on the pot, encoder and jack nuts, so
+  every part's seating face must sit at the same height above its board, or tightening the nuts
+  bends the board. With a spot face the jack's seating face moves 0.5 mm forward of the pots':
+  the jack must seat 0.5 mm higher, or the pots get 0.5 mm washers. Worked out from the parts'
+  drawings at stage 4 (Neutrik's sheet has no drawing) [Verify].
+- **Buttons against their pitch** (schematic review of PL): the B3F-5000 is 12 x 12 mm but the
+  table above puts FX select, on and tap 9 mm apart and mute and dim 10 mm apart. Either the
+  6 x 6 mm B3F-1000 class (stock footprint `SW_TH_Tactile_Omron_B3F-100x`) or wider spacing
+  [owner decides]; only the footprint changes.
+
 ## 5. Depth (y)
 
 Rear panel 2 + main board 100 + gap for the ribbon header about 15 + panel board 1.6 + pot body
