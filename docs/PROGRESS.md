@@ -4,6 +4,60 @@ The handoff log, newest entry first. Each entry: what was done, the transcripts 
 "none listed"), measured numbers, exact commands, what the owner decides or does next. A batch
 entry with no transcripts line is unfinished.
 
+## 2026-11-24: handoff; the owner works on the exercises, board decisions parked
+
+**Transcripts read:** none listed (no batch work: a handoff entry). Start a new session here.
+
+**Where things stand.** All work is committed and pushed. The board order stays parked; the
+owner said "bring up these later" about every board decision and moved to the exercises.
+
+**Exercises (the owner's; Claude never writes a solution).** Status measured 2026-11-24 after
+`cmake --build --preset host-release`, `python -m pytest tests/exercises/test_<name>.py`: all
+seven coded exercises are the original stubs.
+
+| Exercise | Topic | Tests passing |
+|---|---|---|
+| EX1 `docs/exercises/EX1_dcblock.md` | one-pole DC blocker, float32 precision, header to board benchmark | 0 of 6 |
+| EX3 `EX3_notch_allpass.md` | notch and all-pass biquad coefficients | 1 of 13 (stability passes on the stub) |
+| EX8c `EX8c_kweighting.md` | K-weighting at any rate, bilinear prewarping; switches on the loudness meter | 0 of 12 |
+| EX6 `EX6_halfband.md` | half-band FIR for the oversampler | 4 errors (need the design) |
+| EX8b `EX8b_tremolo.md` | tremolo effect, timed on the board | 0 of 8 |
+| EX8a `EX8a_cc14.md` | 14-bit MIDI CC for the tone gains | 6 of 9 (the stub keeps the device working) |
+| EX8d `EX8d_doublepress.md` | double-press detector | 3 of 9 |
+| EX5 `EX5_input_budget.md` | input stage noise and level by hand | no tests; waits for review finding M2 |
+
+- **Order proposed:** EX1, EX3, EX8c, EX6, EX8b, EX8a, EX8d; EX5 once M2 is decided (M2 may
+  change the input stage it is about). The owner was briefed on EX1 and is starting there.
+- **How Claude helps:** hints on request at three levels (a nudge; the approach in words; a
+  pointer into the reference model or the test), and on "review": run the exercise's tests and
+  the full suite, read the diff, comment. The board steps of an exercise (self-test case, flash,
+  `tools/target_test.py`) need the owner to say the Nucleo is connected.
+
+**Board decisions parked (bring up when the owner asks):** M2 (input stage against the
+PCM3168A's pin limits: Claude recommends a differential-output stage plus clamps), panel buttons
+(B3F-1000 6 mm proposed), LED colours, the J_LINE34 pin-out, rail links (solder jumpers or 0 ohm),
+the PTC part, the pot reference buffer, J1 (JST XH or screw terminal), the TPS7A20 package and
+4.7 ohm, the zener relay clamp, review minors m1, m2, m3, m12; the owner's checks before layout
+(WRA1215S-3WR2 pin numbers from its drawing, the G6K terminal drawing and coil polarity, V14, V28,
+V29, V30, JLC quotes for two 4-layer 100 x 100 and two 2-layer panel boards). Details: the
+2026-11-19 entry below and `docs/notes/rev_a_schematic_review.md`. Also open: the 100 dB EQ
+criterion (measured: 1.2 kHz floor; `docs/notes/peq_float32_bands.md`, "Proposed").
+
+**Also settled in this session, saved here so the chat can be lost:**
+- The owner asked whether to buy an M-Audio M-Track Duo (£35, 16-bit 48 kHz) instead. Answer
+  given: it does not replace the project (a portfolio of embedded DSP); for studio recording buy a
+  24-bit interface, which also serves as a day-to-day measurement aid for rev A. Without the
+  custom board the project still stands on the Nucleo with the modules (batches 2, 4, 8c joined,
+  8d on a breadboard, 9, 10, 13); it loses the analogue design and its lab spec sheet. The owner
+  chose to keep the board design going with the order parked.
+- Batch 2 kit: the Nucleo, the PCM1808 and PCM5102A modules, and a Behringer HA400 headphone amp
+  (Thomann UK) fed from the PCM5102A module's 3.5 mm jack; check the HA400's input connector for
+  the lead.
+- The front panel: 1.5 mm recommended for the NJ6FD-V phones jack, or a spot face in 2 mm; the
+  seating-height rule; `mechanical_interface.md` 4.1.
+- Datasheets used for rev A are kept locally (gitignored) in `docs/datasheets/`, indexed in its
+  README.
+
 ## 2026-11-19: batch 5 stage 3, rev A schematics (drafted and reviewed; order parked)
 
 **Transcripts read:** #78 again in full (the batch's list: #78, #142). "From the transcripts" in
