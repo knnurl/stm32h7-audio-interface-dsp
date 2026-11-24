@@ -69,6 +69,36 @@ stacked at 2.5 kHz, Q 10, +15 dB each, would give 109.7 dB, but the registry's f
 (band 4 is always a shelf) cannot ask for that. If band types ever become selectable, the
 corner needs to rise to 3 kHz.
 
+## Proposed: a 100 dB criterion (awaiting the owner's go)
+
+The owner thinks 100 dB is enough (2026-11-18); Claude agrees. Measured 2026-11-19 with
+`pair_snr` from `tools/studies/peq_f32_noise.py` (the registry's band 3 peak at Q 10, +15 dB
+and band 4 shelf at the same corner, worst over the shelf settings), at each input level
+separately:
+
+| Corner (48 kHz) | Pair SNR at -1 dBFS | Pair SNR at -60 dBFS |
+|---|---|---|
+| 800 Hz | 96.5 dB | 96.7 dB |
+| 1.0 kHz | 99.2 dB | 99.9 dB |
+| 1.2 kHz | 102.1 dB | 102.2 dB |
+| 1.5 kHz | 105.8 dB | 105.7 dB |
+| 2.0 kHz | 110.4 dB | 110.7 dB |
+
+- **Why 110 dB was too strict:** it was set against the DAC's 112 dB dynamic range, a fixed
+  noise floor measured with a -60 dBFS signal. Float32 rounding error is relative to the
+  signal: the table shows the same SNR at both levels. At -60 dBFS the error sits near
+  -160 dBFS, far under the floor; the dynamic range is untouched.
+- **The right comparison is the converter's THD+N at full scale:** -94 dB for the DAC, -93 dB
+  for the ADC (SBAS452A, Electrical Characteristics). An error 102 dB down adds to -94 dB as
+  about -93.4 dB: at most 0.6 dB worse, and only at the worst setting at full scale.
+- **What 100 dB gives:** the lowest passing corner is **1.2 kHz**, not the "about 1 kHz" first
+  quoted (1 kHz gives 99.2 dB, 0.8 dB short). Bands 3 and 4 would reach 1.2 to 2.5 kHz, the
+  presence region they cannot reach today. No cycle cost: the float32 saving is unchanged.
+- **On the owner's go:** set `DSP_PEQ_F32_MIN_HZ` and the registry's lower limit for bands 3 and
+  4 to 1.2 kHz; add the 1.0 to 2.0 kHz pair rows to the study and `docs/results/peq_f32_noise.md`;
+  update this note and the SPEC decision log; rerun the host tests and the board's `peq_f32`
+  case (bit identity).
+
 ## From the transcripts
 
 Read: #172 (Biquad Filters), #89 (Audio EQ Software Implementation), #32 (IIR Filters, Theory
