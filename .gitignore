@@ -30,3 +30,7 @@ captures/
 *.wav
 *.flac
 *.log
+
+# Manufacturers' datasheets kept locally for the design work: not ours to publish
+docs/datasheets/*
+!docs/datasheets/README.md

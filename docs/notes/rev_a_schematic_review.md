@@ -14,7 +14,7 @@ design in `rev_a_architecture.md`, `rev_a_board_split.md`, `pin_plan.md`, `rev_a
 2. Exported KiCad's own netlist of every root sheet (`kicad-cli sch export netlist`) and dumped
    every part as pin number, pin name and net, so the connectivity checked is KiCad's, not the
    Python's.
-3. Checked pin-outs against the datasheet text in the scratchpad (SBAS452A PCM3168A, SBOS727B
+3. Checked pin-outs against the datasheet text in `docs/datasheets/` (local only; SBAS452A PCM3168A, SBOS727B
    OPA1622, SBOS855E OPA1678, SBVS338H TPS7A20, SBVS125D TPS7A30, SBVS121E TPS7A49, SLVSD90B
    TPS56320x, UM2408 Rev 6, Mornsun WRA_S-3WR2) and the stock footprints' pad names in KiCad 10's
    library.
